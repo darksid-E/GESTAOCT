@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Central De Dados Controle Térmico</title>
+    <link rel="stylesheet" href="style.css">
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom"></script>
+
+    <script src="supabase-config.js"></script>
+    <script src="script.js"></script> 
+</head>
+<body>
+    <header class="top_bar">
+        <button id="menu" class="menu_button" aria-label="Menu">☰</button>
+        <h1 id="titulo_geral">Central De Dados Controle Térmico</h1>
+        <img id="logo" src="./assets/logo.png" class="logo-ternium" height="35" width="109" alkt="Logo Ternium">
+    </header>
+
+    <div class="main_content">
+        <aside class="side_bar" id="side_bar">
+            <nav>
+                <button class="nav_btn" data-target="temperaturas">📈 Gráfico de Temperaturas</button>
+                <button class="nav_btn active_link" data-target="reparos">Gestão de Reparos</button>
+                <!-- <button class="nav_btn" data-target="tltb">TL=TB</button> -->
+                <!-- <button class="nav_btn" data-target="descarbonizacao">Descarbonização</button> -->
+                <button class="nav_btn" data-target="cadastro">Cadastro</button> 
+                <button class="nav_btn" data-target="dashboard">Dashboard (Gráficos)</button>
+            </nav>
+        </aside>
+
+        <main class="plot_area">
+            
+            <section id="reparos" class="page_section active_section">
+                <div class="header_reparos">
+                    <h2>Mapa de Gestão de Reparos</h2>
+                    <div class="botoes_acao">
+                        <input type="file" id="btn_importar_json" accept=".json" style="display: none;">
+                        <button id="btn_trigger_import" class="btn_acao btn_secundario">Carregar Banco</button>
+                        <button id="btn_exportar_json" class="btn_acao">Baixar Banco</button>
+                        <button id="btn_abrir_tabela" class="btn_acao btn_secundario">Tabela de Dados</button>
+                    </div>
+                </div>
+
+                <button id="btn_abrir_manual" class="btn_acao btn_bloco_grande">Novo Reparo</button>
+
+                <div class="resumo_cards">
+                    <div class="card_stat inspecao"><h3>Inspeção</h3><p id="count_inspecao">0</p></div>
+                    <div class="card_stat nao_reparado"><h3>Não Reparado</h3><p id="count_nao_reparado">0</p></div>
+                    <div class="card_stat em_andamento"><h3>Andamento</h3><p id="count_em_andamento">0</p></div>
+                    <div class="card_stat concluido"><h3>Concluído</h3><p id="count_concluido">0</p></div>
+                </div>
+                
+                <div class="legenda_mapa" id="filtro_legenda">
+                    <span class="leg_item" data-filter="inspecao"><div class="cor_box amarelo"></div> Inspeção</span>
+                    <span class="leg_item" data-filter="nao_reparado"><div class="cor_box vermelho"></div> Não Reparado</span>
+                    <span class="leg_item" data-filter="em_andamento"><div class="cor_box azul"></div> Em Andamento</span>
+                    <span class="leg_item" data-filter="concluido"><div class="cor_box verde"></div> Concluído</span>
+                    <span class="leg_dica">(Clique nas cores para filtrar o mapa)</span>
+                </div>
+
+                <div id="baterias_container" class="mapa_scroll"></div>
+            </section>
+
+            <section id="dashboard" class="page_section">
+                <h2>Dashboard de KPIs</h2>
+                
+                <div class="dash_filters">
+                    <label>Filtro Bateria: </label>
+                    <select id="dash_filtro_bat">
+                        <option value="Todas">Todas</option><option value="A">Bateria A</option>
+                        <option value="B">Bateria B</option><option value="C">Bateria C</option>
+                    </select>
+                </div>
+
+                <div class="charts_grid">
+                    <div class="chart_box">
+                        <h3>Status Geral (Última Posição)</h3>
+                        <canvas id="graficoStatus"></canvas>
+                    </div>
+                    <div class="chart_box">
+                        <h3>Gestão de Retroativos (Recorrências)</h3>
+                        <p style="font-size:0.8rem; color:#666; text-align:center;">Itens com mais de 1 lançamento de reparo no histórico</p>
+                        <canvas id="graficoRetroativos"></canvas>
+                    </div>
+                </div>
+            </section>
+
+            <section id="temperaturas" class="page_section">
+                <h2>Gráfico de Temperaturas</h2>
+
+                <div class="temp_import_card">
+                    <input type="file" id="input_csv_temperatura" accept=".csv" style="display: none;">
+                    <button id="btn_importar_csv_temp" class="btn_acao">📂 Importar CSV de Temperaturas</button>
+                    <span id="status_csv_temp" class="temp_status_csv">Nenhum arquivo importado nesta sessão.</span>
+                    <p class="temp_hint">Os dados do CSV ficam só no seu navegador, nesta aba — não são enviados ao Supabase. Se recarregar a página, é preciso importar de novo.</p>
+                </div>
+
+                <div class="temp_filtros">
+                    <div>
+                        <label>Bateria:</label>
+                        <select id="temp_filtro_bat">
+                            <option value="A">A</option><option value="B">B</option><option value="C">C</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label>Bloco:</label>
+                        <select id="temp_filtro_bloco">
+                            <option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option>
+                            <option value="5">5</option><option value="6">6</option><option value="7">7</option><option value="8">8</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label>Forno:</label>
+                        <select id="temp_filtro_forno"></select>
+                    </div>
+                    <div>
+                        <label>De:</label>
+                        <input type="date" id="temp_periodo_inicio">
+                    </div>
+                    <div>
+                        <label>Até:</label>
+                        <input type="date" id="temp_periodo_fim">
+                    </div>
+                    <button id="btn_resetar_zoom_geral" class="btn_acao btn_secundario btn_zoom_reset" title="Restaurar zoom">🔍 Resetar Zoom</button>
+                </div>
+
+                <div class="temp_chart_box">
+                    <canvas id="grafico_temperatura_geral"></canvas>
+                    <p id="temp_sem_dados_geral" class="temp_sem_dados" style="display: none;">Nenhum dado de temperatura importado ainda para este forno.</p>
+                </div>
+                <p class="temp_dica_zoom">💡 Arraste o mouse sobre o gráfico pra dar zoom num período. Use "Resetar Zoom" pra voltar.</p>
+            </section>
+            <section id="tltb" class="page_section"><h2>TL=TB</h2></section>
+            <section id="descarbonizacao" class="page_section"><h2>Descarbonização</h2></section>
+            <section id="cadastro" class="page_section">
+                <h2>Cadastro</h2>
+
+                <div id="cadastro_status_logado" class="cadastro_card cadastro_status" style="display: none;">
+                    <p class="label_destaque">Usuário Atual</p>
+                    <div id="cadastro_info_logado" class="cadastro_info_grid"></div>
+                    <button id="btn_sair_cadastro" class="btn_acao btn_secundario">Sair</button>
+                </div>
+
+                <div id="cadastro_form_login" class="cadastro_card">
+                    <p class="label_destaque">Já tenho cadastro</p>
+                    <div class="form_group row_group">
+                        <div class="half_width">
+                            <label>Email Ternium</label>
+                            <input type="email" id="login_email" placeholder="nome.sobrenome@ternium.com.br">
+                        </div>
+                        <div class="half_width">
+                            <label>Senha</label>
+                            <input type="password" id="login_senha" placeholder="Sua senha">
+                        </div>
+                    </div>
+                    <button id="btn_entrar_cadastro" class="btn_acao">Entrar</button>
+                </div>
+
+                <div id="cadastro_form_novo" class="cadastro_card">
+                    <p class="label_destaque">Novo Cadastro</p>
+                    <div class="form_group row_group">
+                        <div class="half_width"><label>Nome</label><input type="text" id="cad_nome"></div>
+                        <div class="half_width"><label>Sobrenome</label><input type="text" id="cad_sobrenome"></div>
+                    </div>
+                    <div class="form_group row_group">
+                        <div class="half_width"><label>Matrícula Ternium</label><input type="text" id="cad_matricula"></div>
+                        <div class="half_width"><label>Email Ternium</label><input type="email" id="cad_email"></div>
+                    </div>
+                    <div class="form_group row_group">
+                        <div class="half_width"><label>Senha</label><input type="password" id="cad_senha" placeholder="Mínimo 6 caracteres"></div>
+                        <div class="half_width"><label>Confirmar Senha</label><input type="password" id="cad_senha_confirma"></div>
+                    </div>
+                    <button id="btn_cadastrar" class="btn_acao">Cadastrar</button>
+                    <p class="cadastro_hint">Todo novo cadastro entra como usuário de navegação (somente leitura). A permissão de administrador (lançar/editar reparos) é liberada manualmente direto no Supabase. Dependendo da configuração do projeto, pode ser necessário confirmar o email antes do primeiro login.</p>
+                </div>
+            </section>
+
+        </main>
+    </div>
+
+    <div id="modal_reparo" class="modal_overlay">
+        <div class="modal_content modal_large">
+            <header class="modal_header">
+                <h3>Gerenciador de Reparos</h3>
+                <button id="fechar_modal" class="close_btn">&times;</button>
+            </header>
+            <div class="modal_body modal_grid">
+                
+                <div class="col_form">
+                    <p class="label_destaque">Seleção do Alvo:</p>
+                    <div class="alvo_manual_group">
+                        <div class="form_group row_group">
+                            <div class="half_width"><label>Bateria</label><select id="sel_bat" class="select_alvo"><option value="A">A</option><option value="B">B</option><option value="C">C</option></select></div>
+                            <div class="half_width"><label>Bloco</label><select id="sel_bloco" class="select_alvo"><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option><option value="6">6</option><option value="7">7</option><option value="8">8</option></select></div>
+                            <div class="half_width"><label>Forno</label><select id="sel_forno" class="select_alvo"><option value="N/A">N/A</option></select></div>
+                        </div>
+                        <div class="form_group row_group">
+                            <div class="half_width">
+                                <label>Lado</label>
+                                <select id="sel_lado" class="select_alvo"><option value="LC">LC</option><option value="LM">LM</option><option value="Ambos">Ambos</option></select>
+                            </div>
+                            <div class="half_width">
+                                <label>Elemento</label>
+                                <select id="sel_tipo" class="select_alvo">
+                                    <option value="Forno">Forno</option><option value="Sole Flue 1">Sole Flue 1</option><option value="Sole Flue 2">Sole Flue 2</option>
+                                    <option value="Sole Flue 3">Sole Flue 3</option><option value="Sole Flue 4">Sole Flue 4</option><option value="Coletor">Coletor</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <h2 id="forno_alvo" class="forno_destaque">00 - X0 - XX</h2>
+                    <input type="hidden" id="id_reparo_edit" value="">
+
+                    <div id="aviso_readonly_modal" class="aviso_readonly" style="display: none;">
+                        🔒 Modo somente leitura — apenas usuários administradores podem lançar ou editar reparos. Você pode navegar e consultar o histórico normalmente.
+                    </div>
+
+                    <div class="form_group"><label>Problema:</label><textarea id="desc_problema" rows="2"></textarea></div>
+                    <div class="form_group"><label>Solução:</label><textarea id="desc_solucao" rows="2"></textarea></div>
+
+                    <div class="form_group row_group">
+                        <div class="half_width"><label>Andamento:</label><select id="status_reparo"><option value="inspecao">Inspeção (Amarelo)</option><option value="nao_reparado">Não Reparado (Vermelho)</option><option value="em_andamento">Em Andamento (Azul)</option><option value="concluido">Concluído (Verde)</option></select></div>
+                        <div class="half_width"><label>Avaliação CT:</label><input type="text" id="aval_ct"></div>
+                    </div>
+
+                    <div class="form_group row_group">
+                        <div class="half_width"><label>Prazo:</label><input type="date" id="prazo_reparo"></div>
+                        <div class="half_width"><label>Data Fim:</label><input type="date" id="data_fim"></div>
+                    </div>
+                    <div class="form_group"><label>Obs:</label><textarea id="obs_reparo" rows="1"></textarea></div>
+
+                    <!-- FOTOS UPLOAD E PREVIEW -->
+                    <div class="form_group row_group">
+                        <div class="half_width">
+                            <label>Foto Antes:</label>
+                            <label for="foto_antes" class="file_upload_label">
+                                <span class="file_upload_icon">📷</span>
+                                <span class="file_upload_text" id="foto_antes_texto">Escolher foto...</span>
+                            </label>
+                            <input type="file" id="foto_antes" accept="image/*" class="file_upload_input">
+                        </div>
+                        <div class="half_width">
+                            <label>Foto Depois:</label>
+                            <label for="foto_depois" class="file_upload_label">
+                                <span class="file_upload_icon">📷</span>
+                                <span class="file_upload_text" id="foto_depois_texto">Escolher foto...</span>
+                            </label>
+                            <input type="file" id="foto_depois" accept="image/*" class="file_upload_input">
+                        </div>
+                    </div>
+                    <div class="form_group row_group" id="preview_fotos" style="display: none; gap: 10px; margin-bottom: 10px;">
+                        <div class="half_width">
+                            <img id="img_preview_antes" style="width: 100%; border-radius: var(--raio-sm); border: 1px solid var(--borda); display: none; object-fit: cover;" />
+                        </div>
+                        <div class="half_width">
+                            <img id="img_preview_depois" style="width: 100%; border-radius: var(--raio-sm); border: 1px solid var(--borda); display: none; object-fit: cover;" />
+                        </div>
+                    </div>
+
+                    <div class="botoes_form">
+                        <button id="btn_salvar" class="btn_salvar">Salvar Registro</button>
+                        <button id="btn_cancelar_edicao" class="btn_cancelar_edicao" style="display: none;">Cancelar</button>
+                    </div>
+                </div>
+
+                <div class="col_visual">
+                    <div class="legenda_3d">Vista 3D (2 Fornos Para os Lados)</div>
+                    <div id="container_3d">
+                        <div class="controles_camera">
+                            <button onclick="mudarCamera3D('frontal')">Frontal</button>
+                            <button onclick="mudarCamera3D('topo')">Topo</button>
+                            <button onclick="mudarCamera3D('lateral')">Lateral</button>
+                        </div>
+                    </div>
+                    
+                    <div class="historico_cabecalho">
+                        <h4 style="margin-top: 15px; color: #555;">Histórico Local</h4>
+                        <button id="btn_imprimir_prontuario" class="btn_acao btn_secundario btn_imprimir" title="Imprimir todo o prontuário deste alvo">🖨️ Imprimir Prontuário</button>
+                    </div>
+                    <div id="lista_historico" class="historico_scroll"></div>
+
+                    <div class="historico_cabecalho">
+                        <h4 style="margin-top: 15px; color: #555;">Gráfico de Temperaturas</h4>
+                        <div class="temp_acoes_modal">
+                            <input type="date" id="temp_periodo_inicio_modal" title="De">
+                            <input type="date" id="temp_periodo_fim_modal" title="Até">
+                            <button id="btn_resetar_zoom_modal" class="btn_icone_temp" title="Restaurar zoom">🔍</button>
+                            <button id="btn_expandir_grafico_modal" class="btn_icone_temp" title="Expandir gráfico">⛶</button>
+                        </div>
+                    </div>
+                    <div class="temp_chart_box temp_chart_box_modal">
+                        <canvas id="grafico_temperatura_modal"></canvas>
+                        <p id="temp_sem_dados_modal" class="temp_sem_dados" style="display: none;">Nenhum dado de temperatura importado para este forno. Importe um CSV na aba "Gráfico de Temperaturas".</p>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <div id="modal_tabela" class="modal_overlay">
+        <div class="modal_content modal_large" style="width: 95%; max-width: 2000px; height: 85vh; display: flex; flex-direction: column;">
+            <header class="modal_header">
+                <h3>Banco de Dados - Tabela Geral</h3>
+                <button id="fechar_modal_tabela" class="close_btn">&times;</button>
+            </header>
+            
+            <div class="tabela_filtros">
+                <div>
+                    <label>Bateria: </label><select id="filtro_tab_bat"><option value="Todas">Todas</option><option value="A">A</option><option value="B">B</option><option value="C">C</option></select>
+                    <label style="margin-left:15px;">Status: </label>
+                    <select id="filtro_tab_status">
+                        <option value="Todos">Todos</option><option value="inspecao">Inspeção</option>
+                        <option value="nao_reparado">Não Reparado</option><option value="em_andamento">Em Andamento</option><option value="concluido">Concluído</option>
+                    </select>
+                </div>
+                <div>
+                    <button id="btn_imprimir_tabela" class="btn_acao btn_secundario btn_imprimir">🖨️ Imprimir Tabela</button>
+                    <button id="btn_novo_tabela" class="btn_acao" style="background-color: #32CD32;">➕ Adicionar Novo</button>
+                </div>
+            </div>
+
+            <div class="modal_body" style="overflow: auto; padding: 0;">
+                <table class="data_table" id="tabela_banco">
+                    <thead>
+                        <tr>
+                            <th>Data</th><th>ID Alvo</th><th>Status</th><th>Bat.</th><th>Bloco</th><th>Forno</th>
+                            <th>Lado</th><th>Problema</th><th>Observação</th><th>Prazo</th><th>Fim</th><th>Status</th><th>Registrado por</th><th style="width: 80px;">Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tbody_banco"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div id="tooltip_mapa" class="tooltip_flutuante"></div>
+
+    <div id="lightbox_foto" class="lightbox_overlay">
+        <button id="lightbox_fechar" class="lightbox_close" aria-label="Fechar">&times;</button>
+        <img id="lightbox_img" class="lightbox_img" alt="Foto ampliada do reparo">
+    </div>
+
+    <div id="grafico_expandido_overlay" class="lightbox_overlay grafico_expandido_overlay">
+        <button id="grafico_expandido_fechar" class="lightbox_close" aria-label="Fechar">&times;</button>
+        <div class="grafico_expandido_conteudo">
+            <div class="grafico_expandido_cabecalho">
+                <h3 id="grafico_expandido_titulo">Gráfico de Temperaturas</h3>
+                <div class="temp_acoes_modal">
+                    <input type="date" id="temp_periodo_inicio_expandido" title="De">
+                    <input type="date" id="temp_periodo_fim_expandido" title="Até">
+                    <button id="btn_resetar_zoom_expandido" class="btn_icone_temp" title="Restaurar zoom">🔍</button>
+                </div>
+            </div>
+            <p class="temp_dica_zoom">💡 Arraste o mouse sobre o gráfico pra dar zoom num período.</p>
+            <div class="temp_chart_box temp_chart_box_expandido">
+                <canvas id="grafico_temperatura_expandido"></canvas>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
