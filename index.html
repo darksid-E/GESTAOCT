@@ -97,7 +97,7 @@
                     <input type="file" id="input_csv_temperatura" accept=".csv" style="display: none;">
                     <button id="btn_importar_csv_temp" class="btn_acao">📂 Importar CSV de Temperaturas</button>
                     <span id="status_csv_temp" class="temp_status_csv">Nenhum arquivo importado nesta sessão.</span>
-                    <p class="temp_hint">Os dados do CSV ficam só no seu navegador, nesta aba — não são enviados ao Supabase. Se recarregar a página, é preciso importar de novo.</p>
+                    <p class="temp_hint">Os dados do CSV ficam salvos no seu navegador. Se recarregar a página, é preciso importar de novo.</p>
                 </div>
 
                 <div class="temp_filtros">
@@ -176,7 +176,7 @@
                         <div class="half_width"><label>Confirmar Senha</label><input type="password" id="cad_senha_confirma"></div>
                     </div>
                     <button id="btn_cadastrar" class="btn_acao">Cadastrar</button>
-                    <p class="cadastro_hint">Todo novo cadastro entra como usuário de navegação (somente leitura). A permissão de administrador (lançar/editar reparos) é liberada manualmente direto no Supabase. Dependendo da configuração do projeto, pode ser necessário confirmar o email antes do primeiro login.</p>
+                    <p class="cadastro_hint">Novos cadastros entram como usuário de navegação (somente leitura). A permissão de administrador (lançar/editar reparos) é liberada com autorização da gestão Controle Térmico.</p>
                 </div>
             </section>
 
