@@ -37,7 +37,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const SUPABASE_URL = window.SUPABASE_CONFIG?.url || '';
     const SUPABASE_KEY = window.SUPABASE_CONFIG?.key || '';
     // A URL de config aponta para /rest/v1 (usada pelo PostgREST). O Storage
-    // vive na raiz do projeto (/storage/v1/...), então removemos o sufixo
+    // vive na raiz do projeto (/storage/v1/...), então removi o sufixo
     // /rest/v1 para montar a URL correta e evitar o erro PGRST125 (o
     // PostgREST tentava interpretar "storage" como parte da rota REST).
     const SUPABASE_STORAGE_BASE = SUPABASE_URL.replace(/\/rest\/v1\/?$/, '');
@@ -131,7 +131,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     // =========================================================
-    // --- CADASTRO / SUPABASE AUTH (login real com senha) ---
+    // --- CADASTRO / SUPABASE AUTH (login com senha) ---
     // =========================================================
     const SUPABASE_AUTH_BASE = `${SUPABASE_STORAGE_BASE}/auth/v1`;
     const SUPABASE_TABLE_PERFIS = 'perfis';
