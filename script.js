@@ -37,7 +37,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const SUPABASE_URL = window.SUPABASE_CONFIG?.url || '';
     const SUPABASE_KEY = window.SUPABASE_CONFIG?.key || '';
     // A URL de config aponta para /rest/v1 (usada pelo PostgREST). O Storage
-    // vive na raiz do projeto (/storage/v1/...), então removi o sufixo
+    // vive na raiz do projeto (/storage/v1/...), então removemos o sufixo
     // /rest/v1 para montar a URL correta e evitar o erro PGRST125 (o
     // PostgREST tentava interpretar "storage" como parte da rota REST).
     const SUPABASE_STORAGE_BASE = SUPABASE_URL.replace(/\/rest\/v1\/?$/, '');
@@ -131,7 +131,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     // =========================================================
-    // --- CADASTRO / SUPABASE AUTH (login com senha) ---
+    // --- CADASTRO / SUPABASE AUTH (login real com senha) ---
     // =========================================================
     const SUPABASE_AUTH_BASE = `${SUPABASE_STORAGE_BASE}/auth/v1`;
     const SUPABASE_TABLE_PERFIS = 'perfis';
@@ -1711,7 +1711,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     { label: 'TOPO TEMP.', data: registros.map(r => r.topo), borderColor: '#e13300', backgroundColor: '#e13300', yAxisID: 'yTemp', tension: 0.15, pointRadius: 0, borderWidth: 1.6, spanGaps: true },
                     { label: 'LC TEMP.', data: registros.map(r => r.lc), borderColor: '#1565c0', backgroundColor: '#1565c0', yAxisID: 'yTemp', tension: 0.15, pointRadius: 0, borderWidth: 1.6, spanGaps: true },
                     { label: 'LM TEMP.', data: registros.map(r => r.lm), borderColor: '#2e7d32', backgroundColor: '#2e7d32', yAxisID: 'yTemp', tension: 0.15, pointRadius: 0, borderWidth: 1.6, spanGaps: true },
-                    { label: 'CK TIME', data: registros.map(r => r.ck), borderColor: '#e1a100', backgroundColor: '#e1a100', yAxisID: 'yCk', tension: 0.15, pointRadius: 0, borderWidth: 1.6, borderDash: [4, 3], spanGaps: true },
+                    { label: 'CK TIME', data: registros.map(r => r.ck), borderColor: '#e1a100', backgroundColor: '#e1a100', yAxisID: 'yTemp', tension: 0.15, pointRadius: 0, borderWidth: 1.6, borderDash: [4, 3], spanGaps: true },
                 ]
             },
             options: {
@@ -1731,8 +1731,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 },
                 scales: {
                     x: { ticks: { maxTicksLimit: 10, autoSkip: true, font: { size: 9 } } },
-                    yTemp: { type: 'linear', position: 'left', title: { display: true, text: 'Temperatura (°C)', font: { size: 10 } } },
-                    yCk: { type: 'linear', position: 'right', beginAtZero: true, title: { display: true, text: 'CK TIME (h)', font: { size: 10 } }, grid: { drawOnChartArea: false } }
+                    yTemp: { type: 'linear', position: 'left', title: { display: true, text: 'Temperatura (°C) / CK TIME', font: { size: 10 } } }
                 }
             }
         };
