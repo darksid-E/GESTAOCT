@@ -1457,7 +1457,7 @@ document.addEventListener("DOMContentLoaded", () => {
     // (contados a partir da data mais recente do arquivo inteiro).
     function definirPeriodoPadrao() {
         if (dadosTemperaturaCSV.length === 0) return;
-        const maxData = Math.max(...dadosTemperaturaCSV.map(r => r.data));
+        const maxData = dadosTemperaturaCSV.reduce((max, r) => r.data > max ? r.data : max, dadosTemperaturaCSV[0].data);
         const NOVE_DIAS_MS = 9 * 24 * 60 * 60 * 1000;
         periodoTempFim = maxData;
         periodoTempInicio = maxData - NOVE_DIAS_MS;
@@ -1574,9 +1574,13 @@ document.addEventListener("DOMContentLoaded", () => {
             el.innerText = 'Nenhum arquivo importado nesta sessão.';
             return;
         }
-        const datas = dadosTemperaturaCSV.map(r => r.data);
-        const min = new Date(Math.min(...datas));
-        const max = new Date(Math.max(...datas));
+        let minVal = dadosTemperaturaCSV[0].data, maxVal = dadosTemperaturaCSV[0].data;
+        for (const r of dadosTemperaturaCSV) {
+            if (r.data < minVal) minVal = r.data;
+            if (r.data > maxVal) maxVal = r.data;
+        }
+        const min = new Date(minVal);
+        const max = new Date(maxVal);
         el.innerText = `${dadosTemperaturaCSV.length.toLocaleString('pt-BR')} registros carregados (${min.toLocaleDateString('pt-BR')} a ${max.toLocaleDateString('pt-BR')})`;
     }
 
