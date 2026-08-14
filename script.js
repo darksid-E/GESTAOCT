@@ -10,18 +10,35 @@ document.addEventListener("DOMContentLoaded", () => {
     if (window.innerWidth > 768) sideBar.classList.add("active");
     menuButton.addEventListener("click", () => sideBar.classList.toggle("active"));
 
+    // Abas que só podem ser vistas depois de logar. "cadastro" é a tela de
+    // login/cadastro em si, então fica sempre acessível.
+    const ABAS_LIVRES_SEM_LOGIN = ['cadastro'];
+
+    function irParaAba(targetId) {
+        const button = Array.from(navButtons).find(btn => btn.getAttribute('data-target') === targetId);
+        navButtons.forEach(btn => btn.classList.remove("active_link"));
+        if (button) button.classList.add("active_link");
+        pageSections.forEach(section => section.classList.remove("active_section"));
+        const targetSection = document.getElementById(targetId);
+        if (targetSection) targetSection.classList.add("active_section");
+
+        if (targetId === 'dashboard') { renderizarDashboard(); }
+        if (targetId === 'temperaturas') { renderizarGraficoTemperaturaTab(); }
+    }
+    window.irParaAba = irParaAba;
+
     navButtons.forEach(button => {
         button.addEventListener("click", (e) => {
             const targetId = button.getAttribute("data-target");
-            navButtons.forEach(btn => btn.classList.remove("active_link"));
-            button.classList.add("active_link");
-            pageSections.forEach(section => section.classList.remove("active_section"));
-            const targetSection = document.getElementById(targetId);
-            if (targetSection) targetSection.classList.add("active_section");
+            const logado = !!sessaoAtual;
+            if (!logado && !ABAS_LIVRES_SEM_LOGIN.includes(targetId)) {
+                alert('Faça login para acessar esta área.');
+                irParaAba('cadastro');
+                if (window.innerWidth <= 768) sideBar.classList.remove("active");
+                return;
+            }
+            irParaAba(targetId);
             if (window.innerWidth <= 768) sideBar.classList.remove("active");
-            
-            if(targetId === 'dashboard') { renderizarDashboard(); }
-            if(targetId === 'temperaturas') { renderizarGraficoTemperaturaTab(); }
         });
     });
 
@@ -410,8 +427,29 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     }
 
+    // Mostra/esconde as abas do menu lateral conforme o login. Sem sessão
+    // ativa, só a aba "Cadastro" (login/cadastro) fica visível; se a pessoa
+    // deslogar estando em outra aba, ela é redirecionada pra lá.
+    function aplicarVisibilidadeAbas() {
+        const logado = !!sessaoAtual;
+
+        navButtons.forEach(btn => {
+            const targetId = btn.getAttribute('data-target');
+            btn.style.display = (logado || ABAS_LIVRES_SEM_LOGIN.includes(targetId)) ? '' : 'none';
+        });
+
+        if (!logado) {
+            const secaoAtiva = Array.from(pageSections).find(s => s.classList.contains('active_section'));
+            if (secaoAtiva && !ABAS_LIVRES_SEM_LOGIN.includes(secaoAtiva.id)) {
+                irParaAba('cadastro');
+            }
+        }
+    }
+    window.aplicarVisibilidadeAbas = aplicarVisibilidadeAbas;
+
     // Aplica as permissões de admin/navegação em toda a interface
     function aplicarPermissoes() {
+        aplicarVisibilidadeAbas();
         const admin = isAdminAtual();
 
         const btnNovoReparo = document.getElementById('btn_abrir_manual');
