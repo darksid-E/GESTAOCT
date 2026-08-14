@@ -1750,10 +1750,10 @@ document.addEventListener("DOMContentLoaded", () => {
             data: {
                 labels,
                 datasets: [
-                    { label: 'TOPO TEMP.', data: registros.map(r => r.topo), borderColor: '#e13300', backgroundColor: '#e13300', yAxisID: 'yTemp', tension: 0.15, pointRadius: 0, borderWidth: 1.6, spanGaps: true },
-                    { label: 'LC TEMP.', data: registros.map(r => r.lc), borderColor: '#1565c0', backgroundColor: '#1565c0', yAxisID: 'yTemp', tension: 0.15, pointRadius: 0, borderWidth: 1.6, spanGaps: true },
-                    { label: 'LM TEMP.', data: registros.map(r => r.lm), borderColor: '#2e7d32', backgroundColor: '#2e7d32', yAxisID: 'yTemp', tension: 0.15, pointRadius: 0, borderWidth: 1.6, spanGaps: true },
-                    { label: 'CK TIME', data: registros.map(r => r.ck), borderColor: '#e1a100', backgroundColor: '#e1a100', yAxisID: 'yTemp', tension: 0.15, pointRadius: 0, borderWidth: 1.6, borderDash: [4, 3], spanGaps: true },
+                    { label: 'TOPO TEMP.', data: registros.map(r => r.topo), borderColor: 'lightgray', backgroundColor: 'lightgray', yAxisID: 'yTemp', tension: 0.15, pointRadius: 0, borderWidth: 1.6, spanGaps: true },
+                    { label: 'LC TEMP.', data: registros.map(r => r.lc), borderColor: 'darkblue', backgroundColor: 'darkblue', yAxisID: 'yTemp', tension: 0.15, pointRadius: 0, borderWidth: 1.6, spanGaps: true },
+                    { label: 'LM TEMP.', data: registros.map(r => r.lm), borderColor: 'red', backgroundColor: 'red', yAxisID: 'yTemp', tension: 0.15, pointRadius: 0, borderWidth: 1.6, spanGaps: true },
+                    { label: 'CK TIME', data: registros.map(r => r.ck), borderColor: 'green', backgroundColor: 'green', yAxisID: 'yTemp', tension: 0.15, pointRadius: 0, borderWidth: 1.6, borderDash: [4, 3], spanGaps: true },
                 ]
             },
             options: {
