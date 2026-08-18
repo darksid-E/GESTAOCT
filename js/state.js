@@ -1,0 +1,114 @@
+// =========================================================
+// --- ESTADO COMPARTILHADO ---
+// =========================================================
+// Tudo que era variável solta dentro do único DOMContentLoaded do
+// script.js original e precisava ser lida/alterada por vários trechos
+// de código agora mora aqui, em um objeto único. Os outros módulos
+// importam `state` e leem/escrevem em `state.algumaCoisa` em vez de usar
+// uma variável de closure compartilhada.
+
+const SUPABASE_URL = window.SUPABASE_CONFIG?.url || '';
+const SUPABASE_KEY = window.SUPABASE_CONFIG?.key || '';
+// A URL de config aponta para /rest/v1 (usada pelo PostgREST). O Storage
+// vive na raiz do projeto (/storage/v1/...), então removemos o sufixo
+// /rest/v1 para montar a URL correta e evitar o erro PGRST125 (o
+// PostgREST tentava interpretar "storage" como parte da rota REST).
+const SUPABASE_STORAGE_BASE = SUPABASE_URL.replace(/\/rest\/v1\/?$/, '');
+const SUPABASE_TABLE = 'reparos';
+const SUPABASE_AUTH_BASE = `${SUPABASE_STORAGE_BASE}/auth/v1`;
+const SUPABASE_TABLE_PERFIS = 'perfis';
+const CHAVE_SESSAO_LOCAL = 'sessaoAuthCT';
+
+// Abas que só podem ser vistas depois de logar. "cadastro" é a tela de
+// login/cadastro em si, então fica sempre acessível.
+const ABAS_LIVRES_SEM_LOGIN = ['cadastro'];
+
+function carregarSessaoLocal() {
+    try {
+        return JSON.parse(localStorage.getItem(CHAVE_SESSAO_LOCAL));
+    } catch (erro) {
+        return null;
+    }
+}
+
+export const state = {
+    supabaseAtivo: Boolean(SUPABASE_URL && SUPABASE_KEY),
+    dbReparos: [],
+
+    // { access_token, refresh_token, expires_at, user, perfil }
+    sessaoAtual: carregarSessaoLocal(),
+
+    // Dados de temperatura (CSV importado, só em memória/sessão)
+    dadosTemperaturaCSV: [],
+    periodoTempInicio: null, // epoch ms
+    periodoTempFim: null,    // epoch ms
+
+    // Instâncias de gráficos Chart.js
+    charts: {
+        temperaturaGeral: null,
+        temperaturaModal: null,
+        temperaturaExpandido: null,
+        dashboardStatus: null,
+        dashboardRetro: null,
+    },
+
+    // Cena 3D (gêmeo digital)
+    three: {
+        scene: null,
+        camera: null,
+        renderer: null,
+        controls: null,
+        fornosGroup: null,
+    },
+
+    // Filtro ativo na legenda do mapa 2D
+    filtroAtivoLegenda: null,
+};
+
+export const config = {
+    SUPABASE_URL,
+    SUPABASE_KEY,
+    SUPABASE_STORAGE_BASE,
+    SUPABASE_TABLE,
+    SUPABASE_AUTH_BASE,
+    SUPABASE_TABLE_PERFIS,
+    CHAVE_SESSAO_LOCAL,
+    ABAS_LIVRES_SEM_LOGIN,
+};
+
+export function salvarSessaoLocal(sessao) {
+    state.sessaoAtual = sessao;
+    if (sessao) localStorage.setItem(CHAVE_SESSAO_LOCAL, JSON.stringify(sessao));
+    else localStorage.removeItem(CHAVE_SESSAO_LOCAL);
+}
+
+// Token usado em toda requisição ao Supabase: o do usuário logado (assim
+// as políticas RLS conseguem checar auth.uid()), ou a chave anônima
+// pública para quem só está navegando/consultando sem estar logado.
+export function tokenAtual() {
+    return state.sessaoAtual?.access_token || SUPABASE_KEY;
+}
+
+export function isAdminAtual() {
+    return !!(state.sessaoAtual?.perfil?.isAdmin === true);
+}
+
+export function nomeExibicaoAtual() {
+    const p = state.sessaoAtual?.perfil;
+    if (p) return `${p.nome} ${p.sobrenome}`.trim();
+    return state.sessaoAtual?.user?.email || 'Usuário desconhecido';
+}
+
+export function carregarCacheLocal() {
+    try {
+        const baseLocal = JSON.parse(localStorage.getItem('dbReparosCoke')) || [];
+        return baseLocal.map(r => r.id_reparo ? r : { ...r, id_reparo: Date.now().toString() + Math.floor(Math.random() * 100000).toString() });
+    } catch (erro) {
+        console.warn('Não foi possível ler o cache local:', erro);
+        return [];
+    }
+}
+
+export function salvarCacheLocal() {
+    localStorage.setItem('dbReparosCoke', JSON.stringify(state.dbReparos));
+}

@@ -1,0 +1,187 @@
+// =========================================================
+// --- 1b. MAPA 2D (geração do grid de fornos) ---
+// --- 2. TOOLTIP E CARDS DE RESUMO ---
+// =========================================================
+import { state } from './state.js';
+import { formatarStatus } from './utils.js';
+import { abrirModalMapClick } from './modal-reparo.js';
+
+export function gerarMapaBaterias() {
+    const container = document.getElementById("baterias_container");
+    if (!container) return;
+    const baterias = ['A', 'B', 'C'];
+    const blocosTop = [1, 2, 3, 4];
+    const blocosBottom = [5, 6, 7, 8];
+
+    baterias.forEach(bat => {
+        const batDiv = document.createElement('div');
+        batDiv.className = 'bateria_wrapper';
+        batDiv.innerHTML = `<h3 class="bateria_titulo">Bateria ${bat}</h3>`;
+        batDiv.appendChild(criarLinhaBlocos(bat, blocosTop, 'top'));
+
+        const quenchLine = document.createElement('div');
+        quenchLine.className = 'quenching_car';
+        quenchLine.innerText = 'LINHA DO QUENCHING ◄ ►';
+
+        batDiv.appendChild(quenchLine);
+        batDiv.appendChild(criarLinhaBlocos(bat, blocosBottom, 'bottom'));
+        container.appendChild(batDiv);
+    });
+}
+
+function criarLinhaBlocos(bateria, blocos, posicao) {
+    const row = document.createElement('div');
+    row.className = 'linha_blocos';
+
+    blocos.forEach(numBloco => {
+        const blocoDiv = document.createElement('div');
+        blocoDiv.className = 'bloco';
+        blocoDiv.innerHTML = `<div class="bloco_titulo">Bloco ${numBloco}</div>`;
+
+        let strColTop = posicao === 'top' ? `${bateria}${numBloco} - Coletor LM` : `${bateria}${numBloco} - Coletor LC`;
+        let strColBot = posicao === 'top' ? `${bateria}${numBloco} - Coletor LC` : `${bateria}${numBloco} - Coletor LM`;
+
+        const colTop = document.createElement('div'); colTop.className = 'coletor'; colTop.innerText = 'COLETOR'; colTop.dataset.id = strColTop;
+        const colBot = document.createElement('div'); colBot.className = 'coletor'; colBot.innerText = 'COLETOR'; colBot.dataset.id = strColBot;
+
+        colTop.onclick = () => abrirModalMapClick('Coletor', bateria, numBloco, 'N/A', strColTop.split(' ')[2]);
+        colBot.onclick = () => abrirModalMapClick('Coletor', bateria, numBloco, 'N/A', strColBot.split(' ')[2]);
+
+        const gridFornos = document.createElement('div');
+        gridFornos.className = 'fornos_grid';
+
+        for (let i = 1; i <= 18; i++) {
+            const numForno = i.toString().padStart(2, '0');
+            const fornoColuna = document.createElement('div');
+            fornoColuna.className = 'forno_coluna';
+
+            let strLM = `${numForno} - ${bateria}${numBloco} - LM`;
+            let strLC = `${numForno} - ${bateria}${numBloco} - LC`;
+
+            const numeroDiv = document.createElement('div');
+            numeroDiv.className = 'forno_numero';
+            numeroDiv.innerText = i;
+
+            let domLM = criarLadoForno(strLM, bateria, numBloco, numForno, 'LM', posicao === 'top');
+            let domLC = criarLadoForno(strLC, bateria, numBloco, numForno, 'LC', posicao !== 'top');
+
+            if (posicao === 'top') {
+                fornoColuna.appendChild(domLM);
+                fornoColuna.appendChild(numeroDiv);
+                fornoColuna.appendChild(domLC);
+            } else {
+                fornoColuna.appendChild(domLC);
+                fornoColuna.appendChild(numeroDiv);
+                fornoColuna.appendChild(domLM);
+            }
+            gridFornos.appendChild(fornoColuna);
+        }
+
+        blocoDiv.appendChild(colTop);
+        blocoDiv.appendChild(gridFornos);
+        blocoDiv.appendChild(colBot);
+        row.appendChild(blocoDiv);
+    });
+    return row;
+}
+
+function criarLadoForno(idString, bat, bloco, forno, lado, isTopSide) {
+    const ladoContainer = document.createElement('div');
+    ladoContainer.className = 'lado_container';
+
+    const fornoMain = document.createElement('div');
+    fornoMain.className = 'forno_main';
+    fornoMain.dataset.id = idString;
+    fornoMain.onclick = () => abrirModalMapClick('Forno', bat, bloco, forno, lado);
+
+    const rowSF = document.createElement('div');
+    rowSF.className = 'sole_flues_row';
+    for (let s = 1; s <= 4; s++) {
+        const sfDiv = document.createElement('div');
+        sfDiv.className = 'sole_flue'; sfDiv.innerText = s;
+        sfDiv.dataset.id = `${idString} - SF${s}`;
+        sfDiv.onclick = () => abrirModalMapClick(`Sole Flue ${s}`, bat, bloco, forno, lado);
+        rowSF.appendChild(sfDiv);
+    }
+
+    if (isTopSide) { ladoContainer.appendChild(rowSF); ladoContainer.appendChild(fornoMain); }
+    else { ladoContainer.appendChild(fornoMain); ladoContainer.appendChild(rowSF); }
+    return ladoContainer;
+}
+
+export function processarDadosGlobais() {
+    window.mapaStatusAtual = {};
+    let counts = { inspecao: 0, nao_reparado: 0, em_andamento: 0, concluido: 0 };
+
+    document.querySelectorAll('.forno_main, .sole_flue, .coletor').forEach(el => {
+        el.classList.remove('status_inspecao', 'status_nao_reparado', 'status_em_andamento', 'status_concluido');
+    });
+
+    state.dbReparos.forEach(reg => {
+        if (reg.id_referencia.includes('Ambos')) {
+            let idLC = reg.id_referencia.replace('Ambos', 'LC');
+            let idLM = reg.id_referencia.replace('Ambos', 'LM');
+            window.mapaStatusAtual[idLC] = reg;
+            window.mapaStatusAtual[idLM] = reg;
+        } else {
+            window.mapaStatusAtual[reg.id_referencia] = reg;
+        }
+    });
+
+    for (let id in window.mapaStatusAtual) {
+        const reg = window.mapaStatusAtual[id];
+        const elDOM = document.querySelector(`[data-id="${id}"]`);
+        if (elDOM) {
+            elDOM.classList.add(`status_${reg.andamento}`);
+        }
+        if (counts[reg.andamento] !== undefined) counts[reg.andamento]++;
+    }
+
+    document.getElementById('count_inspecao').innerText = counts.inspecao;
+    document.getElementById('count_nao_reparado').innerText = counts.nao_reparado;
+    document.getElementById('count_em_andamento').innerText = counts.em_andamento;
+    document.getElementById('count_concluido').innerText = counts.concluido;
+}
+
+export function initMapa2D() {
+    const tooltip = document.getElementById('tooltip_mapa');
+
+    document.querySelectorAll('.forno_main, .sole_flue, .coletor').forEach(el => {
+        el.addEventListener('mousemove', (e) => {
+            const id = el.dataset.id;
+            const reg = window.mapaStatusAtual[id];
+            tooltip.style.left = e.pageX + 15 + 'px';
+            tooltip.style.top = e.pageY + 15 + 'px';
+            if (reg) {
+                tooltip.innerHTML = `<strong>${id}</strong><br><div class="tooltip_status">Status: ${formatarStatus(reg.andamento)}<br>Problema: ${reg.desc_problema || 'N/A'}</div>`;
+            } else {
+                tooltip.innerHTML = `<strong>${id}</strong><br><div class="tooltip_status">Nenhum registro</div>`;
+            }
+            tooltip.style.opacity = 1;
+        });
+        el.addEventListener('mouseleave', () => tooltip.style.opacity = 0);
+    });
+
+    const legendItems = document.querySelectorAll('.leg_item[data-filter]');
+    legendItems.forEach(item => {
+        item.addEventListener('click', () => {
+            const statusFiltro = item.getAttribute('data-filter');
+            const todasPecas = document.querySelectorAll('.forno_main, .sole_flue, .coletor');
+            if (state.filtroAtivoLegenda === statusFiltro) {
+                state.filtroAtivoLegenda = null;
+                todasPecas.forEach(el => { el.style.opacity = '1'; el.style.boxShadow = 'none'; });
+                legendItems.forEach(leg => leg.style.opacity = '1');
+            } else {
+                state.filtroAtivoLegenda = statusFiltro;
+                legendItems.forEach(leg => leg.style.opacity = leg.getAttribute('data-filter') === statusFiltro ? '1' : '0.4');
+                todasPecas.forEach(el => {
+                    if (el.classList.contains(`status_${statusFiltro}`)) {
+                        el.style.opacity = '1'; el.style.boxShadow = 'inset 0 0 5px rgba(0,0,0,0.8)';
+                    } else {
+                        el.style.opacity = '0.1'; el.style.boxShadow = 'none';
+                    }
+                });
+            }
+        });
+    });
+}
