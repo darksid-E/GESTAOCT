@@ -8,6 +8,13 @@ import { gerarMapaBaterias } from './mapa2d.js';
 import { processarDadosGlobais } from './mapa2d.js';
 import { renderizarTabela } from './tabela.js';
 
+// Cadastro liberado só para emails corporativos @ternium.com — aceita
+// qualquer variação de país (ternium.com, ternium.com.br, ternium.com.us,
+// ternium.com.ar, ternium.com.mx etc).
+function emailEhDominioTernium(email) {
+    return /^[^\s@]+@ternium\.com(\.[a-z]{2,3})?$/i.test(email.trim());
+}
+
 async function authFetch(caminho, options = {}) {
     const resposta = await fetch(`${config.SUPABASE_AUTH_BASE}${caminho}`, {
         ...options,
@@ -298,6 +305,7 @@ export function initAuth() {
         const senhaConfirma = document.getElementById('cad_senha_confirma').value;
 
         if (!nome || !sobrenome || !matricula || !email || !senha) return alert('Preencha todos os campos do cadastro.');
+        if (!emailEhDominioTernium(email)) return alert('O cadastro é permitido apenas com email corporativo @ternium.com.');
         if (senha.length < 6) return alert('A senha precisa ter pelo menos 6 caracteres.');
         if (senha !== senhaConfirma) return alert('As senhas não conferem.');
         if (!state.supabaseAtivo) return alert('Supabase não está configurado no momento.');

@@ -5,7 +5,16 @@ import { state, config } from './state.js';
 import { renderizarDashboard } from './dashboard.js';
 import { renderizarGraficoTemperaturaTab } from './temperaturas.js';
 
-let menuButton, sideBar, navButtons, pageSections;
+let menuButton, sideBar, navButtons, pageSections, sidebarBackdrop;
+
+function abrirSidebar() {
+    sideBar.classList.add("active");
+    sidebarBackdrop.classList.add("active");
+}
+function fecharSidebar() {
+    sideBar.classList.remove("active");
+    sidebarBackdrop.classList.remove("active");
+}
 
 export function irParaAba(targetId) {
     const button = Array.from(navButtons).find(btn => btn.getAttribute('data-target') === targetId);
@@ -22,11 +31,16 @@ export function irParaAba(targetId) {
 export function initNavigation() {
     menuButton = document.getElementById("menu");
     sideBar = document.getElementById("side_bar");
+    sidebarBackdrop = document.getElementById("sidebar_backdrop");
     navButtons = document.querySelectorAll(".nav_btn");
     pageSections = document.querySelectorAll(".page_section");
 
     if (window.innerWidth > 768) sideBar.classList.add("active");
-    menuButton.addEventListener("click", () => sideBar.classList.toggle("active"));
+    menuButton.addEventListener("click", () => {
+        if (sideBar.classList.contains("active")) fecharSidebar();
+        else abrirSidebar();
+    });
+    sidebarBackdrop.addEventListener("click", fecharSidebar);
 
     window.irParaAba = irParaAba;
 
@@ -37,11 +51,11 @@ export function initNavigation() {
             if (!logado && !config.ABAS_LIVRES_SEM_LOGIN.includes(targetId)) {
                 alert('Faça login para acessar esta área.');
                 irParaAba('cadastro');
-                if (window.innerWidth <= 768) sideBar.classList.remove("active");
+                if (window.innerWidth <= 768) fecharSidebar();
                 return;
             }
             irParaAba(targetId);
-            if (window.innerWidth <= 768) sideBar.classList.remove("active");
+            if (window.innerWidth <= 768) fecharSidebar();
         });
     });
 

@@ -836,106 +836,10 @@ body {
     letter-spacing: 0.2px;
 }
 .linha_filtros_tabela th {
-    background-color: #f0f0f4;
-    padding: 6px 8px;
-    top: 40px;
-    z-index: 9;
-}
-.input_filtro_col {
-    width: 100%;
-    box-sizing: border-box;
-    padding: 5px 6px;
-    border-radius: var(--raio-sm);
-    border: 1px solid #c7c7d1;
-    font-size: 0.78rem;
-    font-weight: 500;
-    background: white;
-    color: #333;
-}
-.input_filtro_col:focus { outline: none; border-color: var(--cor-primaria); }
-.btn_limpar_filtro {
-    background: none;
-    border: 1px solid #c7c7d1;
-    border-radius: var(--raio-sm);
-    cursor: pointer;
-    font-size: 0.8rem;
-    padding: 5px 8px;
-    color: var(--texto-suave);
-    width: 100%;
-}
-.btn_limpar_filtro:hover { background-color: var(--cor-status-nao-reparado); color: white; border-color: var(--cor-status-nao-reparado); }
-.badge_prazo.na_tabela { font-size: 0.72rem; }
-.data_table tbody tr { transition: background var(--transicao); }
-.data_table tbody tr:hover { background-color: var(--bg-sutil); }
-.data_table button { background: none; border: none; cursor: pointer; font-size: 1.05rem; margin-right: 5px; transition: transform var(--transicao); }
-.data_table button:hover { transform: scale(1.15); }
-
-.linha_filtros_tabela th {
-    background-color: var(--bg-sutil);
-    padding: 6px 6px;
-    position: sticky;
-    top: 37px;
-    z-index: 9;
-}
-.input_filtro_col {
-    width: 100%;
-    box-sizing: border-box;
-    padding: 5px 6px;
-    font-size: 0.78rem;
-    border: 1px solid #c7c7d1;
-    border-radius: 4px;
-    font-weight: 500;
-    color: var(--texto-principal);
-    background: white;
-}
-.input_filtro_col:focus { outline: 2px solid var(--cor-primaria); outline-offset: -1px; }
-.btn_limpar_filtro {
-    width: 100%;
-    padding: 5px 0;
-    border: 1px solid #c7c7d1;
-    border-radius: 4px;
-    background: white;
-    cursor: pointer;
-    font-size: 0.85rem;
-    transition: background var(--transicao);
-}
-.btn_limpar_filtro:hover { background-color: var(--cor-status-nao-reparado); color: white; border-color: var(--cor-status-nao-reparado); }
-
-.linha_filtros_tabela th {
     background-color: var(--bg-sutil);
     position: sticky;
     top: 41px; /* fica colado logo abaixo do cabeçalho fixo */
     z-index: 9;
-    padding: 6px 8px;
-}
-.input_filtro_col {
-    width: 100%;
-    box-sizing: border-box;
-    padding: 5px 6px;
-    font-size: 0.78rem;
-    border: 1px solid #c7c7d1;
-    border-radius: 4px;
-    font-weight: 400;
-    color: var(--texto-principal);
-    background: white;
-}
-.btn_limpar_filtro {
-    background: none;
-    border: 1px solid #c7c7d1;
-    border-radius: 4px;
-    cursor: pointer;
-    font-size: 0.85rem;
-    padding: 4px 6px;
-    width: 100%;
-    transition: background var(--transicao);
-}
-.btn_limpar_filtro:hover { background: var(--cor-status-nao-reparado); border-color: var(--cor-status-nao-reparado); color: white; }
-
-.linha_filtros_tabela th {
-    background-color: var(--bg-sutil);
-    position: sticky;
-    top: 37px;
-    z-index: 9;
     padding: 6px 6px;
 }
 .input_filtro_col {
@@ -946,39 +850,10 @@ body {
     border: 1px solid #c7c7d1;
     font-size: 0.78rem;
     font-weight: 500;
-    background: white;
-    color: #333;
-}
-.btn_limpar_filtro {
-    background: none;
-    border: 1px solid #c7c7d1;
-    border-radius: 4px;
-    cursor: pointer;
-    font-size: 0.8rem;
-    padding: 5px 8px;
-    color: #555;
-    transition: opacity var(--transicao);
-}
-.btn_limpar_filtro:hover { opacity: 0.65; }
-
-.linha_filtros_tabela th {
-    background-color: var(--bg-sutil);
-    position: sticky;
-    top: 37px;
-    z-index: 9;
-    padding: 6px 6px;
-}
-.input_filtro_col {
-    width: 100%;
-    box-sizing: border-box;
-    padding: 5px 6px;
-    border-radius: 4px;
-    border: 1px solid #c7c7d1;
-    font-size: 0.75rem;
-    font-weight: 500;
-    color: var(--texto-principal, #333);
+    color: var(--texto);
     background: white;
 }
+.input_filtro_col:focus { outline: 2px solid var(--cor-destaque); outline-offset: -1px; }
 .input_filtro_col::placeholder { color: #999; }
 .btn_limpar_filtro {
     background: var(--cor-status-nao-reparado);
@@ -993,7 +868,11 @@ body {
     transition: opacity var(--transicao);
 }
 .btn_limpar_filtro:hover { opacity: 0.8; }
-.badge_situacao { font-size: 0.68rem; padding: 3px 8px; border-radius: 10px; color: white; font-weight: 700; display: inline-block; white-space: nowrap; }
+.badge_prazo.na_tabela { font-size: 0.72rem; }
+.data_table tbody tr { transition: background var(--transicao); }
+.data_table tbody tr:hover { background-color: var(--bg-sutil); }
+.data_table button { background: none; border: none; cursor: pointer; font-size: 1.05rem; margin-right: 5px; transition: transform var(--transicao); }
+.data_table button:hover { transform: scale(1.15); }
 
 /* =============================================================
    DASHBOARD
@@ -1028,12 +907,118 @@ body {
 /* =============================================================
    RESPONSIVO
    ============================================================= */
+.sidebar_backdrop { display: none; }
+.dica_scroll_mobile { display: none; }
+
 @media (max-width: 768px) {
-    .plot_area { margin: 10px; border-radius: var(--raio-md); }
-    .page_section { padding: 16px; }
-    .modal_grid { flex-direction: column; overflow-y: auto; }
-    .col_form, .col_visual { min-width: unset; }
-    .resumo_cards { flex-wrap: wrap; }
-    .card_stat { min-width: calc(50% - 7px); }
-    .side_bar { position: fixed; top: 60px; left: 0; bottom: 0; z-index: 50; }
+    /* --- Estrutura geral --- */
+    .top_bar { padding: 0 10px; height: 54px; }
+    .menu_button { padding: 7px 11px; font-size: 18px; margin-right: 10px; }
+    #titulo_geral { font-size: 0.92rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 52vw; }
+    .logo-ternium { height: 26px; width: auto; }
+
+    .plot_area { margin: 8px; border-radius: var(--raio-md); -webkit-overflow-scrolling: touch; }
+    .page_section { padding: 14px; }
+    .page_section h2 { font-size: 1.12rem; margin-bottom: 14px; }
+
+    .side_bar { position: fixed; top: 54px; left: 0; bottom: 0; z-index: 50; width: 250px; }
+    .sidebar_backdrop.active {
+        display: block;
+        position: fixed;
+        inset: 0;
+        top: 54px;
+        background: rgba(10, 10, 14, 0.45);
+        z-index: 45;
+        animation: overlayFade 200ms ease;
+    }
+    .nav_btn { padding: 12px 12px; font-size: 0.9rem; }
+
+    /* --- Header + botões de ação --- */
+    .header_reparos { flex-direction: column; align-items: stretch; gap: 12px; }
+    .botoes_acao { width: 100%; }
+    .botoes_acao .btn_acao { flex: 1; min-width: calc(50% - 5px); }
+
+    .resumo_cards { gap: 8px; }
+    .card_stat { min-width: calc(50% - 4px); padding: 10px 8px; }
+    .card_stat h3 { font-size: 0.72rem; }
+    .card_stat p { font-size: 1.35rem; }
+
+    .legenda_mapa { gap: 8px 14px; padding: 10px; font-size: 0.8rem; }
+    .leg_dica { flex-basis: 100%; margin-left: 0; }
+
+    /* --- Mapa 2D: mantém a densidade (é um desenho de engenharia), só
+       melhora o toque/scroll e avisa que dá pra arrastar --- */
+    .dica_scroll_mobile {
+        display: block;
+        font-size: 0.75rem;
+        color: var(--texto-suave);
+        font-style: italic;
+        margin-bottom: 6px;
+        text-align: center;
+    }
+    .mapa_scroll { -webkit-overflow-scrolling: touch; }
+    .bateria_wrapper { padding: 12px; }
+
+    /* --- Modais: ocupam a tela quase inteira, sem cantos arredondados --- */
+    .modal_overlay { padding: 0; align-items: flex-end; }
+    .modal_content, .modal_large { width: 100%; max-width: 100%; height: 100%; max-height: 100%; border-radius: 0; }
+    .modal_header { padding: 12px 16px; }
+    .modal_header h3 { font-size: 1rem; }
+    .modal_grid { flex-direction: column; padding: 14px; gap: 14px; max-height: none; overflow-y: auto; }
+    .col_form, .col_visual { min-width: unset; padding-right: 0; overflow-y: visible; }
+    #container_3d { height: 230px; }
+    .controles_camera { top: 6px; right: 6px; gap: 4px; }
+    .controles_camera button { padding: 5px 9px; font-size: 0.72rem; }
+
+    .row_group { flex-direction: column; gap: 0; }
+    .botoes_form { flex-direction: column; }
+
+    /* iOS aumenta o zoom da página ao focar campo com fonte < 16px —
+       forçando 16px aqui evita esse salto incômodo. */
+    .form_group select, .form_group textarea, .form_group input,
+    .select_alvo, .input_filtro_col, .tabela_filtros select,
+    .temp_filtros select, .temp_filtros input, .dash_filters select,
+    .cadastro_card input, .cadastro_card select,
+    #login_email, #login_senha { font-size: 16px; }
+
+    /* --- Tabela de reparos --- */
+    .tabela_filtros { flex-direction: column; align-items: stretch; padding: 12px 14px; }
+    .tabela_filtros > div { display: flex; gap: 8px; flex-wrap: wrap; }
+    .tabela_filtros .btn_acao { flex: 1; min-width: calc(50% - 4px); }
+    .data_table th, .data_table td { padding: 8px 8px; font-size: 0.8rem; }
+    .linha_filtros_tabela th { top: 34px; padding: 5px 5px; }
+    .input_filtro_col { font-size: 16px; padding: 6px 5px; }
+
+    /* --- Dashboard --- */
+    .dash_filters { padding: 12px; }
+    .charts_grid { flex-direction: column; }
+    .chart_box { min-width: unset; width: 100%; padding: 16px; }
+
+    /* --- Gráfico de temperaturas --- */
+    .temp_import_card { padding: 14px; }
+    .temp_filtros { padding: 10px 12px; gap: 12px; }
+    .temp_chart_box { height: 280px; padding: 12px; }
+    .temp_chart_box_modal { height: 190px; }
+    .temp_chart_box_expandido { height: 50vh; }
+    .grafico_expandido_overlay { padding: 10px; }
+    .grafico_expandido_conteudo { padding: 14px 16px; }
+
+    /* --- Cadastro/login --- */
+    .cadastro_card { padding: 16px; max-width: 100%; }
+
+    /* --- Lightbox de fotos --- */
+    .lightbox_overlay { padding: 10px; }
+    .lightbox_close { top: 8px; right: 8px; width: 34px; height: 34px; font-size: 20px; }
+
+    /* --- Histórico do modal --- */
+    .hist_card { font-size: 0.82rem; }
+    .hist_foto_thumb { width: 70px; height: 70px; }
+}
+
+@media (max-width: 480px) {
+    #titulo_geral { max-width: 40vw; font-size: 0.82rem; }
+    .card_stat { min-width: 100%; }
+    .botoes_acao .btn_acao, .tabela_filtros .btn_acao { min-width: 100%; }
+    #container_3d { height: 190px; }
+    .temp_chart_box { height: 230px; }
 }
