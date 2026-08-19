@@ -2,15 +2,35 @@
 // --- 5. TABELA DE DADOS & FILTROS ---
 // =========================================================
 import { state, isAdminAtual } from './state.js';
-import { formatarStatus, formatarDataBR, definirValorSelect } from './utils.js';
+import { formatarStatus, formatarDataBR, definirValorSelect, calcularSituacaoPrazo } from './utils.js';
 import { init3D } from './twin3d.js';
 
-let modalTabela, tbodyBanco, fBatTab, fStatTab;
+let modalTabela, tbodyBanco;
+let fData, fId, fStatus, fBateria, fBloco, fForno, fLado, fProblema, fObservacao, fPrazo, fFim, fSituacao, fCriadoPor;
+
+function textoContem(valorCampo, termoFiltro) {
+    if (!termoFiltro) return true;
+    return String(valorCampo || '').toLowerCase().includes(termoFiltro.trim().toLowerCase());
+}
 
 export function obterRegistrosFiltradosTabela() {
     let filtrados = state.dbReparos.slice().reverse();
-    if (fBatTab.value !== 'Todas') filtrados = filtrados.filter(r => r.bateria === fBatTab.value);
-    if (fStatTab.value !== 'Todos') filtrados = filtrados.filter(r => r.andamento === fStatTab.value);
+
+    if (fStatus.value !== 'Todos') filtrados = filtrados.filter(r => r.andamento === fStatus.value);
+    if (fBateria.value !== 'Todas') filtrados = filtrados.filter(r => r.bateria === fBateria.value);
+    if (fBloco.value !== 'Todos') filtrados = filtrados.filter(r => String(r.bloco) === fBloco.value);
+    if (fForno.value !== 'Todos') filtrados = filtrados.filter(r => r.forno === fForno.value);
+    if (fLado.value !== 'Todos') filtrados = filtrados.filter(r => r.lado === fLado.value);
+    if (fSituacao.value !== 'Todos') filtrados = filtrados.filter(r => calcularSituacaoPrazo(r).codigo === fSituacao.value);
+
+    filtrados = filtrados.filter(r => textoContem(r.data_registro, fData.value));
+    filtrados = filtrados.filter(r => textoContem(r.id_referencia, fId.value));
+    filtrados = filtrados.filter(r => textoContem(r.desc_problema, fProblema.value));
+    filtrados = filtrados.filter(r => textoContem(r.observacao, fObservacao.value));
+    filtrados = filtrados.filter(r => textoContem(formatarDataBR(r.prazo), fPrazo.value));
+    filtrados = filtrados.filter(r => textoContem(formatarDataBR(r.data_fim), fFim.value));
+    filtrados = filtrados.filter(r => textoContem(r.criado_por, fCriadoPor.value));
+
     return filtrados;
 }
 
@@ -18,18 +38,14 @@ export function renderizarTabela() {
     tbodyBanco.innerHTML = '';
     const filtrados = obterRegistrosFiltradosTabela();
 
+    if (filtrados.length === 0) {
+        tbodyBanco.innerHTML = '<tr><td colspan="14" style="text-align:center; color:#888; padding:24px;">Nenhum registro encontrado com os filtros atuais.</td></tr>';
+        return;
+    }
+
     filtrados.forEach(reg => {
         const tr = document.createElement('tr');
-
-        let situacaoPrazo = "Sem Prazo";
-        if (reg.prazo) {
-            const dataHoje = new Date().toISOString().split('T')[0];
-            if (reg.andamento === 'concluido') {
-                situacaoPrazo = (reg.data_fim && reg.data_fim > reg.prazo) ? "Concluído Atrasado" : "Concluído no Prazo";
-            } else {
-                situacaoPrazo = (dataHoje > reg.prazo) ? "Atrasado" : "No Prazo";
-            }
-        }
+        const situacao = calcularSituacaoPrazo(reg);
 
         tr.innerHTML = `
             <td><strong>${reg.data_registro}</strong></td>
@@ -43,7 +59,7 @@ export function renderizarTabela() {
             <td>${reg.observacao || '-'}</td>
             <td>${formatarDataBR(reg.prazo)}</td>
             <td>${formatarDataBR(reg.data_fim)}</td>
-            <td>${situacaoPrazo}</td>
+            <td><span class="badge_prazo ${situacao.classe}">${situacao.texto}</span></td>
             <td>${reg.criado_por || '-'}</td>
             <td>
                 ${isAdminAtual() ? `
@@ -56,11 +72,38 @@ export function renderizarTabela() {
     });
 }
 
+function limparFiltrosTabela() {
+    fData.value = ''; fId.value = ''; fProblema.value = ''; fObservacao.value = '';
+    fPrazo.value = ''; fFim.value = ''; fCriadoPor.value = '';
+    fStatus.value = 'Todos'; fBateria.value = 'Todas'; fBloco.value = 'Todos';
+    fForno.value = 'Todos'; fLado.value = 'Todos'; fSituacao.value = 'Todos';
+    renderizarTabela();
+}
+
 export function initTabela() {
     modalTabela = document.getElementById('modal_tabela');
     tbodyBanco = document.getElementById('tbody_banco');
-    fBatTab = document.getElementById('filtro_tab_bat');
-    fStatTab = document.getElementById('filtro_tab_status');
+
+    fData = document.getElementById('ftab_data');
+    fId = document.getElementById('ftab_id');
+    fStatus = document.getElementById('ftab_status');
+    fBateria = document.getElementById('ftab_bateria');
+    fBloco = document.getElementById('ftab_bloco');
+    fForno = document.getElementById('ftab_forno');
+    fLado = document.getElementById('ftab_lado');
+    fProblema = document.getElementById('ftab_problema');
+    fObservacao = document.getElementById('ftab_observacao');
+    fPrazo = document.getElementById('ftab_prazo');
+    fFim = document.getElementById('ftab_fim');
+    fSituacao = document.getElementById('ftab_situacao');
+    fCriadoPor = document.getElementById('ftab_criado_por');
+
+    // Preenche o select de forno do filtro (mesmo padrão "01".."18" usado no resto do app)
+    for (let i = 1; i <= 18; i++) {
+        const f = i.toString().padStart(2, '0');
+        fForno.innerHTML += `<option value="${f}">${f}</option>`;
+    }
+    fForno.innerHTML += `<option value="N/A">N/A (Coletor sem forno)</option>`;
 
     document.getElementById('btn_abrir_tabela').addEventListener('click', () => { renderizarTabela(); modalTabela.classList.add('active'); });
     document.getElementById('fechar_modal_tabela').addEventListener('click', () => modalTabela.classList.remove('active'));
@@ -70,8 +113,11 @@ export function initTabela() {
         document.getElementById('btn_abrir_manual').click();
     });
 
-    fBatTab.addEventListener('change', renderizarTabela);
-    fStatTab.addEventListener('change', renderizarTabela);
+    document.getElementById('btn_limpar_filtros_tabela').addEventListener('click', limparFiltrosTabela);
+
+    // Selects filtram no "change"; campos de texto filtram a cada tecla ("input")
+    [fStatus, fBateria, fBloco, fForno, fLado, fSituacao].forEach(el => el.addEventListener('change', renderizarTabela));
+    [fData, fId, fProblema, fObservacao, fPrazo, fFim, fCriadoPor].forEach(el => el.addEventListener('input', renderizarTabela));
 
     window.abrirEdicaoPelaTabela = function (idReparo) {
         if (!isAdminAtual()) { alert('Apenas usuários administradores podem editar reparos.'); return; }
