@@ -319,17 +319,17 @@ body {
 .bloco_titulo { font-size: 0.95rem; font-weight: 700; color: var(--cor-secundaria); margin-bottom: 8px; }
 .fornos_grid { display: flex; gap: 4px; }
 
-.coletor {
-    width: 100%;
+.coletor_row { display: flex; gap: 4px; width: 100%; margin: 5px 0; }
+.coletor_seg {
+    flex: 1;
     height: 20px;
     background-color: #dcdce2;
     border: 1px solid #b8b8c2;
     border-radius: var(--raio-sm);
     cursor: pointer;
     transition: filter 120ms ease, transform 120ms ease;
-    margin: 5px 0;
     text-align: center;
-    font-size: 11px;
+    font-size: 8px;
     line-height: 18px;
     font-weight: 700;
     color: #555;
@@ -355,7 +355,7 @@ body {
     transition: filter 120ms ease, transform 120ms ease;
     border-radius: 3px;
 }
-.forno_main:hover, .sole_flue:hover, .coletor:hover {
+.forno_main:hover, .sole_flue:hover, .coletor_seg:hover {
     filter: brightness(0.88);
     transform: scale(1.03);
     border-color: #333;
@@ -835,10 +835,165 @@ body {
     font-weight: 600;
     letter-spacing: 0.2px;
 }
+.linha_filtros_tabela th {
+    background-color: #f0f0f4;
+    padding: 6px 8px;
+    top: 40px;
+    z-index: 9;
+}
+.input_filtro_col {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 5px 6px;
+    border-radius: var(--raio-sm);
+    border: 1px solid #c7c7d1;
+    font-size: 0.78rem;
+    font-weight: 500;
+    background: white;
+    color: #333;
+}
+.input_filtro_col:focus { outline: none; border-color: var(--cor-primaria); }
+.btn_limpar_filtro {
+    background: none;
+    border: 1px solid #c7c7d1;
+    border-radius: var(--raio-sm);
+    cursor: pointer;
+    font-size: 0.8rem;
+    padding: 5px 8px;
+    color: var(--texto-suave);
+    width: 100%;
+}
+.btn_limpar_filtro:hover { background-color: var(--cor-status-nao-reparado); color: white; border-color: var(--cor-status-nao-reparado); }
+.badge_prazo.na_tabela { font-size: 0.72rem; }
 .data_table tbody tr { transition: background var(--transicao); }
 .data_table tbody tr:hover { background-color: var(--bg-sutil); }
 .data_table button { background: none; border: none; cursor: pointer; font-size: 1.05rem; margin-right: 5px; transition: transform var(--transicao); }
 .data_table button:hover { transform: scale(1.15); }
+
+.linha_filtros_tabela th {
+    background-color: var(--bg-sutil);
+    padding: 6px 6px;
+    position: sticky;
+    top: 37px;
+    z-index: 9;
+}
+.input_filtro_col {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 5px 6px;
+    font-size: 0.78rem;
+    border: 1px solid #c7c7d1;
+    border-radius: 4px;
+    font-weight: 500;
+    color: var(--texto-principal);
+    background: white;
+}
+.input_filtro_col:focus { outline: 2px solid var(--cor-primaria); outline-offset: -1px; }
+.btn_limpar_filtro {
+    width: 100%;
+    padding: 5px 0;
+    border: 1px solid #c7c7d1;
+    border-radius: 4px;
+    background: white;
+    cursor: pointer;
+    font-size: 0.85rem;
+    transition: background var(--transicao);
+}
+.btn_limpar_filtro:hover { background-color: var(--cor-status-nao-reparado); color: white; border-color: var(--cor-status-nao-reparado); }
+
+.linha_filtros_tabela th {
+    background-color: var(--bg-sutil);
+    position: sticky;
+    top: 41px; /* fica colado logo abaixo do cabeçalho fixo */
+    z-index: 9;
+    padding: 6px 8px;
+}
+.input_filtro_col {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 5px 6px;
+    font-size: 0.78rem;
+    border: 1px solid #c7c7d1;
+    border-radius: 4px;
+    font-weight: 400;
+    color: var(--texto-principal);
+    background: white;
+}
+.btn_limpar_filtro {
+    background: none;
+    border: 1px solid #c7c7d1;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.85rem;
+    padding: 4px 6px;
+    width: 100%;
+    transition: background var(--transicao);
+}
+.btn_limpar_filtro:hover { background: var(--cor-status-nao-reparado); border-color: var(--cor-status-nao-reparado); color: white; }
+
+.linha_filtros_tabela th {
+    background-color: var(--bg-sutil);
+    position: sticky;
+    top: 37px;
+    z-index: 9;
+    padding: 6px 6px;
+}
+.input_filtro_col {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 5px 6px;
+    border-radius: 4px;
+    border: 1px solid #c7c7d1;
+    font-size: 0.78rem;
+    font-weight: 500;
+    background: white;
+    color: #333;
+}
+.btn_limpar_filtro {
+    background: none;
+    border: 1px solid #c7c7d1;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.8rem;
+    padding: 5px 8px;
+    color: #555;
+    transition: opacity var(--transicao);
+}
+.btn_limpar_filtro:hover { opacity: 0.65; }
+
+.linha_filtros_tabela th {
+    background-color: var(--bg-sutil);
+    position: sticky;
+    top: 37px;
+    z-index: 9;
+    padding: 6px 6px;
+}
+.input_filtro_col {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 5px 6px;
+    border-radius: 4px;
+    border: 1px solid #c7c7d1;
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: var(--texto-principal, #333);
+    background: white;
+}
+.input_filtro_col::placeholder { color: #999; }
+.btn_limpar_filtro {
+    background: var(--cor-status-nao-reparado);
+    color: white;
+    border: none;
+    border-radius: 4px;
+    width: 100%;
+    padding: 6px 0;
+    cursor: pointer;
+    font-weight: 700;
+    font-size: 0.85rem;
+    transition: opacity var(--transicao);
+}
+.btn_limpar_filtro:hover { opacity: 0.8; }
+.badge_situacao { font-size: 0.68rem; padding: 3px 8px; border-radius: 10px; color: white; font-weight: 700; display: inline-block; white-space: nowrap; }
 
 /* =============================================================
    DASHBOARD

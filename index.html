@@ -315,12 +315,7 @@
             
             <div class="tabela_filtros">
                 <div>
-                    <label>Bateria: </label><select id="filtro_tab_bat"><option value="Todas">Todas</option><option value="A">A</option><option value="B">B</option><option value="C">C</option></select>
-                    <label style="margin-left:15px;">Status: </label>
-                    <select id="filtro_tab_status">
-                        <option value="Todos">Todos</option><option value="inspecao">Inspeção</option>
-                        <option value="nao_reparado">Não Reparado</option><option value="em_andamento">Em Andamento</option><option value="concluido">Concluído</option>
-                    </select>
+                    <button id="btn_limpar_filtros_tabela" class="btn_acao btn_secundario">✖ Limpar Filtros</button>
                 </div>
                 <div>
                     <button id="btn_imprimir_tabela" class="btn_acao btn_secundario btn_imprimir">🖨️ Imprimir Tabela</button>
@@ -333,7 +328,50 @@
                     <thead>
                         <tr>
                             <th>Data</th><th>ID Alvo</th><th>Status</th><th>Bat.</th><th>Bloco</th><th>Forno</th>
-                            <th>Lado</th><th>Problema</th><th>Observação</th><th>Prazo</th><th>Fim</th><th>Status</th><th>Registrado por</th><th style="width: 80px;">Ações</th>
+                            <th>Lado</th><th>Problema</th><th>Observação</th><th>Prazo</th><th>Fim</th><th>Situação</th><th>Registrado por</th><th style="width: 80px;">Ações</th>
+                        </tr>
+                        <tr class="linha_filtros_tabela">
+                            <th><input type="text" id="ftab_data" class="input_filtro_col" placeholder="Filtrar..."></th>
+                            <th><input type="text" id="ftab_id" class="input_filtro_col" placeholder="Filtrar..."></th>
+                            <th>
+                                <select id="ftab_status" class="input_filtro_col">
+                                    <option value="Todos">Todos</option><option value="inspecao">Inspeção</option>
+                                    <option value="nao_reparado">Não Reparado</option><option value="em_andamento">Em Andamento</option><option value="concluido">Concluído</option>
+                                </select>
+                            </th>
+                            <th>
+                                <select id="ftab_bateria" class="input_filtro_col">
+                                    <option value="Todas">Todas</option><option value="A">A</option><option value="B">B</option><option value="C">C</option>
+                                </select>
+                            </th>
+                            <th>
+                                <select id="ftab_bloco" class="input_filtro_col">
+                                    <option value="Todos">Todos</option><option value="1">1</option><option value="2">2</option><option value="3">3</option>
+                                    <option value="4">4</option><option value="5">5</option><option value="6">6</option><option value="7">7</option><option value="8">8</option>
+                                </select>
+                            </th>
+                            <th><select id="ftab_forno" class="input_filtro_col"><option value="Todos">Todos</option></select></th>
+                            <th>
+                                <select id="ftab_lado" class="input_filtro_col">
+                                    <option value="Todos">Todos</option><option value="LC">LC</option><option value="LM">LM</option><option value="Ambos">Ambos</option>
+                                </select>
+                            </th>
+                            <th><input type="text" id="ftab_problema" class="input_filtro_col" placeholder="Filtrar..."></th>
+                            <th><input type="text" id="ftab_observacao" class="input_filtro_col" placeholder="Filtrar..."></th>
+                            <th><input type="text" id="ftab_prazo" class="input_filtro_col" placeholder="dd/mm/aaaa"></th>
+                            <th><input type="text" id="ftab_fim" class="input_filtro_col" placeholder="dd/mm/aaaa"></th>
+                            <th>
+                                <select id="ftab_situacao" class="input_filtro_col">
+                                    <option value="Todos">Todos</option>
+                                    <option value="atrasado">Atrasado</option>
+                                    <option value="no_prazo">No Prazo</option>
+                                    <option value="concluido_no_prazo">Concluído no Prazo</option>
+                                    <option value="concluido_atrasado">Concluído Atrasado</option>
+                                    <option value="sem_prazo">Sem Prazo</option>
+                                </select>
+                            </th>
+                            <th><input type="text" id="ftab_criado_por" class="input_filtro_col" placeholder="Filtrar..."></th>
+                            <th></th>
                         </tr>
                     </thead>
                     <tbody id="tbody_banco"></tbody>

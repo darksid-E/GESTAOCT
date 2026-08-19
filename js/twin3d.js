@@ -107,7 +107,7 @@ function instanciarConjuntoForno(numF, lado, bat, bloco, offsetX, offsetZ, isFro
 
     const dutoMesh = new THREE.Mesh(geoDuto, matPadrao.clone());
     dutoMesh.position.set(offsetX, 11, offsetZ + (isFront ? 11.3 : -11.3));
-    dutoMesh.userData = { idRef: `${bat}${bloco} - Coletor ${lado}` };
+    dutoMesh.userData = { idRef: `${strF} - ${bat}${bloco} - Coletor ${lado}` };
     state.three.fornosGroup.add(dutoMesh);
 
     const label = criarSpriteTexto(`F${strF} ${bat}${bloco} ${lado}`);

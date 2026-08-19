@@ -38,14 +38,11 @@ function criarLinhaBlocos(bateria, blocos, posicao) {
         blocoDiv.className = 'bloco';
         blocoDiv.innerHTML = `<div class="bloco_titulo">Bloco ${numBloco}</div>`;
 
-        let strColTop = posicao === 'top' ? `${bateria}${numBloco} - Coletor LM` : `${bateria}${numBloco} - Coletor LC`;
-        let strColBot = posicao === 'top' ? `${bateria}${numBloco} - Coletor LC` : `${bateria}${numBloco} - Coletor LM`;
+        let ladoTop = posicao === 'top' ? 'LM' : 'LC';
+        let ladoBot = posicao === 'top' ? 'LC' : 'LM';
 
-        const colTop = document.createElement('div'); colTop.className = 'coletor'; colTop.innerText = 'COLETOR'; colTop.dataset.id = strColTop;
-        const colBot = document.createElement('div'); colBot.className = 'coletor'; colBot.innerText = 'COLETOR'; colBot.dataset.id = strColBot;
-
-        colTop.onclick = () => abrirModalMapClick('Coletor', bateria, numBloco, 'N/A', strColTop.split(' ')[2]);
-        colBot.onclick = () => abrirModalMapClick('Coletor', bateria, numBloco, 'N/A', strColBot.split(' ')[2]);
+        const colTop = criarLinhaColetor(bateria, numBloco, ladoTop);
+        const colBot = criarLinhaColetor(bateria, numBloco, ladoBot);
 
         const gridFornos = document.createElement('div');
         gridFornos.className = 'fornos_grid';
@@ -85,6 +82,28 @@ function criarLinhaBlocos(bateria, blocos, posicao) {
     return row;
 }
 
+// Antes o coletor era uma única barra por bloco/lado (sem distinguir o
+// forno). Agora vira uma linha com 18 segmentos — um por forno — alinhados
+// com as colunas de "fornos_grid" logo abaixo/acima.
+function criarLinhaColetor(bateria, numBloco, lado) {
+    const linha = document.createElement('div');
+    linha.className = 'coletor_row';
+
+    for (let i = 1; i <= 18; i++) {
+        const numForno = i.toString().padStart(2, '0');
+        const idColetor = `${numForno} - ${bateria}${numBloco} - Coletor ${lado}`;
+
+        const seg = document.createElement('div');
+        seg.className = 'coletor_seg';
+        seg.dataset.id = idColetor;
+        seg.title = idColetor;
+        seg.onclick = () => abrirModalMapClick('Coletor', bateria, numBloco, numForno, lado);
+
+        linha.appendChild(seg);
+    }
+    return linha;
+}
+
 function criarLadoForno(idString, bat, bloco, forno, lado, isTopSide) {
     const ladoContainer = document.createElement('div');
     ladoContainer.className = 'lado_container';
@@ -113,7 +132,7 @@ export function processarDadosGlobais() {
     window.mapaStatusAtual = {};
     let counts = { inspecao: 0, nao_reparado: 0, em_andamento: 0, concluido: 0 };
 
-    document.querySelectorAll('.forno_main, .sole_flue, .coletor').forEach(el => {
+    document.querySelectorAll('.forno_main, .sole_flue, .coletor_seg').forEach(el => {
         el.classList.remove('status_inspecao', 'status_nao_reparado', 'status_em_andamento', 'status_concluido');
     });
 
@@ -146,7 +165,7 @@ export function processarDadosGlobais() {
 export function initMapa2D() {
     const tooltip = document.getElementById('tooltip_mapa');
 
-    document.querySelectorAll('.forno_main, .sole_flue, .coletor').forEach(el => {
+    document.querySelectorAll('.forno_main, .sole_flue, .coletor_seg').forEach(el => {
         el.addEventListener('mousemove', (e) => {
             const id = el.dataset.id;
             const reg = window.mapaStatusAtual[id];
@@ -166,7 +185,7 @@ export function initMapa2D() {
     legendItems.forEach(item => {
         item.addEventListener('click', () => {
             const statusFiltro = item.getAttribute('data-filter');
-            const todasPecas = document.querySelectorAll('.forno_main, .sole_flue, .coletor');
+            const todasPecas = document.querySelectorAll('.forno_main, .sole_flue, .coletor_seg');
             if (state.filtroAtivoLegenda === statusFiltro) {
                 state.filtroAtivoLegenda = null;
                 todasPecas.forEach(el => { el.style.opacity = '1'; el.style.boxShadow = 'none'; });

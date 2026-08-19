@@ -2,7 +2,7 @@
 // --- IMPRESSÃO (prontuário do forno / registro único / tabela geral) ---
 // =========================================================
 import { state } from './state.js';
-import { formatarStatus, formatarDataBR } from './utils.js';
+import { formatarStatus, formatarDataBR, calcularSituacaoPrazo } from './utils.js';
 import { getObterRegistrosDoAlvo, getTituloFornoModalTexto } from './modal-reparo.js';
 import { obterRegistrosFiltradosTabela } from './tabela.js';
 
@@ -32,6 +32,10 @@ const CSS_IMPRESSAO = `
     table.tabela_geral_impressa { width: 100%; border-collapse: collapse; font-size: 0.72rem; }
     table.tabela_geral_impressa th, table.tabela_geral_impressa td { border: 1px solid #ccc; padding: 4px 6px; text-align: left; }
     table.tabela_geral_impressa th { background: #f0f0f0; }
+    .situacao_impressa { padding: 2px 8px; border-radius: 8px; font-size: 0.68rem; font-weight: bold; color: white; white-space: nowrap; }
+    .situacao_impressa.prazo_ok { background: #2e7d32; }
+    .situacao_impressa.prazo_atrasado { background: #d32f2f; }
+    .situacao_impressa.prazo_neutro { background: #757575; }
     @media print {
         @page { margin: 14mm; }
         .fotos_impressas img { width: 180px; }
@@ -77,7 +81,9 @@ function gerarHtmlProntuario(idReferencia, registros) {
 
 function gerarHtmlTabelaGeral(registros) {
     const dataGeracao = new Date().toLocaleString('pt-BR');
-    const linhas = registros.map(reg => `
+    const linhas = registros.map(reg => {
+        const situacao = calcularSituacaoPrazo(reg);
+        return `
         <tr>
             <td>${reg.data_registro}</td>
             <td>${reg.id_referencia}</td>
@@ -87,23 +93,25 @@ function gerarHtmlTabelaGeral(registros) {
             <td>${reg.observacao || '-'}</td>
             <td>${formatarDataBR(reg.prazo)}</td>
             <td>${formatarDataBR(reg.data_fim)}</td>
+            <td><span class="situacao_impressa ${situacao.classe}">${situacao.texto}</span></td>
             <td>${reg.criado_por || '-'}</td>
         </tr>
-    `).join('');
+    `;
+    }).join('');
 
     return `<!DOCTYPE html><html lang="pt-br"><head><meta charset="UTF-8">
         <title>Histórico Geral de Reparos</title><style>${CSS_IMPRESSAO}</style></head><body>
         <header class="cabecalho_impresso">
             <h1>Central de Dados Controle Térmico</h1>
             <h2>Histórico Geral de Reparos</h2>
-            <p>Gerado em ${dataGeracao} • ${registros.length} registro(s)</p>
+            <p>Gerado em ${dataGeracao} • ${registros.length} registro(s) • filtros da tabela aplicados</p>
         </header>
         <table class="tabela_geral_impressa">
             <thead><tr>
                 <th>Data</th><th>ID Alvo</th><th>Status</th><th>Bat.</th><th>Bloco</th><th>Forno</th><th>Lado</th>
-                <th>Problema</th><th>Observação</th><th>Prazo</th><th>Fim</th><th>Registrado por</th>
+                <th>Problema</th><th>Observação</th><th>Prazo</th><th>Fim</th><th>Situação</th><th>Registrado por</th>
             </tr></thead>
-            <tbody>${linhas || '<tr><td colspan="12">Nenhum registro encontrado.</td></tr>'}</tbody>
+            <tbody>${linhas || '<tr><td colspan="13">Nenhum registro encontrado com os filtros atuais.</td></tr>'}</tbody>
         </table>
     </body></html>`;
 }

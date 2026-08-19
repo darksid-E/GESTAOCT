@@ -20,11 +20,10 @@ export function atualizarAlvoVisual() {
     const lado = document.getElementById('sel_lado').value;
     const tipo = document.getElementById('sel_tipo').value;
 
-    if (tipo === 'Coletor') { document.getElementById('sel_forno').value = 'N/A'; forno = 'N/A'; }
-    else if (forno === 'N/A') { document.getElementById('sel_forno').value = '01'; forno = '01'; }
+    if (forno === 'N/A') { document.getElementById('sel_forno').value = '01'; forno = '01'; }
 
     let idGerado = "";
-    if (tipo === 'Coletor') idGerado = `${bat}${bloco} - Coletor ${lado}`;
+    if (tipo === 'Coletor') idGerado = `${forno} - ${bat}${bloco} - Coletor ${lado}`;
     else if (tipo.startsWith('Sole Flue')) idGerado = `${forno} - ${bat}${bloco} - ${lado} - SF${tipo.split(' ')[2]}`;
     else idGerado = `${forno} - ${bat}${bloco} - ${lado}`;
 
