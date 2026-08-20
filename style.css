@@ -381,7 +381,7 @@ body {
 /* TOOLTIP MAPA 2D */
 .tooltip_flutuante {
     position: fixed;
-    background: rgba(25, 25, 30, 0.92);
+    background: rgba(25, 25, 30, 0.94);
     color: #fff;
     padding: 9px 13px;
     border-radius: var(--raio-sm);
@@ -393,8 +393,19 @@ body {
     border: 1px solid var(--cor-primaria);
     font-weight: 600;
     box-shadow: var(--sombra-md);
+    transform: translate(-50%, calc(-100% - 10px));
+    white-space: nowrap;
 }
-.tooltip_status { font-size: 0.75rem; color: #ccc; margin-top: 4px; font-weight: 400; }
+.tooltip_flutuante::after {
+    content: '';
+    position: absolute;
+    left: 50%;
+    bottom: -7px;
+    transform: translateX(-50%);
+    border: 7px solid transparent;
+    border-top-color: var(--cor-primaria);
+}
+.tooltip_status { font-size: 0.75rem; color: #ccc; margin-top: 4px; font-weight: 400; white-space: normal; max-width: 220px; }
 
 /* =============================================================
    MODAL E FORMULÁRIO
@@ -798,7 +809,7 @@ body {
 
 .historico_cabecalho { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
 .historico_cabecalho h4 { margin: 15px 0 0; }
-.btn_imprimir { display: inline-flex; align-items: center; padding: 10.1px 12px; font-size: 0.76rem; }
+.btn_imprimir { display: inline-flex; align-items: center; gap: 6px; padding: 7px 12px; font-size: 0.78rem; }
 .badge_prazo { font-size: 0.7rem; padding: 3px 8px; border-radius: 10px; color: white; font-weight: 700; display: inline-block; width: fit-content; }
 .prazo_ok { background-color: var(--cor-status-concluido); }
 .prazo_atrasado { background-color: var(--cor-status-nao-reparado); }

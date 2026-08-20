@@ -164,21 +164,59 @@ export function processarDadosGlobais() {
 
 export function initMapa2D() {
     const tooltip = document.getElementById('tooltip_mapa');
+    const mapaContainer = document.getElementById('baterias_container');
+    let elementoComTooltip = null;
 
-    document.querySelectorAll('.forno_main, .sole_flue, .coletor_seg').forEach(el => {
-        el.addEventListener('mousemove', (e) => {
-            const id = el.dataset.id;
-            const reg = window.mapaStatusAtual[id];
-            tooltip.style.left = e.pageX + 15 + 'px';
-            tooltip.style.top = e.pageY + 15 + 'px';
-            if (reg) {
-                tooltip.innerHTML = `<strong>${id}</strong><br><div class="tooltip_status">Status: ${formatarStatus(reg.andamento)}<br>Problema: ${reg.desc_problema || 'N/A'}</div>`;
-            } else {
-                tooltip.innerHTML = `<strong>${id}</strong><br><div class="tooltip_status">Nenhum registro</div>`;
-            }
-            tooltip.style.opacity = 1;
-        });
-        el.addEventListener('mouseleave', () => tooltip.style.opacity = 0);
+    function posicionarTooltipSobre(el) {
+        const rect = el.getBoundingClientRect();
+        tooltip.style.left = (rect.left + rect.width / 2) + 'px';
+        tooltip.style.top = rect.top + 'px';
+    }
+
+    function mostrarTooltip(el) {
+        elementoComTooltip = el;
+        const id = el.dataset.id;
+        const reg = window.mapaStatusAtual[id];
+        tooltip.innerHTML = reg
+            ? `<strong>${id}</strong><div class="tooltip_status">${formatarStatus(reg.andamento)}${reg.desc_problema ? ' • ' + reg.desc_problema : ''}</div>`
+            : `<strong>${id}</strong><div class="tooltip_status">Nenhum registro</div>`;
+        posicionarTooltipSobre(el);
+        tooltip.style.opacity = 1;
+    }
+
+    function esconderTooltip() {
+        tooltip.style.opacity = 0;
+        elementoComTooltip = null;
+    }
+
+    // Delegação de eventos: um único listener no container, em vez de um
+    // listener por ponto do mapa. Isso resolve dois problemas de uma vez:
+    // 1) os pontos do mapa (.forno_main/.sole_flue/.coletor_seg) só existem
+    //    depois que gerarMapaBaterias() roda, que é assíncrono — um
+    //    listener preso em cada ponto no momento do initMapa2D() nunca
+    //    chegava a ser anexado a eles.
+    // 2) funciona mesmo se o mapa for redesenhado no futuro, sem precisar
+    //    re-anexar nada.
+    mapaContainer.addEventListener('mouseover', (e) => {
+        const el = e.target.closest('.forno_main, .sole_flue, .coletor_seg');
+        if (!el || el === elementoComTooltip) return;
+        mostrarTooltip(el);
+    });
+    mapaContainer.addEventListener('mouseout', (e) => {
+        const el = e.target.closest('.forno_main, .sole_flue, .coletor_seg');
+        if (!el) return;
+        if (el.contains(e.relatedTarget)) return; // ainda dentro do mesmo ponto
+        esconderTooltip();
+    });
+
+    // Se a pessoa rolar o mapa (scroll horizontal/vertical) com o mouse
+    // parado em cima de um ponto, o card acompanha em vez de ficar
+    // "flutuando" desalinhado do elemento.
+    mapaContainer.addEventListener('scroll', () => {
+        if (elementoComTooltip) posicionarTooltipSobre(elementoComTooltip);
+    });
+    window.addEventListener('scroll', () => {
+        if (elementoComTooltip) posicionarTooltipSobre(elementoComTooltip);
     });
 
     const legendItems = document.querySelectorAll('.leg_item[data-filter]');

@@ -6,6 +6,14 @@ import { state } from './state.js';
 const corBaseHex = 0xa0a0a0;
 let container3D;
 
+// Reduz o tamanho de tudo (fornos, sole flues, dutos, labels) pela metade.
+// Aplicamos como escala do GRUPO inteiro (não editando cada geometria/
+// posição individualmente) justamente para garantir que nada fique fora
+// de lugar ou desconectado: como é uma transformação uniforme, todas as
+// posições relativas (forno-a-forno, sole flue-no-forno, duto-no-forno)
+// encolhem juntas na mesma proporção.
+const ESCALA_FORNO = 0.5;
+
 function criarGeometriaForno() {
     const shape = new THREE.Shape();
     shape.moveTo(5, 0);
@@ -41,6 +49,7 @@ export function init3D() {
 
     state.three.scene = new THREE.Scene();
     state.three.fornosGroup = new THREE.Group();
+    state.three.fornosGroup.scale.setScalar(ESCALA_FORNO);
     state.three.scene.add(state.three.fornosGroup);
 
     const width = container3D.clientWidth; const height = container3D.clientHeight;
@@ -52,8 +61,12 @@ export function init3D() {
     state.three.controls = new THREE.OrbitControls(state.three.camera, state.three.renderer.domElement);
     state.three.controls.enableDamping = true; state.three.controls.dampingFactor = 0.05;
 
-    state.three.camera.position.set(0, 15, 55);
-    state.three.controls.target.set(0, 5, 0);
+    // Câmera também na metade da distância original: como os fornos agora
+    // ocupam a metade do espaço em unidades do mundo, aproximar a câmera
+    // na mesma proporção mantém o forno selecionado com o mesmo nível de
+    // zoom/foco de antes — só que agora com o bloco inteiro ao redor dele.
+    state.three.camera.position.set(0, 7.5, 27.5);
+    state.three.controls.target.set(0, 2.5, 0);
 
     state.three.scene.add(new THREE.AmbientLight(0xffffff, 0.7));
     const dirLight = new THREE.DirectionalLight(0xffffff, 0.6);
@@ -70,9 +83,9 @@ export function init3D() {
 window.mudarCamera3D = function (visao) {
     const cam = state.three.camera, controls = state.three.controls;
     if (!cam) return;
-    if (visao === 'frontal') { cam.position.set(0, 15, 55); controls.target.set(0, 5, 0); }
-    if (visao === 'topo') { cam.position.set(0, 55, 0.1); controls.target.set(0, 0, 0); }
-    if (visao === 'lateral') { cam.position.set(45, 10, 0); controls.target.set(0, 5, 0); }
+    if (visao === 'frontal') { cam.position.set(0, 7.5, 27.5); controls.target.set(0, 2.5, 0); }
+    if (visao === 'topo') { cam.position.set(0, 27.5, 0.05); controls.target.set(0, 0, 0); }
+    if (visao === 'lateral') { cam.position.set(22.5, 5, 0); controls.target.set(0, 2.5, 0); }
 };
 
 function criarSpriteTexto(texto) {
@@ -121,13 +134,16 @@ export function construirCluster3D(bat, bloco, fornoStr, ladoStr) {
     let ladoFrontal = (ladoStr === 'Ambos') ? 'LC' : ladoStr;
     let ladoTraseiro = (ladoFrontal === 'LC') ? 'LM' : 'LC';
 
-    for (let i = -2; i <= 2; i++) {
-        let fNum = fornoCentro + i;
-        if (fNum >= 1 && fNum <= 18) {
-            let offsetX = i * 10;
-            instanciarConjuntoForno(fNum, ladoFrontal, bat, bloco, offsetX, 12, true);
-            instanciarConjuntoForno(fNum, ladoTraseiro, bat, bloco, offsetX, -12, false);
-        }
+    // Mostra o bloco inteiro (fornos 01 a 18) em vez de só 2 pra cada lado
+    // do selecionado. O forno selecionado continua sempre no offsetX=0,
+    // que é justamente pra onde a câmera aponta (controls.target) — então
+    // o foco visual nele se mantém, só que agora com o bloco todo ao redor
+    // pra dar contexto.
+    for (let fNum = 1; fNum <= 18; fNum++) {
+        let i = fNum - fornoCentro;
+        let offsetX = i * 10;
+        instanciarConjuntoForno(fNum, ladoFrontal, bat, bloco, offsetX, 12, true);
+        instanciarConjuntoForno(fNum, ladoTraseiro, bat, bloco, offsetX, -12, false);
     }
 }
 
