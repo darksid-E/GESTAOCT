@@ -34,18 +34,32 @@ async function cadastrarComEmailSenha(email, senha, dadosPerfil) {
     // cadastrada em Authentication > URL Configuration > Redirect URLs
     // no painel do Supabase, senão ele ignora e usa o valor padrão.
     //
+    // IMPORTANTE: aqui estamos chamando a API REST do GoTrue diretamente
+    // com fetch (não o client supabase-js), então o formato do payload é
+    // o da API "crua", que é diferente do que normalmente se vê em
+    // exemplos com supabase-js:
+    //   - "data" (user_metadata) vai solto no corpo, e NÃO dentro de
+    //     "options" — "options.emailRedirectTo" é só um envelope que o
+    //     supabase-js cria por baixo dos panos; a API REST não entende
+    //     essa chave e a ignora silenciosamente, junto com tudo que
+    //     estiver dentro dela (foi por isso que nome/sobrenome/matrícula
+    //     nunca chegavam no user_metadata, e por tabela iam vazios pra
+    //     "perfis").
+    //   - o redirect do email de confirmação vai como query string
+    //     "?redirect_to=...", não como campo do corpo.
+    //
     // nome/sobrenome/matrícula vão como "user_metadata": o Supabase
     // guarda isso no próprio auth.users, no servidor. Diferente do
     // sessionStorage (que só existe na aba atual), esses dados chegam
     // intactos mesmo se a confirmação do email abrir em outra aba,
     // outro navegador ou até outro celular.
     const urlAtual = window.location.href.split('#')[0].split('?')[0];
-    return authFetch('/signup', {
+    return authFetch(`/signup?redirect_to=${encodeURIComponent(urlAtual)}`, {
         method: 'POST',
         body: JSON.stringify({
             email,
             password: senha,
-            options: { emailRedirectTo: urlAtual, data: dadosPerfil }
+            data: dadosPerfil
         })
     });
 }
