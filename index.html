@@ -66,8 +66,13 @@
                     <span class="leg_dica">(Clique nas cores para filtrar o mapa)</span>
                 </div>
 
-                <p class="dica_scroll_mobile">⇆ Deslize o mapa para os lados</p>
-                <div id="baterias_container" class="mapa_scroll"></div>
+                <div class="mapa_toolbar">
+                    <p class="dica_scroll_mobile">⇆ Deslize o mapa para os lados</p>
+                    <button id="btn_enquadrar_mapa" class="btn_acao btn_secundario" title="Encaixar as 3 baterias na tela, sem precisar rolar">⛶ Enquadrar as 3 Baterias</button>
+                </div>
+                <div id="baterias_container" class="mapa_scroll">
+                    <div id="baterias_conteudo"></div>
+                </div>
             </section>
 
             <section id="dashboard" class="page_section">
@@ -274,7 +279,7 @@
                 </div>
 
                 <div class="col_visual">
-                    <div class="legenda_3d">Vista 3D (2 Fornos Para os Lados)</div>
+                    <div class="legenda_3d">Vista 3D (Bloco Completo)</div>
                     <div id="container_3d">
                         <div class="controles_camera">
                             <button onclick="mudarCamera3D('frontal')">Frontal</button>
@@ -288,20 +293,6 @@
                         <button id="btn_imprimir_prontuario" class="btn_acao btn_secundario btn_imprimir" title="Imprimir todo o prontuário deste alvo">🖨️ Imprimir Prontuário</button>
                     </div>
                     <div id="lista_historico" class="historico_scroll"></div>
-
-                    <div class="historico_cabecalho">
-                        <h4 style="margin-top: 15px; color: #555;">Gráfico de Temperaturas</h4>
-                        <div class="temp_acoes_modal">
-                            <input type="date" id="temp_periodo_inicio_modal" title="De">
-                            <input type="date" id="temp_periodo_fim_modal" title="Até">
-                            <button id="btn_resetar_zoom_modal" class="btn_icone_temp" title="Restaurar zoom">🔍</button>
-                            <button id="btn_expandir_grafico_modal" class="btn_icone_temp" title="Expandir gráfico">⛶</button>
-                        </div>
-                    </div>
-                    <div class="temp_chart_box temp_chart_box_modal">
-                        <canvas id="grafico_temperatura_modal"></canvas>
-                        <p id="temp_sem_dados_modal" class="temp_sem_dados" style="display: none;">Nenhum dado de temperatura importado para este forno. Importe um CSV na aba "Gráfico de Temperaturas".</p>
-                    </div>
                 </div>
 
             </div>
@@ -387,24 +378,6 @@
     <div id="lightbox_foto" class="lightbox_overlay">
         <button id="lightbox_fechar" class="lightbox_close" aria-label="Fechar">&times;</button>
         <img id="lightbox_img" class="lightbox_img" alt="Foto ampliada do reparo">
-    </div>
-
-    <div id="grafico_expandido_overlay" class="lightbox_overlay grafico_expandido_overlay">
-        <button id="grafico_expandido_fechar" class="lightbox_close" aria-label="Fechar">&times;</button>
-        <div class="grafico_expandido_conteudo">
-            <div class="grafico_expandido_cabecalho">
-                <h3 id="grafico_expandido_titulo">Gráfico de Temperaturas</h3>
-                <div class="temp_acoes_modal">
-                    <input type="date" id="temp_periodo_inicio_expandido" title="De">
-                    <input type="date" id="temp_periodo_fim_expandido" title="Até">
-                    <button id="btn_resetar_zoom_expandido" class="btn_icone_temp" title="Restaurar zoom">🔍</button>
-                </div>
-            </div>
-            <p class="temp_dica_zoom">💡 Arraste o mouse sobre o gráfico pra dar zoom num período.</p>
-            <div class="temp_chart_box temp_chart_box_expandido">
-                <canvas id="grafico_temperatura_expandido"></canvas>
-            </div>
-        </div>
     </div>
 </body>
 </html>

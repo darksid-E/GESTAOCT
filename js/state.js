@@ -46,8 +46,6 @@ export const state = {
     // Instâncias de gráficos Chart.js
     charts: {
         temperaturaGeral: null,
-        temperaturaModal: null,
-        temperaturaExpandido: null,
         dashboardStatus: null,
         dashboardRetro: null,
     },

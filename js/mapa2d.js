@@ -7,7 +7,7 @@ import { formatarStatus } from './utils.js';
 import { abrirModalMapClick } from './modal-reparo.js';
 
 export function gerarMapaBaterias() {
-    const container = document.getElementById("baterias_container");
+    const container = document.getElementById("baterias_conteudo");
     if (!container) return;
     const baterias = ['A', 'B', 'C'];
     const blocosTop = [1, 2, 3, 4];
@@ -240,5 +240,53 @@ export function initMapa2D() {
                 });
             }
         });
+    });
+
+    // --- Botão "Enquadrar as 3 Baterias" ---
+    // O mapa é bem largo (18 fornos x 8 blocos x 3 baterias) e normalmente
+    // só dá pra ver rolando pros lados. Esse botão encolhe visualmente o
+    // conteúdo (via CSS transform: scale) até caber inteiro na largura
+    // disponível, sem precisar rolar. Clicar de novo volta ao tamanho normal.
+    const conteudo = document.getElementById('baterias_conteudo');
+    const btnEnquadrar = document.getElementById('btn_enquadrar_mapa');
+    let enquadrado = false;
+
+    function aplicarEnquadramento() {
+        conteudo.style.transform = 'none';
+        mapaContainer.style.height = '';
+        const larguraNatural = conteudo.scrollWidth;
+        const alturaNatural = conteudo.scrollHeight;
+        const larguraDisponivel = mapaContainer.clientWidth;
+        const escala = Math.min(larguraDisponivel / larguraNatural, 1);
+
+        conteudo.style.transformOrigin = 'top left';
+        conteudo.style.transform = `scale(${escala})`;
+        mapaContainer.style.height = (alturaNatural * escala) + 'px';
+    }
+
+    function removerEnquadramento() {
+        conteudo.style.transform = '';
+        mapaContainer.style.height = '';
+    }
+
+    btnEnquadrar?.addEventListener('click', () => {
+        enquadrado = !enquadrado;
+        if (enquadrado) {
+            aplicarEnquadramento();
+            mapaContainer.classList.add('mapa_enquadrado');
+            btnEnquadrar.innerText = '↔️ Ver Tamanho Normal';
+            btnEnquadrar.classList.add('ativo');
+        } else {
+            removerEnquadramento();
+            mapaContainer.classList.remove('mapa_enquadrado');
+            btnEnquadrar.innerText = '⛶ Enquadrar as 3 Baterias';
+            btnEnquadrar.classList.remove('ativo');
+        }
+    });
+
+    // Se a pessoa redimensionar a janela com o mapa enquadrado, recalcula
+    // a escala pra continuar cabendo certinho.
+    window.addEventListener('resize', () => {
+        if (enquadrado) aplicarEnquadramento();
     });
 }

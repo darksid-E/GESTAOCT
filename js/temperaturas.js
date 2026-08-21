@@ -25,19 +25,15 @@ function definirPeriodoPadrao() {
     sincronizarInputsPeriodo();
 }
 
-// Mantém os 3 pares de campo De/Até (aba, modal, expandido) todos iguais
+// Mantém os inputs de período (De/Até) da aba sempre sincronizados
 function sincronizarInputsPeriodo() {
     if (state.periodoTempInicio === null || state.periodoTempFim === null) return;
     const valorIni = paraInputData(state.periodoTempInicio);
     const valorFim = paraInputData(state.periodoTempFim);
-    ['temp_periodo_inicio', 'temp_periodo_inicio_modal', 'temp_periodo_inicio_expandido'].forEach(id => {
-        const el = document.getElementById(id);
-        if (el) el.value = valorIni;
-    });
-    ['temp_periodo_fim', 'temp_periodo_fim_modal', 'temp_periodo_fim_expandido'].forEach(id => {
-        const el = document.getElementById(id);
-        if (el) el.value = valorFim;
-    });
+    const elIni = document.getElementById('temp_periodo_inicio');
+    if (elIni) elIni.value = valorIni;
+    const elFim = document.getElementById('temp_periodo_fim');
+    if (elFim) elFim.value = valorFim;
 }
 
 function aoMudarPeriodo(idIni, idFim) {
@@ -47,9 +43,6 @@ function aoMudarPeriodo(idIni, idFim) {
     if (fim) state.periodoTempFim = new Date(`${fim}T23:59:59`).getTime();
     sincronizarInputsPeriodo();
     renderizarGraficoTemperaturaTab();
-    const modal = document.getElementById('modal_reparo');
-    if (modal?.classList.contains('active')) renderizarGraficoTemperaturaModal();
-    if (document.getElementById('grafico_expandido_overlay')?.classList.contains('active')) renderizarGraficoExpandido();
 }
 
 function parseNumeroBr(valor) {
@@ -271,50 +264,9 @@ export function renderizarGraficoTemperaturaTab() {
         (c) => { state.charts.temperaturaGeral = c; }, () => state.charts.temperaturaGeral);
 }
 
-export function renderizarGraficoTemperaturaModal() {
-    const canvas = document.getElementById('grafico_temperatura_modal');
-    const semDados = document.getElementById('temp_sem_dados_modal');
-    if (!canvas) return;
-
-    const bat = document.getElementById('sel_bat')?.value;
-    const bloco = document.getElementById('sel_bloco')?.value;
-    const forno = document.getElementById('sel_forno')?.value;
-
-    if (!bat || !bloco || !forno || forno === 'N/A') {
-        if (state.charts.temperaturaModal) { state.charts.temperaturaModal.destroy(); state.charts.temperaturaModal = null; }
-        canvas.style.display = 'none';
-        if (semDados) { semDados.style.display = 'block'; semDados.innerText = 'Este alvo (Coletor) não tem dados de temperatura por forno.'; }
-        return;
-    }
-    if (semDados) semDados.innerText = 'Nenhum dado de temperatura importado para este forno. Importe um CSV na aba "Gráfico de Temperaturas".';
-
-    renderizarGraficoEm('grafico_temperatura_modal', 'temp_sem_dados_modal', bat, bloco, forno,
-        (c) => { state.charts.temperaturaModal = c; }, () => state.charts.temperaturaModal);
-}
-
-function renderizarGraficoExpandido() {
-    const bat = document.getElementById('sel_bat')?.value;
-    const bloco = document.getElementById('sel_bloco')?.value;
-    const forno = document.getElementById('sel_forno')?.value;
-    if (!bat || !bloco || !forno || forno === 'N/A') return;
-
-    const titulo = document.getElementById('grafico_expandido_titulo');
-    if (titulo) titulo.innerText = `Gráfico de Temperaturas — ${document.getElementById('forno_alvo').innerText}`;
-
-    if (state.charts.temperaturaExpandido) { state.charts.temperaturaExpandido.destroy(); state.charts.temperaturaExpandido = null; }
-    const registros = construirDatasetTemperatura(bat, bloco, forno);
-    if (registros.length === 0) return;
-
-    const config = montarConfigGraficoTemperatura(registros, bat, bloco, forno);
-    state.charts.temperaturaExpandido = new Chart(document.getElementById('grafico_temperatura_expandido'), config);
-}
-
 export function initTemperaturas() {
-    [['temp_periodo_inicio', 'temp_periodo_fim'], ['temp_periodo_inicio_modal', 'temp_periodo_fim_modal'], ['temp_periodo_inicio_expandido', 'temp_periodo_fim_expandido']]
-        .forEach(([idIni, idFim]) => {
-            document.getElementById(idIni)?.addEventListener('change', () => aoMudarPeriodo(idIni, idFim));
-            document.getElementById(idFim)?.addEventListener('change', () => aoMudarPeriodo(idIni, idFim));
-        });
+    document.getElementById('temp_periodo_inicio')?.addEventListener('change', () => aoMudarPeriodo('temp_periodo_inicio', 'temp_periodo_fim'));
+    document.getElementById('temp_periodo_fim')?.addEventListener('change', () => aoMudarPeriodo('temp_periodo_inicio', 'temp_periodo_fim'));
 
     document.getElementById('btn_importar_csv_temp')?.addEventListener('click', () => {
         document.getElementById('input_csv_temperatura').click();
@@ -340,8 +292,6 @@ export function initTemperaturas() {
                     atualizarStatusCsvTemperatura();
                     definirPeriodoPadrao();
                     renderizarGraficoTemperaturaTab();
-                    const modal = document.getElementById('modal_reparo');
-                    if (modal?.classList.contains('active')) renderizarGraficoTemperaturaModal();
                     alert(`Importado! ${registros.length.toLocaleString('pt-BR')} registros de temperatura carregados.\n\nEsses dados ficam só nesta aba do navegador — não são enviados ao Supabase.`);
                 } catch (erro) {
                     console.error('Erro ao importar CSV de temperaturas:', erro);
@@ -373,24 +323,5 @@ export function initTemperaturas() {
         document.getElementById(id)?.addEventListener('change', renderizarGraficoTemperaturaTab);
     });
 
-    // --- Gráfico expandido (mesmo alvo do modal, em tela maior) ---
-    const overlayGraficoExpandido = document.getElementById('grafico_expandido_overlay');
-
-    document.getElementById('btn_expandir_grafico_modal')?.addEventListener('click', () => {
-        sincronizarInputsPeriodo();
-        overlayGraficoExpandido?.classList.add('active');
-        renderizarGraficoExpandido();
-    });
-
-    function fecharGraficoExpandido() {
-        overlayGraficoExpandido?.classList.remove('active');
-        if (state.charts.temperaturaExpandido) { state.charts.temperaturaExpandido.destroy(); state.charts.temperaturaExpandido = null; }
-    }
-    document.getElementById('grafico_expandido_fechar')?.addEventListener('click', fecharGraficoExpandido);
-    overlayGraficoExpandido?.addEventListener('click', (e) => { if (e.target === overlayGraficoExpandido) fecharGraficoExpandido(); });
-    document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && overlayGraficoExpandido?.classList.contains('active')) fecharGraficoExpandido(); });
-
     document.getElementById('btn_resetar_zoom_geral')?.addEventListener('click', () => state.charts.temperaturaGeral?.resetZoom());
-    document.getElementById('btn_resetar_zoom_modal')?.addEventListener('click', () => state.charts.temperaturaModal?.resetZoom());
-    document.getElementById('btn_resetar_zoom_expandido')?.addEventListener('click', () => state.charts.temperaturaExpandido?.resetZoom());
 }

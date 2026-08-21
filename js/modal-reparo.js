@@ -7,7 +7,6 @@ import { criarReparoSupabase, atualizarReparoSupabase, excluirReparoSupabase, up
 import { init3D, construirCluster3D, atualizarCores3D } from './twin3d.js';
 import { processarDadosGlobais } from './mapa2d.js';
 import { renderizarTabela } from './tabela.js';
-import { renderizarGraficoTemperaturaModal } from './temperaturas.js';
 import { aplicarPermissoes } from './auth.js';
 
 let modal, tituloFornoModal, listaHistorico, selectElements, selTipoPrincipal, selLadoPrincipal;
@@ -32,7 +31,6 @@ export function atualizarAlvoVisual() {
     construirCluster3D(bat, bloco, forno, lado);
     atualizarCores3D();
     aplicarPermissoes();
-    renderizarGraficoTemperaturaModal();
 }
 
 export function abrirModalMapClick(tipoItem, bat, bloco, forno, lado) {
