@@ -14,6 +14,16 @@ let container3D;
 // encolhem juntas na mesma proporção.
 const ESCALA_FORNO = 0.5;
 
+// Além da escala geral acima, o COMPRIMENTO do forno (profundidade no
+// eixo Z — de frente pra trás) também foi reduzido pela metade
+// especificamente. A profundidade original de cada forno era 24 (metade
+// pra cada lado do seu próprio centro = 12); agora é 12 (metade pra cada
+// lado = 6). Os fornos de "frente" e "trás" de cada bloco se tocam bem no
+// meio (Z=0) — por isso o deslocamento usado em construirCluster3D()
+// também precisa acompanhar essa metade (PROFUNDIDADE_FORNO), senão eles
+// ficariam desconectados (com um vão) ou sobrepostos.
+const PROFUNDIDADE_FORNO = 6; // metade da profundidade de cada forno a partir do seu centro
+
 function criarGeometriaForno() {
     const shape = new THREE.Shape();
     shape.moveTo(5, 0);
@@ -22,8 +32,8 @@ function criarGeometriaForno() {
     shape.lineTo(-5, 5.2); shape.lineTo(-5, 0); shape.lineTo(-4, 0); shape.lineTo(-4, 5.2); shape.lineTo(-3.9, 5.2);
     shape.absellipse(0, 5.2, 3.9, 1.9, Math.PI, 0, true);
     shape.lineTo(4, 5.2); shape.lineTo(4, 0); shape.lineTo(5, 0);
-    const geo = new THREE.ExtrudeGeometry(shape, { depth: 24, bevelEnabled: false, curveSegments: 10 });
-    geo.translate(0, 0, -12); return geo;
+    const geo = new THREE.ExtrudeGeometry(shape, { depth: PROFUNDIDADE_FORNO * 2, bevelEnabled: false, curveSegments: 10 });
+    geo.translate(0, 0, -PROFUNDIDADE_FORNO); return geo;
 }
 
 function criarGeometriaSoleFlue() {
@@ -34,8 +44,8 @@ function criarGeometriaSoleFlue() {
     hole.absellipse(0, 2.2, 0.55, 0.4, Math.PI, 0, true);
     hole.lineTo(0.7, 2.2); hole.lineTo(0.7, 0.6); hole.lineTo(-0.7, 0.6);
     shape.holes.push(hole);
-    const geo = new THREE.ExtrudeGeometry(shape, { depth: 24, bevelEnabled: false, curveSegments: 32 });
-    geo.translate(0, 0, -12); return geo;
+    const geo = new THREE.ExtrudeGeometry(shape, { depth: PROFUNDIDADE_FORNO * 2, bevelEnabled: false, curveSegments: 32 });
+    geo.translate(0, 0, -PROFUNDIDADE_FORNO); return geo;
 }
 
 const geoForno = criarGeometriaForno();
@@ -119,12 +129,12 @@ function instanciarConjuntoForno(numF, lado, bat, bloco, offsetX, offsetZ, isFro
     }
 
     const dutoMesh = new THREE.Mesh(geoDuto, matPadrao.clone());
-    dutoMesh.position.set(offsetX, 11, offsetZ + (isFront ? 11.3 : -11.3));
+    dutoMesh.position.set(offsetX, 11, offsetZ + (isFront ? PROFUNDIDADE_FORNO - 0.35 : -(PROFUNDIDADE_FORNO - 0.35)));
     dutoMesh.userData = { idRef: `${strF} - ${bat}${bloco} - Coletor ${lado}` };
     state.three.fornosGroup.add(dutoMesh);
 
     const label = criarSpriteTexto(`F${strF} ${bat}${bloco} ${lado}`);
-    label.position.set(offsetX, 4.6, offsetZ + (isFront ? 12.1 : -12.1));
+    label.position.set(offsetX, 4.6, offsetZ + (isFront ? PROFUNDIDADE_FORNO + 0.05 : -(PROFUNDIDADE_FORNO + 0.05)));
     state.three.fornosGroup.add(label);
 }
 
@@ -142,8 +152,8 @@ export function construirCluster3D(bat, bloco, fornoStr, ladoStr) {
     for (let fNum = 1; fNum <= 18; fNum++) {
         let i = fNum - fornoCentro;
         let offsetX = i * 10;
-        instanciarConjuntoForno(fNum, ladoFrontal, bat, bloco, offsetX, 12, true);
-        instanciarConjuntoForno(fNum, ladoTraseiro, bat, bloco, offsetX, -12, false);
+        instanciarConjuntoForno(fNum, ladoFrontal, bat, bloco, offsetX, PROFUNDIDADE_FORNO, true);
+        instanciarConjuntoForno(fNum, ladoTraseiro, bat, bloco, offsetX, -PROFUNDIDADE_FORNO, false);
     }
 }
 

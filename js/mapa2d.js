@@ -242,6 +242,21 @@ export function initMapa2D() {
         });
     });
 
+    // Filtro por TIPO de item (fornos / sole flues / coletores) — independente
+    // do filtro de status acima: cada chip liga/desliga (multi-seleção, não
+    // é "só um de cada vez" como o filtro de cor). Usa visibility (não
+    // display) pra ocultar sem bagunçar o alinhamento do resto do mapa.
+    const seletorPorTipo = { forno: '.forno_main', sole_flue: '.sole_flue', coletor: '.coletor_seg' };
+    document.querySelectorAll('.leg_tipo[data-tipo]').forEach(item => {
+        item.addEventListener('click', () => {
+            const tipo = item.getAttribute('data-tipo');
+            const oculto = item.classList.toggle('leg_tipo_oculto');
+            document.querySelectorAll(seletorPorTipo[tipo]).forEach(el => {
+                el.style.visibility = oculto ? 'hidden' : '';
+            });
+        });
+    });
+
     // --- Botão "Enquadrar as 3 Baterias" ---
     // O mapa é bem largo (18 fornos x 8 blocos x 3 baterias) e normalmente
     // só dá pra ver rolando pros lados. Esse botão encolhe visualmente o

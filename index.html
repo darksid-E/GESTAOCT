@@ -7,9 +7,6 @@
     <title>Central De Dados Controle Térmico</title>
     <link rel="icon" href="assets/favicon.png" type="image/x-icon">
     <link rel="stylesheet" href="style.css">
-    <link rel="apple-touch-icon" href="/assets/favicon.png">
-    <link rel="apple-touch-icon" sizes="152x152" href="/assets/favicon.png">
-    <link rel="apple-touch-icon" sizes="180x180" href="/assets/favicon.png">
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
@@ -23,7 +20,7 @@
     <header class="top_bar">
         <button id="menu" class="menu_button" aria-label="Menu">☰</button>
         <h1 id="titulo_geral">Central De Dados Controle Térmico</h1>
-        <img id="logo" src="./assets/logo.png" class="logo-ternium" height="35" width="109" alt="Logo Ternium">
+        <img id="logo" src="./assets/logo.png" class="logo-ternium" height="35" width="109" alkt="Logo Ternium">
     </header>
 
     <div class="main_content">
@@ -66,12 +63,19 @@
                     <span class="leg_item" data-filter="nao_reparado"><div class="cor_box vermelho"></div> Não Reparado</span>
                     <span class="leg_item" data-filter="em_andamento"><div class="cor_box azul"></div> Em Andamento</span>
                     <span class="leg_item" data-filter="concluido"><div class="cor_box verde"></div> Concluído</span>
-                    <span class="leg_dica">(Clique nas cores para filtrar o mapa)</span>
+                    <span class="leg_separador"></span>
+                    <span class="leg_item leg_tipo" data-tipo="forno" title="Mostrar/ocultar fornos">🔥 Fornos</span>
+                    <span class="leg_item leg_tipo" data-tipo="sole_flue" title="Mostrar/ocultar sole flues">➖ Sole Flues</span>
+                    <span class="leg_item leg_tipo" data-tipo="coletor" title="Mostrar/ocultar coletores">🔗 Coletores</span>
+                    <span class="leg_dica">(Cores filtram por status; itens mostram/ocultam por tipo)</span>
                 </div>
 
                 <div class="mapa_toolbar">
                     <p class="dica_scroll_mobile">⇆ Deslize o mapa para os lados</p>
-                    <button id="btn_enquadrar_mapa" class="btn_acao btn_secundario" title="Encaixar as 3 baterias na tela, sem precisar rolar">⛶ Enquadrar as 3 Baterias</button>
+                    <div class="mapa_toolbar_botoes">
+                        <button id="btn_imprimir_mapa" class="btn_acao btn_secundario btn_imprimir" title="Imprimir o mapa colorido das 3 baterias">🖨️ Imprimir Mapa</button>
+                        <button id="btn_enquadrar_mapa" class="btn_acao btn_secundario" title="Encaixar as 3 baterias na tela, sem precisar rolar">⛶ Enquadrar as 3 Baterias</button>
+                    </div>
                 </div>
                 <div id="baterias_container" class="mapa_scroll">
                     <div id="baterias_conteudo"></div>

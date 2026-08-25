@@ -116,6 +116,45 @@ function gerarHtmlTabelaGeral(registros) {
     </body></html>`;
 }
 
+// Impressão do mapa térmico (2D) com as cores de status — visão das 3
+// baterias inteiras. Aproveitamos o próprio HTML já colorido do mapa
+// (as classes status_inspecao/nao_reparado/em_andamento/concluido já
+// estão aplicadas nos elementos) e reusamos o CSS de verdade do app
+// (style.css) linkado por URL absoluta, em vez de recriar o visual do
+// mapa do zero.
+function gerarHtmlMapaColorido() {
+    const conteudo = document.getElementById('baterias_conteudo');
+    const dataGeracao = new Date().toLocaleString('pt-BR');
+    const cssAppUrl = new URL('style.css', window.location.href).href;
+
+    return `<!DOCTYPE html><html lang="pt-br"><head><meta charset="UTF-8">
+        <title>Mapa Térmico — Coqueria</title>
+        <link rel="stylesheet" href="${cssAppUrl}">
+        <style>
+            body { margin: 22px; font-family: Arial, Helvetica, sans-serif; background: white; }
+            .cabecalho_impresso { border-bottom: 3px solid #e13300; padding-bottom: 12px; margin-bottom: 18px; }
+            .cabecalho_impresso h1 { margin: 0 0 4px; font-size: 1.25rem; color: #e13300; }
+            .cabecalho_impresso p { margin: 0; font-size: 0.8rem; color: #555; }
+            .legenda_impressa { display: flex; gap: 18px; flex-wrap: wrap; margin-bottom: 18px; font-size: 0.85rem; }
+            .legenda_impressa span.item { display: inline-flex; align-items: center; gap: 6px; }
+            .mapa_scroll, #baterias_container { overflow: visible !important; }
+            @media print { @page { size: landscape; margin: 10mm; } }
+        </style>
+        </head><body>
+        <header class="cabecalho_impresso">
+            <h1>Central de Dados Controle Térmico</h1>
+            <p>Mapa Térmico — Baterias A, B e C • Gerado em ${dataGeracao}</p>
+        </header>
+        <div class="legenda_impressa">
+            <span class="item"><div class="cor_box amarelo"></div> Inspeção</span>
+            <span class="item"><div class="cor_box vermelho"></div> Não Reparado</span>
+            <span class="item"><div class="cor_box azul"></div> Em Andamento</span>
+            <span class="item"><div class="cor_box verde"></div> Concluído</span>
+        </div>
+        <div id="baterias_conteudo">${conteudo ? conteudo.innerHTML : ''}</div>
+    </body></html>`;
+}
+
 function imprimirHtml(html) {
     const janela = window.open('', '_blank', 'width=900,height=700');
     if (!janela) { alert('Não foi possível abrir a janela de impressão. Verifique se o navegador bloqueou o pop-up.'); return; }
@@ -144,5 +183,9 @@ export function initImpressao() {
 
     document.getElementById('btn_imprimir_tabela')?.addEventListener('click', () => {
         imprimirHtml(gerarHtmlTabelaGeral(obterRegistrosFiltradosTabela()));
+    });
+
+    document.getElementById('btn_imprimir_mapa')?.addEventListener('click', () => {
+        imprimirHtml(gerarHtmlMapaColorido());
     });
 }

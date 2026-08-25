@@ -266,6 +266,9 @@ body {
 .leg_item:hover { background: rgba(0, 0, 0, 0.04); }
 .leg_dica { font-size: 0.78rem; color: #999; font-style: italic; margin-left: auto; }
 .cor_box { width: 15px; height: 15px; border-radius: 4px; border: 1px solid rgba(0, 0, 0, 0.15); }
+.leg_separador { width: 1px; align-self: stretch; background: var(--borda); margin: 0 2px; }
+.leg_tipo { border: 1px solid var(--borda); background: var(--bg-superficie); }
+.leg_tipo.leg_tipo_oculto { opacity: 0.45; text-decoration: line-through; background: transparent; border-style: dashed; }
 .status_inspecao, .amarelo { background-color: var(--cor-status-inspecao) !important; }
 .status_nao_reparado, .vermelho { background-color: var(--cor-status-nao-reparado) !important; color: white; }
 .status_em_andamento, .azul { background-color: var(--cor-status-andamento) !important; color: white; }
@@ -277,6 +280,7 @@ body {
 #baterias_conteudo { transition: transform 220ms ease; }
 
 .mapa_toolbar { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; margin-bottom: 10px; }
+.mapa_toolbar_botoes { display: flex; gap: 8px; flex-wrap: wrap; margin-left: auto; }
 .mapa_toolbar .btn_acao { font-size: 0.82rem; padding: 8px 14px; }
 .mapa_toolbar .btn_acao.ativo { background-color: var(--cor-status-em-andamento, #1E90FF); }
 
