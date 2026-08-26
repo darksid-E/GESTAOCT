@@ -89,29 +89,39 @@ const BASE_BUCKSTAY_HORIZONTAL = ALTURA_TOPO_FORNO;
 const ALTURA_BUCKSTAY_HORIZONTAL = 0.5;
 
 function criarGeometriaProtectorSuperior() {
-    // Acompanha exatamente a curva externa da abóbada (mesmo arco elíptico
-    // do geoForno) — um "casco" fino por fora dela, então nunca invade o
-    // forno. É mais estreito que a abóbada inteira ("menor"), cobrindo só
-    // a parte central de cima, não até as bordas.
-    const espessura = 0.15;
-    const raioXext = RAIO_X_ABOBADA + espessura;
-    const raioYext = RAIO_Y_ABOBADA + espessura;
-    const anguloInicio = 0.45; // rad — deixa de fora as bordas da abóbada (menor)
-    const anguloFim = Math.PI - 0.45;
+    // MODIFICAÇÃO SOLICITADA:
+    // Ajustar para que o protector superior fique da espessura da parede da abóbada (0.9),
+    // e com o final (base) coincidindo com o topo dos protectors intermediários (Y = 5.2).
+    // A profundidade do extrude (Z) permanece fina (0.15) como os outros protectors.
+    
+    const profundidadeExtrude = 0.15; // Profundidade do extrude (Z), fina, igual aos intermediários/inferior
+    const espessuraParedeAbobada = 0.9; // Largura da "fita" (arco), igual à espessura da parede da abóbada do forno
+    
+    const raioX_ext_forno = RAIO_X_ABOBADA; // 4.8
+    const raioY_ext_forno = RAIO_Y_ABOBADA; // 2.8
+    
+    // Os raios externos do protector são os do forno + a espessura da parede
+    const raioX_ext_protector = raioX_ext_forno + espessuraParedeAbobada; // 4.8 + 0.9 = 5.7
+    const raioY_ext_protector = raioY_ext_forno + espessuraParedeAbobada; // 2.8 + 0.9 = 3.7
 
     const shape = new THREE.Shape();
-    shape.absellipse(0, CENTRO_Y_ABOBADA, raioXext, raioYext, anguloInicio, anguloFim, false);
-    shape.absellipse(0, CENTRO_Y_ABOBADA, RAIO_X_ABOBADA, RAIO_Y_ABOBADA, anguloFim, anguloInicio, true);
+    // Arco externo, do ângulo 0 ao PI. Centro em CENTRO_Y_ABOBADA (5.2).
+    // Isso garante que o protector comece exatamente na linha horizontal Y = 5.2.
+    shape.absellipse(0, CENTRO_Y_ABOBADA, raioX_ext_protector, raioY_ext_protector, 0, Math.PI, false);
+    // Arco interno, do ângulo PI ao 0 (sentido oposto). Centro em CENTRO_Y_ABOBADA (5.2). Usando os raios externos do forno.
+    // Isso cria o protector *por fora* da abóbada, na face do forno.
+    shape.absellipse(0, CENTRO_Y_ABOBADA, raioX_ext_forno, raioY_ext_forno, Math.PI, 0, true);
     shape.closePath();
 
-    const geo = new THREE.ExtrudeGeometry(shape, { depth: espessura, bevelEnabled: false, curveSegments: 24 });
-    geo.translate(0, 0, -espessura / 2);
+    const geo = new THREE.ExtrudeGeometry(shape, { depth: profundidadeExtrude, bevelEnabled: false, curveSegments: 32 }); 
+    // Centralizar o extrude em Z
+    geo.translate(0, 0, -profundidadeExtrude / 2);
     return geo;
 }
 
 const geoBuckstayVertical = new THREE.BoxGeometry(0.6, TOPO_BUCKSTAY_VERTICAL, 0.5);
 const geoBuckstayHorizontal = new THREE.BoxGeometry(10.3, ALTURA_BUCKSTAY_HORIZONTAL, 0.5);
-const geoProtectorSuperior = criarGeometriaProtectorSuperior();
+const geoProtectorSuperior = criarGeometriaProtectorSuperior(); // Usar a função modificada
 const geoProtectorInferior = new THREE.BoxGeometry(8.6, 0.7, 0.15);
 const geoProtectorIntermediario = new THREE.BoxGeometry(1.3, 1.95, 0.15);
 
@@ -225,6 +235,7 @@ function instanciarConjuntoForno(numF, lado, bat, bloco, offsetX, offsetZ, isFro
     // O protector superior já tem a curva da abóbada embutida na própria
     // geometria (centrada em CENTRO_Y_ABOBADA) — por isso é posicionado em
     // y=0, igual ao próprio forno, e não precisa de deslocamento extra.
+    // MODIFICAÇÃO: A base do protector superior agora coincide com o topo dos intermediários (Y = 5.2).
     criarPecaAcessoria(geoProtectorSuperior, 'Protector Superior', offsetX, 0, zProtector);
     criarPecaAcessoria(geoProtectorInferior, 'Protector Inferior', offsetX, TOPO_SOLE_FLUE, zProtector);
     criarPecaAcessoria(geoProtectorIntermediario, 'Protector Intermediário Esquerdo', offsetX - 4.65, centroIntermediario, zProtector);
