@@ -29,9 +29,9 @@
                 <button class="nav_btn active_link" data-target="reparos">Gestão de Reparos</button>
                 <!-- <button class="nav_btn" data-target="tltb">TL=TB</button> -->
                 <!-- <button class="nav_btn" data-target="descarbonizacao">Descarbonização</button> -->
-                <button class="nav_btn" data-target="cadastro">Login</button> 
-                <!-- <button class="nav_btn" data-target="dashboard">Dashboard (Gráficos)</button> -->
-                <!-- <button class="nav_btn" data-target="temperaturas">Gráfico de Temperaturas (Recurso Experimental)</button> -->
+                <button class="nav_btn" data-target="cadastro">Cadastro</button> 
+                <button class="nav_btn" data-target="dashboard">Dashboard (Gráficos)</button>
+                <button class="nav_btn" data-target="temperaturas">Gráfico de Temperaturas (Recurso Experimental)</button>
             </nav>
         </aside>
         <div id="sidebar_backdrop" class="sidebar_backdrop"></div>
@@ -43,7 +43,7 @@
                     <h2>Mapa de Gestão de Reparos</h2>
                     <div class="botoes_acao">
                         <input type="file" id="btn_importar_json" accept=".json" style="display: none;">
-                        <!-- <button id="btn_trigger_import" class="btn_acao btn_secundario">Carregar Banco</button> -->
+                        <button id="btn_trigger_import" class="btn_acao btn_secundario">Carregar Banco</button>
                         <button id="btn_exportar_json" class="btn_acao">Baixar Banco</button>
                         <button id="btn_abrir_tabela" class="btn_acao btn_secundario">Tabela de Dados</button>
                     </div>
@@ -64,16 +64,16 @@
                     <span class="leg_item" data-filter="em_andamento"><div class="cor_box azul"></div> Em Andamento</span>
                     <span class="leg_item" data-filter="concluido"><div class="cor_box verde"></div> Concluído</span>
                     <span class="leg_separador"></span>
-                    <span class="leg_item leg_tipo" data-tipo="forno" title="Mostrar/ocultar fornos">Fornos</span>
-                    <span class="leg_item leg_tipo" data-tipo="sole_flue" title="Mostrar/ocultar sole flues">Sole Flues</span>
-                    <span class="leg_item leg_tipo" data-tipo="coletor" title="Mostrar/ocultar coletores">Coletores</span>
+                    <span class="leg_item leg_tipo" data-tipo="forno" title="Mostrar/ocultar fornos">🔥 Fornos</span>
+                    <span class="leg_item leg_tipo" data-tipo="sole_flue" title="Mostrar/ocultar sole flues">➖ Sole Flues</span>
+                    <span class="leg_item leg_tipo" data-tipo="coletor" title="Mostrar/ocultar coletores">🔗 Coletores</span>
                     <span class="leg_dica">(Cores filtram por status; itens mostram/ocultam por tipo)</span>
                 </div>
 
                 <div class="mapa_toolbar">
                     <p class="dica_scroll_mobile">⇆ Deslize o mapa para os lados</p>
                     <div class="mapa_toolbar_botoes">
-                        <!-- <button id="btn_imprimir_mapa" class="btn_acao btn_secundario btn_imprimir" title="Imprimir o mapa colorido das 3 baterias">🖨️ Imprimir Mapa</button> -->
+                        <button id="btn_imprimir_mapa" class="btn_acao btn_secundario btn_imprimir" title="Imprimir o mapa colorido das 3 baterias">🖨️ Imprimir Mapa</button>
                         <button id="btn_enquadrar_mapa" class="btn_acao btn_secundario" title="Encaixar as 3 baterias na tela, sem precisar rolar">⛶ Enquadrar as 3 Baterias</button>
                     </div>
                 </div>
@@ -154,7 +154,7 @@
             <section id="tltb" class="page_section"><h2>TL=TB</h2></section>
             <section id="descarbonizacao" class="page_section"><h2>Descarbonização</h2></section>
             <section id="cadastro" class="page_section">
-                <h2>Login e Cadastro</h2>
+                <h2>Cadastro</h2>
 
                 <div id="cadastro_status_logado" class="cadastro_card cadastro_status" style="display: none;">
                     <p class="label_destaque">Usuário Atual</p>
@@ -225,6 +225,15 @@
                                 <select id="sel_tipo" class="select_alvo">
                                     <option value="Forno">Forno</option><option value="Sole Flue 1">Sole Flue 1</option><option value="Sole Flue 2">Sole Flue 2</option>
                                     <option value="Sole Flue 3">Sole Flue 3</option><option value="Sole Flue 4">Sole Flue 4</option><option value="Coletor">Coletor</option>
+                                    <optgroup label="Buckstays e Protetores">
+                                        <option value="Buckstay Vertical Direito">Buckstay Vertical Direito</option>
+                                        <option value="Buckstay Vertical Esquerdo">Buckstay Vertical Esquerdo</option>
+                                        <option value="Buckstay Horizontal">Buckstay Horizontal</option>
+                                        <option value="Protetor Superior">Protetor Superior</option>
+                                        <option value="Protetor Intermediário Direito">Protetor Intermediário Direito</option>
+                                        <option value="Protetor Intermediário Esquerdo">Protetor Intermediário Esquerdo</option>
+                                        <option value="Protetor Inferior">Protetor Inferior</option>
+                                    </optgroup>
                                 </select>
                             </div>
                         </div>

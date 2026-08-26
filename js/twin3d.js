@@ -53,6 +53,36 @@ const geoSoleFlue = criarGeometriaSoleFlue();
 const geoDuto = new THREE.CylinderGeometry(2.5, 2.5, 10, 32);
 geoDuto.rotateZ(Math.PI / 2);
 
+// =========================================================
+// --- BUCKSTAYS E PROTETORES ---
+// =========================================================
+// Baseado no modelo FORNO3D.blend (meia-peça do forno com buckstays e
+// protetores) enviado por Felipe. O arquivo original é um mesh CAD único
+// e muito denso (~230 mil vértices, ~460 mil faces, sem objetos ou grupos
+// nomeados por peça) — importar isso ao pé da letra pesaria demais pra
+// renderizar em tempo real (ainda mais multiplicado por até 18 fornos).
+// Por isso essas peças foram ADAPTADAS: formato geométrico simplificado
+// (caixas), nas proporções e posições relativas equivalentes ao modelo
+// real, no mesmo estilo visual leve já usado pro forno/sole flue/coletor.
+//
+// Formam uma "moldura" na face frontal de cada forno: dois buckstays
+// verticais (nas bordas — por isso cada forno "pega um pedaço" do forno
+// vizinho, já que a borda é compartilhada), um buckstay horizontal
+// ligando os topos dos dois verticais, um protetor superior (encostado
+// na parte de cima), um protetor inferior (logo acima dos sole flues) e
+// dois protetores intermediários (colados nos buckstays verticais, na
+// altura do meio).
+const ALTURA_TOPO_FORNO = 8;      // até onde vai a cúpula do forno (eixo Y)
+const TOPO_SOLE_FLUE = 2.9;       // até onde vai o sole flue (eixo Y)
+const PROTRUSAO_BUCKSTAY = PROFUNDIDADE_FORNO + 0.3;  // buckstay fica um pouco saliente da face do forno
+const PROTRUSAO_PROTECTOR = PROFUNDIDADE_FORNO + 0.1; // protetores ficam quase colados na face
+
+const geoBuckstayVertical = new THREE.BoxGeometry(0.6, ALTURA_TOPO_FORNO + 0.3, 0.5);
+const geoBuckstayHorizontal = new THREE.BoxGeometry(10.3, 0.5, 0.5);
+const geoProtectorSuperior = new THREE.BoxGeometry(8.6, ALTURA_TOPO_FORNO - 5, 0.15);
+const geoProtectorInferior = new THREE.BoxGeometry(8.6, 0.7, 0.15);
+const geoProtectorIntermediario = new THREE.BoxGeometry(1.3, 2.4, 0.15);
+
 export function init3D() {
     if (state.three.scene) return;
     container3D = container3D || document.getElementById('container_3d');
@@ -116,7 +146,7 @@ function instanciarConjuntoForno(numF, lado, bat, bloco, offsetX, offsetZ, isFro
 
     const fornoMesh = new THREE.Mesh(geoForno, matPadrao.clone());
     fornoMesh.position.set(offsetX, 0, offsetZ);
-    fornoMesh.userData = { idRef: idBase };
+    fornoMesh.userData = { idRef: idBase, tipo: 'Forno' };
     fornoMesh.add(new THREE.LineSegments(new THREE.EdgesGeometry(geoForno), new THREE.LineBasicMaterial({ color: 0x222 })));
     state.three.fornosGroup.add(fornoMesh);
 
@@ -132,6 +162,29 @@ function instanciarConjuntoForno(numF, lado, bat, bloco, offsetX, offsetZ, isFro
     dutoMesh.position.set(offsetX, 11, offsetZ + (isFront ? PROFUNDIDADE_FORNO - 0.35 : -(PROFUNDIDADE_FORNO - 0.35)));
     dutoMesh.userData = { idRef: `${strF} - ${bat}${bloco} - Coletor ${lado}` };
     state.three.fornosGroup.add(dutoMesh);
+
+    // Buckstays e protetores: mesmo idRef do forno (pra pintarem a mesma
+    // célula no mapa 2D, sem precisar de um ponto próprio pra cada um —
+    // ver atualizarCores3D, onde essas peças são coloridas individualmente
+    // filtrando também pelo campo "tipo" do reparo, não só pelo idRef).
+    const zBuckstay = offsetZ + (isFront ? PROTRUSAO_BUCKSTAY : -PROTRUSAO_BUCKSTAY);
+    const zProtector = offsetZ + (isFront ? PROTRUSAO_PROTECTOR : -PROTRUSAO_PROTECTOR);
+
+    function criarPecaAcessoria(geo, tipo, x, y, z) {
+        const mesh = new THREE.Mesh(geo, matPadrao.clone());
+        mesh.position.set(x, y, z);
+        mesh.userData = { idRef: idBase, tipo };
+        mesh.add(new THREE.LineSegments(new THREE.EdgesGeometry(geo), new THREE.LineBasicMaterial({ color: 0x222 })));
+        state.three.fornosGroup.add(mesh);
+    }
+
+    criarPecaAcessoria(geoBuckstayVertical, 'Buckstay Vertical Esquerdo', offsetX - 5, ALTURA_TOPO_FORNO / 2, zBuckstay);
+    criarPecaAcessoria(geoBuckstayVertical, 'Buckstay Vertical Direito', offsetX + 5, ALTURA_TOPO_FORNO / 2, zBuckstay);
+    criarPecaAcessoria(geoBuckstayHorizontal, 'Buckstay Horizontal', offsetX, ALTURA_TOPO_FORNO, zBuckstay);
+    criarPecaAcessoria(geoProtectorSuperior, 'Protetor Superior', offsetX, (ALTURA_TOPO_FORNO + 5) / 2, zProtector);
+    criarPecaAcessoria(geoProtectorInferior, 'Protetor Inferior', offsetX, TOPO_SOLE_FLUE + 0.35, zProtector);
+    criarPecaAcessoria(geoProtectorIntermediario, 'Protetor Intermediário Esquerdo', offsetX - 4.65, (TOPO_SOLE_FLUE + 0.7 + 5) / 2, zProtector);
+    criarPecaAcessoria(geoProtectorIntermediario, 'Protetor Intermediário Direito', offsetX + 4.65, (TOPO_SOLE_FLUE + 0.7 + 5) / 2, zProtector);
 
     const label = criarSpriteTexto(`F${strF} ${bat}${bloco} ${lado}`);
     label.position.set(offsetX, 4.6, offsetZ + (isFront ? PROFUNDIDADE_FORNO + 0.05 : -(PROFUNDIDADE_FORNO + 0.05)));
@@ -163,14 +216,22 @@ export function atualizarCores3D() {
     state.three.fornosGroup.children.forEach(child => {
         if (child.type === "Mesh" && child.userData && child.userData.idRef) {
             const idOriginal = child.userData.idRef;
+            const tipoPeca = child.userData.tipo; // só existe pro forno, buckstays e protetores
             child.material.color.setHex(corBaseHex);
 
             let idBuscaAmbos = idOriginal.replace('LC', 'Ambos').replace('LM', 'Ambos');
 
-            const reparosPeca = state.dbReparos.filter(r =>
-                r.id_referencia === idOriginal ||
-                r.id_referencia === idBuscaAmbos
-            );
+            // Forno, buckstays e protetores compartilham o MESMO idRef (o do
+            // forno) — pra cada um pintar de acordo com o próprio histórico
+            // (e não todos ficarem com a cor do último reparo de qualquer
+            // um deles), filtramos também pelo campo reparo_no. Sole flue e
+            // coletor não têm "tipo" (seus idRef já são únicos), então
+            // continuam comparando só pelo idRef, como sempre.
+            const reparosPeca = state.dbReparos.filter(r => {
+                const mesmoAlvo = r.id_referencia === idOriginal || r.id_referencia === idBuscaAmbos;
+                if (!mesmoAlvo) return false;
+                return tipoPeca ? r.reparo_no === tipoPeca : true;
+            });
 
             if (reparosPeca.length > 0) {
                 const ultimoReparo = reparosPeca[reparosPeca.length - 1];
