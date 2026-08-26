@@ -56,72 +56,42 @@ geoDuto.rotateZ(Math.PI / 2);
 // =========================================================
 // --- BUCKSTAYS E PROTECTORS ---
 // =========================================================
-// Baseado no modelo FORNO3D.blend (meia-peça do forno com buckstays e
-// protectors) enviado por Felipe. O arquivo original é um mesh CAD único
-// e muito denso (~230 mil vértices, ~460 mil faces, sem objetos ou grupos
-// nomeados por peça) — importar isso ao pé da letra pesaria demais pra
-// renderizar em tempo real (ainda mais multiplicado por até 18 fornos).
-// Por isso essas peças foram ADAPTADAS: formato geométrico simplificado,
-// nas proporções e posições relativas equivalentes ao modelo real, no
-// mesmo estilo visual leve já usado pro forno/sole flue/coletor.
-//
-// Formam uma "moldura" na face frontal de cada forno: dois buckstays
-// verticais (nas bordas — por isso cada forno "pega um pedaço" do forno
-// vizinho, já que a borda é compartilhada) que sobem além da abóbada pra
-// segurar o coletor; um buckstay horizontal tangente ao topo da abóbada,
-// ligando os dois verticais; um protector superior que acompanha a
-// curvatura da abóbada (encostado por fora, sem invadir o forno); um
-// protector inferior no nível do topo dos sole flues; e dois protectors
-// intermediários colados nos buckstays verticais, na altura do meio.
-const CENTRO_Y_ABOBADA = 5.2;              // centro da elipse da abóbada (mesmo valor usado no geoForno)
-const RAIO_X_ABOBADA = 4.8, RAIO_Y_ABOBADA = 2.8; // raios externos da abóbada (idem geoForno)
-const ALTURA_TOPO_FORNO = CENTRO_Y_ABOBADA + RAIO_Y_ABOBADA; // pico da abóbada = 8
-const TOPO_SOLE_FLUE = 2.9;                // até onde vai o sole flue (eixo Y)
-const PROTRUSAO_BUCKSTAY = PROFUNDIDADE_FORNO + 0.3;  // buckstay fica um pouco saliente da face do forno
-const PROTRUSAO_PROTECTOR = PROFUNDIDADE_FORNO + 0.08; // protector quase colado na face
+const CENTRO_Y_ABOBADA = 5.2;              
+const RAIO_X_ABOBADA = 4.8, RAIO_Y_ABOBADA = 2.8; 
+const ALTURA_TOPO_FORNO = CENTRO_Y_ABOBADA + RAIO_Y_ABOBADA; 
+const TOPO_SOLE_FLUE = 2.9;                
+const PROTRUSAO_BUCKSTAY = PROFUNDIDADE_FORNO + 0.3;  
+const PROTRUSAO_PROTECTOR = PROFUNDIDADE_FORNO + 0.08; 
 
-// Buckstays verticais: vão da base até um pouco acima do coletor (que
-// fica em y=11), pra dar a impressão de estarem segurando-o.
 const TOPO_BUCKSTAY_VERTICAL = 9.5;
-// Buckstay horizontal: tangencia o pico da abóbada (fica encostado nela,
-// sem cortar por dentro).
 const BASE_BUCKSTAY_HORIZONTAL = ALTURA_TOPO_FORNO;
 const ALTURA_BUCKSTAY_HORIZONTAL = 0.5;
 
 function criarGeometriaProtectorSuperior() {
-    // MODIFICAÇÃO SOLICITADA:
-    // Ajustar para que o protector superior fique da espessura da parede da abóbada (0.9),
-    // e com o final (base) coincidindo com o topo dos protectors intermediários (Y = 5.2).
-    // A profundidade do extrude (Z) permanece fina (0.15) como os outros protectors.
+    const profundidadeExtrude = 0.15;
     
-    const profundidadeExtrude = 0.15; // Profundidade do extrude (Z), fina, igual aos intermediários/inferior
-    const espessuraParedeAbobada = 0.9; // Largura da "fita" (arco), igual à espessura da parede da abóbada do forno
+    // Raios idênticos aos usados na face do forno (geoForno)
+    // Isso garante que ele fique perfeitamente alinhado na frente da abóbada
+    const raioX_ext = RAIO_X_ABOBADA; // 4.8
+    const raioY_ext = RAIO_Y_ABOBADA; // 2.8
+    const raioX_int = 3.9;            // Raio interno do forno
+    const raioY_int = 1.9;            // Raio interno do forno
     
-    const raioX_ext_forno = RAIO_X_ABOBADA; // 4.8
-    const raioY_ext_forno = RAIO_Y_ABOBADA; // 2.8
-    
-    // Os raios externos do protector são os do forno + a espessura da parede
-    const raioX_ext_protector = raioX_ext_forno + espessuraParedeAbobada; // 4.8 + 0.9 = 5.7
-    const raioY_ext_protector = raioY_ext_forno + espessuraParedeAbobada; // 2.8 + 0.9 = 3.7
-
     const shape = new THREE.Shape();
-    // Arco externo, do ângulo 0 ao PI. Centro em CENTRO_Y_ABOBADA (5.2).
-    // Isso garante que o protector comece exatamente na linha horizontal Y = 5.2.
-    shape.absellipse(0, CENTRO_Y_ABOBADA, raioX_ext_protector, raioY_ext_protector, 0, Math.PI, false);
-    // Arco interno, do ângulo PI ao 0 (sentido oposto). Centro em CENTRO_Y_ABOBADA (5.2). Usando os raios externos do forno.
-    // Isso cria o protector *por fora* da abóbada, na face do forno.
-    shape.absellipse(0, CENTRO_Y_ABOBADA, raioX_ext_forno, raioY_ext_forno, Math.PI, 0, true);
+    // Desenha o arco externo exatamente igual à abóbada
+    shape.absellipse(0, CENTRO_Y_ABOBADA, raioX_ext, raioY_ext, 0, Math.PI, false);
+    // Fecha com o arco interno exatamente igual à parede interna da abóbada
+    shape.absellipse(0, CENTRO_Y_ABOBADA, raioX_int, raioY_int, Math.PI, 0, true);
     shape.closePath();
 
     const geo = new THREE.ExtrudeGeometry(shape, { depth: profundidadeExtrude, bevelEnabled: false, curveSegments: 32 }); 
-    // Centralizar o extrude em Z
     geo.translate(0, 0, -profundidadeExtrude / 2);
     return geo;
 }
 
 const geoBuckstayVertical = new THREE.BoxGeometry(0.6, TOPO_BUCKSTAY_VERTICAL, 0.5);
 const geoBuckstayHorizontal = new THREE.BoxGeometry(10.3, ALTURA_BUCKSTAY_HORIZONTAL, 0.5);
-const geoProtectorSuperior = criarGeometriaProtectorSuperior(); // Usar a função modificada
+const geoProtectorSuperior = criarGeometriaProtectorSuperior(); 
 const geoProtectorInferior = new THREE.BoxGeometry(8.6, 0.7, 0.15);
 const geoProtectorIntermediario = new THREE.BoxGeometry(1.3, 1.95, 0.15);
 
@@ -143,10 +113,6 @@ export function init3D() {
     state.three.controls = new THREE.OrbitControls(state.three.camera, state.three.renderer.domElement);
     state.three.controls.enableDamping = true; state.three.controls.dampingFactor = 0.05;
 
-    // Câmera também na metade da distância original: como os fornos agora
-    // ocupam a metade do espaço em unidades do mundo, aproximar a câmera
-    // na mesma proporção mantém o forno selecionado com o mesmo nível de
-    // zoom/foco de antes — só que agora com o bloco inteiro ao redor dele.
     state.three.camera.position.set(0, 7.5, 27.5);
     state.three.controls.target.set(0, 2.5, 0);
 
@@ -205,20 +171,12 @@ function instanciarConjuntoForno(numF, lado, bat, bloco, offsetX, offsetZ, isFro
     dutoMesh.userData = { idRef: `${strF} - ${bat}${bloco} - Coletor ${lado}` };
     state.three.fornosGroup.add(dutoMesh);
 
-    // Buckstays e protectors: mesmo idRef do forno (pra pintarem a mesma
-    // célula no mapa 2D, sem precisar de um ponto próprio pra cada um —
-    // ver atualizarCores3D, onde essas peças são coloridas individualmente
-    // filtrando também pelo campo "tipo" do reparo, não só pelo idRef).
     const zBuckstay = offsetZ + (isFront ? PROTRUSAO_BUCKSTAY : -PROTRUSAO_BUCKSTAY);
     const zProtector = offsetZ + (isFront ? PROTRUSAO_PROTECTOR : -PROTRUSAO_PROTECTOR);
 
-    // Faixa entre o topo do protector inferior e o início da abóbada —
-    // é aí que os protectors intermediários ficam encaixados. (posição é
-    // sempre o CENTRO da peça, por isso a "borda de cima" do inferior é
-    // seu centro + metade da própria altura, não a altura inteira)
     const ALTURA_PROTECTOR_INFERIOR = 0.7;
-    const baseIntermediario = TOPO_SOLE_FLUE + (ALTURA_PROTECTOR_INFERIOR / 2); // topo do protector inferior
-    const topoIntermediario = CENTRO_Y_ABOBADA;      // onde a abóbada começa
+    const baseIntermediario = TOPO_SOLE_FLUE + (ALTURA_PROTECTOR_INFERIOR / 2);
+    const topoIntermediario = CENTRO_Y_ABOBADA;
     const centroIntermediario = (baseIntermediario + topoIntermediario) / 2;
 
     function criarPecaAcessoria(geo, tipo, x, y, z) {
@@ -232,10 +190,6 @@ function instanciarConjuntoForno(numF, lado, bat, bloco, offsetX, offsetZ, isFro
     criarPecaAcessoria(geoBuckstayVertical, 'Buckstay Vertical Esquerdo', offsetX - 5, TOPO_BUCKSTAY_VERTICAL / 2, zBuckstay);
     criarPecaAcessoria(geoBuckstayVertical, 'Buckstay Vertical Direito', offsetX + 5, TOPO_BUCKSTAY_VERTICAL / 2, zBuckstay);
     criarPecaAcessoria(geoBuckstayHorizontal, 'Buckstay Horizontal', offsetX, BASE_BUCKSTAY_HORIZONTAL + ALTURA_BUCKSTAY_HORIZONTAL / 2, zBuckstay);
-    // O protector superior já tem a curva da abóbada embutida na própria
-    // geometria (centrada em CENTRO_Y_ABOBADA) — por isso é posicionado em
-    // y=0, igual ao próprio forno, e não precisa de deslocamento extra.
-    // MODIFICAÇÃO: A base do protector superior agora coincide com o topo dos intermediários (Y = 5.2).
     criarPecaAcessoria(geoProtectorSuperior, 'Protector Superior', offsetX, 0, zProtector);
     criarPecaAcessoria(geoProtectorInferior, 'Protector Inferior', offsetX, TOPO_SOLE_FLUE, zProtector);
     criarPecaAcessoria(geoProtectorIntermediario, 'Protector Intermediário Esquerdo', offsetX - 4.65, centroIntermediario, zProtector);
@@ -252,11 +206,6 @@ export function construirCluster3D(bat, bloco, fornoStr, ladoStr) {
     let ladoFrontal = (ladoStr === 'Ambos') ? 'LC' : ladoStr;
     let ladoTraseiro = (ladoFrontal === 'LC') ? 'LM' : 'LC';
 
-    // Mostra o bloco inteiro (fornos 01 a 18) em vez de só 2 pra cada lado
-    // do selecionado. O forno selecionado continua sempre no offsetX=0,
-    // que é justamente pra onde a câmera aponta (controls.target) — então
-    // o foco visual nele se mantém, só que agora com o bloco todo ao redor
-    // pra dar contexto.
     for (let fNum = 1; fNum <= 18; fNum++) {
         let i = fNum - fornoCentro;
         let offsetX = i * 10;
@@ -271,17 +220,11 @@ export function atualizarCores3D() {
     state.three.fornosGroup.children.forEach(child => {
         if (child.type === "Mesh" && child.userData && child.userData.idRef) {
             const idOriginal = child.userData.idRef;
-            const tipoPeca = child.userData.tipo; // só existe pro forno, buckstays e protectors
+            const tipoPeca = child.userData.tipo;
             child.material.color.setHex(corBaseHex);
 
             let idBuscaAmbos = idOriginal.replace('LC', 'Ambos').replace('LM', 'Ambos');
 
-            // Forno, buckstays e protectors compartilham o MESMO idRef (o do
-            // forno) — pra cada um pintar de acordo com o próprio histórico
-            // (e não todos ficarem com a cor do último reparo de qualquer
-            // um deles), filtramos também pelo campo reparo_no. Sole flue e
-            // coletor não têm "tipo" (seus idRef já são únicos), então
-            // continuam comparando só pelo idRef, como sempre.
             const reparosPeca = state.dbReparos.filter(r => {
                 const mesmoAlvo = r.id_referencia === idOriginal || r.id_referencia === idBuscaAmbos;
                 if (!mesmoAlvo) return false;
