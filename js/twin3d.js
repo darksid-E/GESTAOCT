@@ -68,7 +68,7 @@ const ALTURA_BUCKSTAY_HORIZONTAL = 0.5;
 // MODIFICAÇÃO: Subtraindo a altura do próprio buckstay horizontal para que 
 // o seu topo fique alinhado com o pico da abóbada (desceu 0.5 no eixo Y),
 // sobrepondo e "segurando" o protector superior.
-const BASE_BUCKSTAY_HORIZONTAL = ALTURA_TOPO_FORNO - ALTURA_BUCKSTAY_HORIZONTAL;
+const BASE_BUCKSTAY_HORIZONTAL = (ALTURA_TOPO_FORNO - ALTURA_BUCKSTAY_HORIZONTAL)-0.3;
 
 function criarGeometriaProtectorSuperior() {
     const profundidadeExtrude = 0.15;
