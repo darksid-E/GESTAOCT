@@ -64,14 +64,16 @@ const PROTRUSAO_BUCKSTAY = PROFUNDIDADE_FORNO + 0.3;
 const PROTRUSAO_PROTECTOR = PROFUNDIDADE_FORNO + 0.08; 
 
 const TOPO_BUCKSTAY_VERTICAL = 9.5;
-const BASE_BUCKSTAY_HORIZONTAL = ALTURA_TOPO_FORNO;
 const ALTURA_BUCKSTAY_HORIZONTAL = 0.5;
+// MODIFICAÇÃO: Subtraindo a altura do próprio buckstay horizontal para que 
+// o seu topo fique alinhado com o pico da abóbada (desceu 0.5 no eixo Y),
+// sobrepondo e "segurando" o protector superior.
+const BASE_BUCKSTAY_HORIZONTAL = ALTURA_TOPO_FORNO - ALTURA_BUCKSTAY_HORIZONTAL;
 
 function criarGeometriaProtectorSuperior() {
     const profundidadeExtrude = 0.15;
     
     // Raios idênticos aos usados na face do forno (geoForno)
-    // Isso garante que ele fique perfeitamente alinhado na frente da abóbada
     const raioX_ext = RAIO_X_ABOBADA; // 4.8
     const raioY_ext = RAIO_Y_ABOBADA; // 2.8
     const raioX_int = 3.9;            // Raio interno do forno
