@@ -147,12 +147,18 @@ export function processarDadosGlobais() {
         }
     });
 
+    // Filtro do seletor de bateria da aba "Gestão de Reparos": só afeta os
+    // números dos cards de resumo. O mapa continua sempre colorido com as
+    // 3 baterias, independente do que estiver selecionado.
+    const filtroBat = state.filtroBateriaReparos || 'Todas';
+
     for (let id in window.mapaStatusAtual) {
         const reg = window.mapaStatusAtual[id];
         const elDOM = document.querySelector(`[data-id="${id}"]`);
         if (elDOM) {
             elDOM.classList.add(`status_${reg.andamento}`);
         }
+        if (filtroBat !== 'Todas' && reg.bateria !== filtroBat) continue;
         if (counts[reg.andamento] !== undefined) counts[reg.andamento]++;
     }
 
@@ -166,6 +172,11 @@ export function initMapa2D() {
     const tooltip = document.getElementById('tooltip_mapa');
     const mapaContainer = document.getElementById('baterias_container');
     let elementoComTooltip = null;
+
+    document.getElementById('reparos_filtro_bat').addEventListener('change', (e) => {
+        state.filtroBateriaReparos = e.target.value;
+        processarDadosGlobais();
+    });
 
     function posicionarTooltipSobre(el) {
         const rect = el.getBoundingClientRect();
