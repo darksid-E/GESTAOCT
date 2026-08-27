@@ -1,0 +1,26 @@
+{
+  "compilerOptions": {
+    "target": "ES2020",
+    "module": "ES2020",
+    "moduleResolution": "Bundler",
+    "lib": ["ES2020", "DOM", "DOM.Iterable"],
+    "rootDir": "src",
+    "outDir": "js",
+
+    /* Mantém o padrão atual: <script type="module" src="js/main.js">
+       carregando módulos ES nativos direto no navegador, sem bundler.
+       O tsc só compila .ts -> .js, o resto do fluxo não muda. */
+    "allowImportingTsExtensions": false,
+
+    "strict": true,
+    "noImplicitAny": false,      // começa "morno" — vira true módulo a módulo
+    "strictNullChecks": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "sourceMap": true,
+    "declaration": false,
+    "removeComments": false
+  },
+  "include": ["src/**/*.ts"]
+}

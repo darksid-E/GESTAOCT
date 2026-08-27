@@ -1,0 +1,25 @@
+{
+  "name": "gestaoct",
+  "version": "1.0.0",
+  "description": "O objetivo principal desta aplicação é simplificar o registro de dados operacionais. Desenvolvido para ser acessado de qualquer lugar e dispositivo, o sistema garante agilidade na alimentação das informações. Esse acesso rápido aos dados operacionais viabiliza análises precisas, contribuindo para uma tomada de decisão mais rápida e estrategicamente embasada.",
+  "main": "supabase-config.js",
+  "scripts": {
+    "build": "tsc",
+    "watch": "tsc --watch",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/darksid-E/GESTAOCT.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/darksid-E/GESTAOCT/issues"
+  },
+  "homepage": "https://github.com/darksid-E/GESTAOCT#readme",
+  "devDependencies": {
+    "typescript": "^7.0.2"
+  }
+}
