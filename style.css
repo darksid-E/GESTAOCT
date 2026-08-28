@@ -448,6 +448,7 @@ body {
     flex-direction: column;
     animation: modalPop 220ms cubic-bezier(.2, .8, .2, 1);
 }
+#modal_reparo .modal_large { width: 1400px; }
 .modal_header {
     background: linear-gradient(90deg, var(--cor-secundaria), var(--cor-secundaria-escura));
     color: white;
@@ -489,6 +490,26 @@ body {
     border-radius: var(--raio-md);
     border: 1px solid var(--borda);
 }
+.col_temp {
+    flex: 1;
+    min-width: 300px;
+    display: flex;
+    flex-direction: column;
+    background: var(--bg-sutil);
+    padding: 16px;
+    border-radius: var(--raio-md);
+    border: 1px solid var(--borda);
+}
+.temp_modal_indicadores { display: flex; flex-direction: column; gap: 6px; margin: 8px 0 12px; }
+.temp_modal_pill {
+    display: block;
+    font-size: 0.72rem;
+    padding: 5px 8px;
+    border-left: 3px solid;
+    background: var(--bg-superficie);
+    border-radius: var(--raio-sm);
+}
+.temp_modal_chart_box { position: relative; flex: 1; min-height: 260px; }
 
 /* 3D VIEWER + BOTOES INTERNOS */
 .legenda_3d { font-weight: 700; color: var(--cor-secundaria); margin-bottom: 10px; font-size: 0.9rem; text-align: center; letter-spacing: 0.2px; }
@@ -621,6 +642,26 @@ body {
 .btn_zoom_reset { font-size: 0.78rem; padding: 7px 12px; align-self: flex-end; }
 .temp_dica_zoom { font-size: 0.75rem; color: var(--texto-suave); margin: 8px 0 0; }
 
+.temp_indicadores {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-bottom: 18px;
+}
+.temp_card_indicador {
+    background: var(--bg-superficie);
+    border: 1px solid var(--borda);
+    border-radius: var(--raio-md);
+    box-shadow: var(--sombra-sm);
+    padding: 10px 14px;
+    flex: 1;
+    min-width: 180px;
+}
+.temp_card_titulo { display: block; font-size: 0.78rem; font-weight: 700; color: var(--cor-secundaria); margin-bottom: 6px; }
+.temp_card_valores { display: flex; justify-content: space-between; gap: 8px; }
+.temp_card_valores > div { display: flex; flex-direction: column; align-items: center; font-size: 0.9rem; font-weight: 700; }
+.temp_card_label { font-size: 0.68rem; font-weight: 600; color: var(--texto-suave); margin-bottom: 2px; }
+
 .temp_chart_box {
     position: relative;
     background: var(--bg-superficie);
@@ -630,6 +671,22 @@ body {
     padding: 18px;
     height: 420px;
 }
+
+.temp_tabela_titulo { margin: 22px 0 4px; font-size: 1rem; color: var(--cor-secundaria); }
+.temp_tabela_container {
+    max-height: 340px;
+    overflow-y: auto;
+    background: var(--bg-superficie);
+    border: 1px solid var(--borda);
+    border-radius: var(--raio-md);
+    box-shadow: var(--sombra-sm);
+}
+.temp_tabela { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+.temp_tabela th, .temp_tabela td { padding: 7px 12px; text-align: right; border-bottom: 1px solid var(--borda); }
+.temp_tabela th:first-child, .temp_tabela td:first-child { text-align: left; }
+.temp_tabela thead th { position: sticky; top: 0; background: var(--bg-sutil); font-size: 0.75rem; color: var(--cor-secundaria); }
+.temp_tabela th.ordenavel { cursor: pointer; user-select: none; }
+.temp_tabela th.ordenavel:hover { color: var(--cor-primaria); }
 .temp_sem_dados {
     position: absolute;
     top: 50%; left: 50%;
@@ -954,7 +1011,8 @@ body {
     .modal_header { padding: 12px 16px; }
     .modal_header h3 { font-size: 1rem; }
     .modal_grid { flex-direction: column; padding: 14px; gap: 14px; max-height: none; overflow-y: auto; }
-    .col_form, .col_visual { min-width: unset; padding-right: 0; overflow-y: visible; }
+    .col_form, .col_visual, .col_temp { min-width: unset; padding-right: 0; overflow-y: visible; }
+    #modal_reparo .modal_large { width: 100%; }
     #container_3d { height: 230px; }
     .controles_camera { top: 6px; right: 6px; gap: 4px; }
     .controles_camera button { padding: 5px 9px; font-size: 0.72rem; }
