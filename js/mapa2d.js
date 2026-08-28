@@ -16,6 +16,7 @@ export function gerarMapaBaterias() {
     baterias.forEach(bat => {
         const batDiv = document.createElement('div');
         batDiv.className = 'bateria_wrapper';
+        batDiv.dataset.bateria = bat;
         batDiv.innerHTML = `<h3 class="bateria_titulo">Bateria ${bat}</h3>`;
         batDiv.appendChild(criarLinhaBlocos(bat, blocosTop, 'top'));
 
@@ -26,6 +27,19 @@ export function gerarMapaBaterias() {
         batDiv.appendChild(quenchLine);
         batDiv.appendChild(criarLinhaBlocos(bat, blocosBottom, 'bottom'));
         container.appendChild(batDiv);
+    });
+
+    aplicarFiltroBateriaMapa();
+}
+
+// Some por completo (não apenas esmaece) os blocos de bateria que não
+// estão selecionados no filtro da aba "Gestão de Reparos". Com "Todas"
+// selecionado, todas voltam a aparecer.
+export function aplicarFiltroBateriaMapa() {
+    const filtroBat = state.filtroBateriaReparos || 'Todas';
+    document.querySelectorAll('.bateria_wrapper').forEach(wrapper => {
+        const visivel = filtroBat === 'Todas' || wrapper.dataset.bateria === filtroBat;
+        wrapper.style.display = visivel ? '' : 'none';
     });
 }
 
@@ -175,6 +189,7 @@ export function initMapa2D() {
 
     document.getElementById('reparos_filtro_bat').addEventListener('change', (e) => {
         state.filtroBateriaReparos = e.target.value;
+        aplicarFiltroBateriaMapa();
         processarDadosGlobais();
     });
 
