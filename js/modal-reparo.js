@@ -8,9 +8,99 @@ import { init3D, construirCluster3D, atualizarCores3D } from './twin3d.js';
 import { processarDadosGlobais } from './mapa2d.js';
 import { renderizarTabela } from './tabela.js';
 import { aplicarPermissoes } from './auth.js';
+import { buscarDadosPI } from './pi-api.js';
 
 let modal, tituloFornoModal, listaHistorico, selectElements, selTipoPrincipal, selLadoPrincipal;
 let lightboxFoto, lightboxImg;
+let chartTempModal = null;
+// Evita que uma busca antiga (troca rápida de forno) sobrescreva o
+// resultado de uma busca mais recente.
+let tokenBuscaTempModal = 0;
+
+// Painel de temperatura ao lado do modal de reparo — mostra as
+// últimas 72h do forno selecionado (janela curta pra ficar rápido,
+// já que é só uma visão rápida; o histórico completo fica na aba
+// "Gráfico de Temperaturas").
+async function atualizarPainelTemperaturaModal(bat, bloco, forno) {
+    const canvas = document.getElementById('grafico_temp_modal');
+    const semDados = document.getElementById('temp_modal_sem_dados');
+    const indicadores = document.getElementById('temp_modal_indicadores');
+    if (!canvas) return;
+
+    const minhaBusca = ++tokenBuscaTempModal;
+    if (indicadores) indicadores.innerHTML = '<p class="temp_hint">Buscando...</p>';
+
+    const agora = Date.now();
+    const TRES_DIAS_MS = 3 * 24 * 60 * 60 * 1000;
+    const resposta = await buscarDadosPI(bat, bloco, forno, agora - TRES_DIAS_MS, agora);
+
+    if (minhaBusca !== tokenBuscaTempModal) return; // uma busca mais nova já chegou
+
+    if (resposta?.indisponivel) {
+        canvas.style.display = 'none';
+        if (semDados) { semDados.innerText = 'Indisponível fora da rede/VPN da Ternium.'; semDados.style.display = 'block'; }
+        if (indicadores) indicadores.innerHTML = '';
+        return;
+    }
+
+    const dados = resposta;
+    if (!dados?.dados?.TOPO?.pontos?.length) {
+        canvas.style.display = 'none';
+        if (semDados) { semDados.innerText = 'Sem dados do PI para este forno.'; semDados.style.display = 'block'; }
+        if (indicadores) indicadores.innerHTML = '';
+        return;
+    }
+
+    canvas.style.display = 'block';
+    if (semDados) semDados.style.display = 'none';
+
+    const series = [
+        { chave: 'TOPO', label: 'TOPO', cor: 'black' },
+        { chave: 'LC', label: 'LC', cor: 'darkblue' },
+        { chave: 'LM', label: 'LM', cor: 'red' },
+    ];
+
+    if (indicadores) {
+        indicadores.innerHTML = series.map(s => {
+            const ind = dados.dados[s.chave]?.indicadores || {};
+            const fmt = (v) => v === null || v === undefined ? '—' : `${v.toFixed(1)}°C`;
+            return `<span class="temp_modal_pill" style="border-color:${s.cor}"><b>${s.label}</b> mín ${fmt(ind.min)} · méd ${fmt(ind.media)} · máx ${fmt(ind.max)}</span>`;
+        }).join('');
+    }
+
+    const labels = dados.dados.TOPO.pontos.map(p => {
+        const d = new Date(p.t);
+        return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+    });
+
+    if (chartTempModal) { chartTempModal.destroy(); chartTempModal = null; }
+    chartTempModal = new Chart(canvas, {
+        type: 'line',
+        data: {
+            labels,
+            datasets: series.map(s => ({
+                label: s.label,
+                data: (dados.dados[s.chave]?.pontos || []).map(p => p.v),
+                borderColor: s.cor,
+                backgroundColor: s.cor,
+                tension: 0.15,
+                pointRadius: 0,
+                borderWidth: 1.4,
+                spanGaps: true,
+            })),
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: { mode: 'index', intersect: false },
+            plugins: { legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 9 } } } },
+            scales: {
+                x: { ticks: { maxTicksLimit: 6, autoSkip: true, font: { size: 8 } } },
+                y: { title: { display: true, text: '°C', font: { size: 9 } } },
+            },
+        },
+    });
+}
 
 export function atualizarAlvoVisual() {
     const bat = document.getElementById('sel_bat').value;
@@ -31,6 +121,7 @@ export function atualizarAlvoVisual() {
     construirCluster3D(bat, bloco, forno, lado);
     atualizarCores3D();
     aplicarPermissoes();
+    atualizarPainelTemperaturaModal(bat, bloco, forno);
 }
 
 export function abrirModalMapClick(tipoItem, bat, bloco, forno, lado) {

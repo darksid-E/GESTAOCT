@@ -34,10 +34,13 @@ export const state = {
     dbReparos: [],
     // { access_token, refresh_token, expires_at, user, perfil }
     sessaoAtual: carregarSessaoLocal(),
-    // Dados de temperatura (CSV importado, só em memória/sessão)
-    dadosTemperaturaCSV: [],
+    // Dados de temperatura (buscados ao vivo do PI Web API, só em
+    // memória — nunca vão pro Supabase)
+    dadosTemperaturaPI: null,
     periodoTempInicio: null,
     periodoTempFim: null,
+    ordenacaoTemp: { coluna: null, direcao: 'asc' },
+    intervaloAtualizacaoTemp: null,
     // Instâncias de gráficos Chart.js
     charts: {
         temperaturaGeral: null,

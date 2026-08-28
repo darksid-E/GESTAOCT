@@ -38,9 +38,13 @@ interface EstadoApp {
     supabaseAtivo: boolean;
     dbReparos: Reparo[];
     sessaoAtual: SessaoAuth | null;
-    dadosTemperaturaCSV: unknown[];
+    // Dados de temperatura buscados ao vivo do PI Web API (resposta
+    // crua de /api/pi-temperaturas) — nunca vão pro Supabase.
+    dadosTemperaturaPI: unknown | null;
     periodoTempInicio: number | null; // epoch ms
     periodoTempFim: number | null;    // epoch ms
+    ordenacaoTemp: { coluna: string | null; direcao: 'asc' | 'desc' };
+    intervaloAtualizacaoTemp: ReturnType<typeof setInterval> | null;
     charts: {
         temperaturaGeral: unknown | null;
         dashboardStatus: unknown | null;
@@ -68,10 +72,13 @@ export const state: EstadoApp = {
     // { access_token, refresh_token, expires_at, user, perfil }
     sessaoAtual: carregarSessaoLocal(),
 
-    // Dados de temperatura (CSV importado, só em memória/sessão)
-    dadosTemperaturaCSV: [],
+    // Dados de temperatura (buscados ao vivo do PI Web API, só em
+    // memória — nunca vão pro Supabase)
+    dadosTemperaturaPI: null,
     periodoTempInicio: null,
     periodoTempFim: null,
+    ordenacaoTemp: { coluna: null, direcao: 'asc' },
+    intervaloAtualizacaoTemp: null,
 
     // Instâncias de gráficos Chart.js
     charts: {
