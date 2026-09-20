@@ -1,4 +1,4 @@
-import type { Reparo, SessaoAuth } from './types.js';
+import type { Reparo, Maquina, SessaoAuth } from './types.js';
 
 // =========================================================
 // --- ESTADO COMPARTILHADO ---
@@ -17,6 +17,7 @@ const SUPABASE_KEY = window.SUPABASE_CONFIG?.key || '';
 // PostgREST tentava interpretar "storage" como parte da rota REST).
 const SUPABASE_STORAGE_BASE = SUPABASE_URL.replace(/\/rest\/v1\/?$/, '');
 const SUPABASE_TABLE = 'reparos';
+const SUPABASE_TABLE_MAQUINAS = 'maquinas';
 const SUPABASE_AUTH_BASE = `${SUPABASE_STORAGE_BASE}/auth/v1`;
 const SUPABASE_TABLE_PERFIS = 'perfis';
 const CHAVE_SESSAO_LOCAL = 'sessaoAuthCT';
@@ -37,16 +38,9 @@ function carregarSessaoLocal(): SessaoAuth | null {
 interface EstadoApp {
     supabaseAtivo: boolean;
     dbReparos: Reparo[];
+    dbMaquinas: Maquina[];
     sessaoAtual: SessaoAuth | null;
-    // Dados de temperatura buscados ao vivo do PI Web API (resposta
-    // crua de /api/pi-temperaturas) — nunca vão pro Supabase.
-    dadosTemperaturaPI: unknown | null;
-    periodoTempInicio: number | null; // epoch ms
-    periodoTempFim: number | null;    // epoch ms
-    ordenacaoTemp: { coluna: string | null; direcao: 'asc' | 'desc' };
-    intervaloAtualizacaoTemp: ReturnType<typeof setInterval> | null;
     charts: {
-        temperaturaGeral: unknown | null;
         dashboardStatus: unknown | null;
         dashboardRetro: unknown | null;
     };
@@ -68,21 +62,13 @@ interface EstadoApp {
 export const state: EstadoApp = {
     supabaseAtivo: Boolean(SUPABASE_URL && SUPABASE_KEY),
     dbReparos: [],
+    dbMaquinas: [],
 
     // { access_token, refresh_token, expires_at, user, perfil }
     sessaoAtual: carregarSessaoLocal(),
 
-    // Dados de temperatura (buscados ao vivo do PI Web API, só em
-    // memória — nunca vão pro Supabase)
-    dadosTemperaturaPI: null,
-    periodoTempInicio: null,
-    periodoTempFim: null,
-    ordenacaoTemp: { coluna: null, direcao: 'asc' },
-    intervaloAtualizacaoTemp: null,
-
     // Instâncias de gráficos Chart.js
     charts: {
-        temperaturaGeral: null,
         dashboardStatus: null,
         dashboardRetro: null,
     },
@@ -110,6 +96,7 @@ export const config = {
     SUPABASE_KEY,
     SUPABASE_STORAGE_BASE,
     SUPABASE_TABLE,
+    SUPABASE_TABLE_MAQUINAS,
     SUPABASE_AUTH_BASE,
     SUPABASE_TABLE_PERFIS,
     CHAVE_SESSAO_LOCAL,
@@ -155,4 +142,17 @@ export function carregarCacheLocal(): Reparo[] {
 
 export function salvarCacheLocal(): void {
     localStorage.setItem('dbReparosCoke', JSON.stringify(state.dbReparos));
+}
+
+export function carregarCacheLocalMaquinas(): Maquina[] {
+    try {
+        return (JSON.parse(localStorage.getItem('dbMaquinasCoke') || '[]') as Maquina[]) || [];
+    } catch (erro) {
+        console.warn('Não foi possível ler o cache local de máquinas:', erro);
+        return [];
+    }
+}
+
+export function salvarCacheLocalMaquinas(): void {
+    localStorage.setItem('dbMaquinasCoke', JSON.stringify(state.dbMaquinas));
 }

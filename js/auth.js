@@ -1,12 +1,13 @@
 // =========================================================
 // --- CADASTRO / SUPABASE AUTH (login real com senha) ---
 // =========================================================
-import { state, config, salvarSessaoLocal, isAdminAtual, nomeExibicaoAtual, carregarCacheLocal, salvarCacheLocal } from './state.js';
-import { listarReparosSupabase } from './supabase-api.js';
+import { state, config, salvarSessaoLocal, isAdminAtual, nomeExibicaoAtual, carregarCacheLocal, salvarCacheLocal, carregarCacheLocalMaquinas, salvarCacheLocalMaquinas } from './state.js';
+import { listarReparosSupabase, listarMaquinasSupabase } from './supabase-api.js';
 import { irParaAba, getNavElements } from './navigation.js';
 import { gerarMapaBaterias } from './mapa2d.js';
 import { processarDadosGlobais } from './mapa2d.js';
 import { renderizarTabela } from './tabela.js';
+import { renderizarPaginaMaquinas, renderizarTabelaMaquinas } from './maquinas.js';
 
 // Cadastro liberado só para emails corporativos @ternium.com — aceita
 // qualquer variação de país (ternium.com, ternium.com.br, ternium.com.us,
@@ -235,7 +236,20 @@ export function aplicarPermissoes() {
         lbl.classList.toggle('disabled', !admin);
     });
 
+    const btnNovoMaquina = document.getElementById('btn_abrir_manual_maquina');
+    if (btnNovoMaquina) btnNovoMaquina.style.display = admin ? '' : 'none';
+
+    const btnNovoTabelaMaquina = document.getElementById('btn_novo_tabela_maquina');
+    if (btnNovoTabelaMaquina) btnNovoTabelaMaquina.style.display = admin ? '' : 'none';
+
+    const camposModalMaquina = document.querySelectorAll(
+        '#modal_maquina .form_group select, #modal_maquina .form_group textarea, ' +
+        '#modal_maquina .form_group input, #modal_maquina .botoes_form button'
+    );
+    camposModalMaquina.forEach(el => { el.disabled = !admin; });
+
     if (document.getElementById('tbody_banco')) renderizarTabela();
+    if (document.getElementById('tbody_banco_maquinas')) renderizarTabelaMaquinas();
 }
 window.aplicarPermissoes = aplicarPermissoes;
 
@@ -382,9 +396,22 @@ export async function inicializarApp() {
         }
     }
 
+    try {
+        if (state.supabaseAtivo) {
+            state.dbMaquinas = await listarMaquinasSupabase();
+            salvarCacheLocalMaquinas();
+        } else {
+            state.dbMaquinas = carregarCacheLocalMaquinas();
+        }
+    } catch (erro) {
+        console.error('Falha ao carregar lançamentos de máquinas. Usando cache local:', erro);
+        state.dbMaquinas = carregarCacheLocalMaquinas();
+    }
+
     window.mapaStatusAtual = {};
     gerarMapaBaterias();
     processarDadosGlobais();
+    renderizarPaginaMaquinas();
     renderizarCadastroUI();
     aplicarPermissoes();
 }

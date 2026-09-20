@@ -34,6 +34,39 @@ export interface Reparo {
     foto_depois: string | null;
 }
 
+// Lançamento de altura/perfil de carga das máquinas de carregamento
+// (31/32) por forno — tabela "maquinas" no Supabase. altura_media,
+// desvio e gatilho são calculados por trigger no banco (não preencher
+// no INSERT); id também é gerado pelo Postgres.
+export interface Maquina {
+    id?: number;
+    data: string;               // yyyy-mm-dd (input type="date")
+    bateria: string;            // 'A' | 'B' | 'C'
+    bloco: number;
+    forno: number;
+    maquina: string;            // '31A' | '32A' | '31B' | '32B' | '31C' | '32C'
+    altura_programada: number;
+    perfil_carga: string;
+    frontal_dir: number;
+    frontal_esq: number;
+    centro_dir: number;
+    centro_1_dir_esq: number;
+    centro_esq: number;
+    centro_2_dir_esq: number;
+    traseira_dir: number;
+    traseira_esq: number;
+    tempo_compactacao_min: number;
+    pressao_compactacao_bar: number;
+    nivel_oleo_pct: number;
+    nivel_bacia_pct: number;
+    observacao: string;
+    altura_media?: number;
+    desvio?: number;
+    gatilho?: 'OK' | 'DESVIO' | (string & {});
+    registrado_por?: string;
+    criado_em?: string;
+}
+
 export interface Perfil {
     nome: string;
     sobrenome: string;

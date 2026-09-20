@@ -11,10 +11,9 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 
     <script src="supabase-config.js"></script>
-    <script src="pi-config.js"></script>
     <script type="module" src="js/main.js"></script>
 </head>
 <body>
@@ -28,11 +27,11 @@
         <aside class="side_bar" id="side_bar">
             <nav>
                 <button class="nav_btn active_link" data-target="reparos">Gestão de Reparos</button>
+                <button class="nav_btn" data-target="maquinas">Máquinas</button>
                 <!-- <button class="nav_btn" data-target="tltb">TL=TB</button> -->
                 <!-- <button class="nav_btn" data-target="descarbonizacao">Descarbonização</button> -->
                 <button class="nav_btn" data-target="cadastro">Login</button> 
                 <!-- <button class="nav_btn" data-target="dashboard">Dashboard (Gráficos)</button> -->
-                <!-- <button class="nav_btn" data-target="temperaturas">Gráfico de Temperaturas (Recurso Experimental)</button> -->
             </nav>
         </aside>
         <div id="sidebar_backdrop" class="sidebar_backdrop"></div>
@@ -93,6 +92,106 @@
                 </div>
             </section>
 
+            <section id="maquinas" class="page_section">
+                <div class="header_reparos">
+                    <h2>Gestão de Máquinas de Carga</h2>
+                    <div class="botoes_acao">
+                        <button id="btn_baixar_excel_maquinas" class="btn_acao">Baixar Banco</button>
+                        <button id="btn_abrir_tabela_maquinas" class="btn_acao btn_secundario">Tabela de Dados</button>
+                    </div>
+                </div>
+
+                <button id="btn_abrir_manual_maquina" class="btn_acao btn_bloco_grande">Novo Lançamento</button>
+
+                <div class="dash_filters">
+                    <label>Período (também usado no "Baixar Banco"): </label>
+                    <input type="date" id="maquinas_filtro_data_inicio">
+                    <span class="maquinas_periodo_separador">até</span>
+                    <input type="date" id="maquinas_filtro_data_fim">
+                </div>
+
+                <div class="resumo_cards">
+                    <div class="card_stat maquinas_stat_altura"><h3>Altura Média de Carga</h3><p id="maquinas_media_altura">-</p></div>
+                    <div class="card_stat maquinas_stat_aderencia"><h3>Aderência à Programação</h3><p id="maquinas_aderencia">-</p></div>
+                </div>
+
+                <p class="temp_dica_zoom">💡 Os valores do diagrama abaixo são a média do período selecionado acima (padrão: hoje).</p>
+
+                <div class="maquinas_diagrama_scroll">
+                    <div class="maquinas_bateria_bloco">
+                        <h3 class="maquinas_bateria_titulo">Bateria A</h3>
+                        <div class="maquinas_par">
+                            <div class="maquinas_card" data-maquina="31A">
+                                <h4 class="maquinas_card_titulo">Máquina 31A</h4>
+                                <table class="maquinas_bandeja_tabela">
+                                    <tr><td class="cel_esq">Frontal Esq.<br><span data-campo="frontal_esq">-</span></td><td class="cel_dir">Frontal Dir.<br><span data-campo="frontal_dir">-</span></td></tr>
+                                    <tr><td class="cel_esq">Centro Esq.<br><span data-campo="centro_esq">-</span></td><td class="cel_dir">Centro Dir.<br><span data-campo="centro_dir">-</span></td></tr>
+                                    <tr><td class="cel_esq">Centro 2 Dir.Esq.<br><span data-campo="centro_2_dir_esq">-</span></td><td class="cel_dir">Centro 1 Dir.Esq.<br><span data-campo="centro_1_dir_esq">-</span></td></tr>
+                                    <tr><td class="cel_esq">Traseira Esq.<br><span data-campo="traseira_esq">-</span></td><td class="cel_dir">Traseira Dir.<br><span data-campo="traseira_dir">-</span></td></tr>
+                                </table>
+                            </div>
+                            <div class="maquinas_card" data-maquina="32A">
+                                <h4 class="maquinas_card_titulo">Máquina 32A</h4>
+                                <table class="maquinas_bandeja_tabela">
+                                    <tr><td class="cel_esq">Frontal Esq.<br><span data-campo="frontal_esq">-</span></td><td class="cel_dir">Frontal Dir.<br><span data-campo="frontal_dir">-</span></td></tr>
+                                    <tr><td class="cel_esq">Centro Esq.<br><span data-campo="centro_esq">-</span></td><td class="cel_dir">Centro Dir.<br><span data-campo="centro_dir">-</span></td></tr>
+                                    <tr><td class="cel_esq">Centro 2 Dir.Esq.<br><span data-campo="centro_2_dir_esq">-</span></td><td class="cel_dir">Centro 1 Dir.Esq.<br><span data-campo="centro_1_dir_esq">-</span></td></tr>
+                                    <tr><td class="cel_esq">Traseira Esq.<br><span data-campo="traseira_esq">-</span></td><td class="cel_dir">Traseira Dir.<br><span data-campo="traseira_dir">-</span></td></tr>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="maquinas_bateria_bloco">
+                        <h3 class="maquinas_bateria_titulo">Bateria B</h3>
+                        <div class="maquinas_par">
+                            <div class="maquinas_card" data-maquina="31B">
+                                <h4 class="maquinas_card_titulo">Máquina 31B</h4>
+                                <table class="maquinas_bandeja_tabela">
+                                    <tr><td class="cel_esq">Frontal Esq.<br><span data-campo="frontal_esq">-</span></td><td class="cel_dir">Frontal Dir.<br><span data-campo="frontal_dir">-</span></td></tr>
+                                    <tr><td class="cel_esq">Centro Esq.<br><span data-campo="centro_esq">-</span></td><td class="cel_dir">Centro Dir.<br><span data-campo="centro_dir">-</span></td></tr>
+                                    <tr><td class="cel_esq">Centro 2 Dir.Esq.<br><span data-campo="centro_2_dir_esq">-</span></td><td class="cel_dir">Centro 1 Dir.Esq.<br><span data-campo="centro_1_dir_esq">-</span></td></tr>
+                                    <tr><td class="cel_esq">Traseira Esq.<br><span data-campo="traseira_esq">-</span></td><td class="cel_dir">Traseira Dir.<br><span data-campo="traseira_dir">-</span></td></tr>
+                                </table>
+                            </div>
+                            <div class="maquinas_card" data-maquina="32B">
+                                <h4 class="maquinas_card_titulo">Máquina 32B</h4>
+                                <table class="maquinas_bandeja_tabela">
+                                    <tr><td class="cel_esq">Frontal Esq.<br><span data-campo="frontal_esq">-</span></td><td class="cel_dir">Frontal Dir.<br><span data-campo="frontal_dir">-</span></td></tr>
+                                    <tr><td class="cel_esq">Centro Esq.<br><span data-campo="centro_esq">-</span></td><td class="cel_dir">Centro Dir.<br><span data-campo="centro_dir">-</span></td></tr>
+                                    <tr><td class="cel_esq">Centro 2 Dir.Esq.<br><span data-campo="centro_2_dir_esq">-</span></td><td class="cel_dir">Centro 1 Dir.Esq.<br><span data-campo="centro_1_dir_esq">-</span></td></tr>
+                                    <tr><td class="cel_esq">Traseira Esq.<br><span data-campo="traseira_esq">-</span></td><td class="cel_dir">Traseira Dir.<br><span data-campo="traseira_dir">-</span></td></tr>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="maquinas_bateria_bloco">
+                        <h3 class="maquinas_bateria_titulo">Bateria C</h3>
+                        <div class="maquinas_par">
+                            <div class="maquinas_card" data-maquina="31C">
+                                <h4 class="maquinas_card_titulo">Máquina 31C</h4>
+                                <table class="maquinas_bandeja_tabela">
+                                    <tr><td class="cel_esq">Frontal Esq.<br><span data-campo="frontal_esq">-</span></td><td class="cel_dir">Frontal Dir.<br><span data-campo="frontal_dir">-</span></td></tr>
+                                    <tr><td class="cel_esq">Centro Esq.<br><span data-campo="centro_esq">-</span></td><td class="cel_dir">Centro Dir.<br><span data-campo="centro_dir">-</span></td></tr>
+                                    <tr><td class="cel_esq">Centro 2 Dir.Esq.<br><span data-campo="centro_2_dir_esq">-</span></td><td class="cel_dir">Centro 1 Dir.Esq.<br><span data-campo="centro_1_dir_esq">-</span></td></tr>
+                                    <tr><td class="cel_esq">Traseira Esq.<br><span data-campo="traseira_esq">-</span></td><td class="cel_dir">Traseira Dir.<br><span data-campo="traseira_dir">-</span></td></tr>
+                                </table>
+                            </div>
+                            <div class="maquinas_card" data-maquina="32C">
+                                <h4 class="maquinas_card_titulo">Máquina 32C</h4>
+                                <table class="maquinas_bandeja_tabela">
+                                    <tr><td class="cel_esq">Frontal Esq.<br><span data-campo="frontal_esq">-</span></td><td class="cel_dir">Frontal Dir.<br><span data-campo="frontal_dir">-</span></td></tr>
+                                    <tr><td class="cel_esq">Centro Esq.<br><span data-campo="centro_esq">-</span></td><td class="cel_dir">Centro Dir.<br><span data-campo="centro_dir">-</span></td></tr>
+                                    <tr><td class="cel_esq">Centro 2 Dir.Esq.<br><span data-campo="centro_2_dir_esq">-</span></td><td class="cel_dir">Centro 1 Dir.Esq.<br><span data-campo="centro_1_dir_esq">-</span></td></tr>
+                                    <tr><td class="cel_esq">Traseira Esq.<br><span data-campo="traseira_esq">-</span></td><td class="cel_dir">Traseira Dir.<br><span data-campo="traseira_dir">-</span></td></tr>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
             <section id="dashboard" class="page_section">
                 <h2>Dashboard de KPIs</h2>
                 
@@ -117,55 +216,6 @@
                 </div>
             </section>
 
-            <section id="temperaturas" class="page_section">
-                <h2>Gráfico de Temperaturas</h2>
-
-                <div class="temp_import_card">
-                    <span id="status_fonte_temp" class="temp_status_csv">🔄 Buscando dados no PI System...</span>
-                    <p class="temp_hint">Dados buscados ao vivo direto do PI System (atualiza a cada 5 minutos). Só funciona conectado à rede/VPN da Ternium. Nada fica salvo no Supabase.</p>
-                </div>
-
-                <div class="temp_filtros">
-                    <div>
-                        <label>Bateria:</label>
-                        <select id="temp_filtro_bat">
-                            <option value="A">A</option><option value="B">B</option><option value="C">C</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label>Bloco:</label>
-                        <select id="temp_filtro_bloco">
-                            <option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option>
-                            <option value="5">5</option><option value="6">6</option><option value="7">7</option><option value="8">8</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label>Forno:</label>
-                        <select id="temp_filtro_forno"></select>
-                    </div>
-                    <div>
-                        <label>De:</label>
-                        <input type="date" id="temp_periodo_inicio">
-                    </div>
-                    <div>
-                        <label>Até:</label>
-                        <input type="date" id="temp_periodo_fim">
-                    </div>
-                    <button id="btn_resetar_zoom_geral" class="btn_acao btn_secundario btn_zoom_reset" title="Restaurar zoom">🔍 Resetar Zoom</button>
-                </div>
-
-                <div id="temp_indicadores" class="temp_indicadores"></div>
-
-                <div class="temp_chart_box">
-                    <canvas id="grafico_temperatura_geral"></canvas>
-                    <p id="temp_sem_dados_geral" class="temp_sem_dados" style="display: none;">Nenhum dado retornado pelo PI para esse forno/período.</p>
-                </div>
-                <p class="temp_dica_zoom">💡 Arraste o mouse sobre o gráfico pra dar zoom num período. Use "Resetar Zoom" pra voltar.</p>
-
-                <h3 class="temp_tabela_titulo">Leituras do período</h3>
-                <p class="temp_hint">Clique no cabeçalho de uma coluna pra ordenar da menor pra maior temperatura (e de novo pra inverter).</p>
-                <div id="temp_tabela_leituras" class="temp_tabela_container"></div>
-            </section>
             <section id="tltb" class="page_section"><h2>TL=TB</h2></section>
             <section id="descarbonizacao" class="page_section"><h2>Descarbonização</h2></section>
             <section id="cadastro" class="page_section">
@@ -326,15 +376,176 @@
                     <div id="lista_historico" class="historico_scroll"></div>
                 </div>
 
-                <div class="col_temp">
-                    <div class="legenda_3d">Temperatura do Forno (últimas 72h)</div>
-                    <div id="temp_modal_indicadores" class="temp_modal_indicadores"></div>
-                    <div class="temp_modal_chart_box">
-                        <canvas id="grafico_temp_modal"></canvas>
-                        <p id="temp_modal_sem_dados" class="temp_sem_dados" style="display: none;">Sem dados do PI para este forno.</p>
+            </div>
+        </div>
+    </div>
+
+    <div id="modal_maquina" class="modal_overlay">
+        <div class="modal_content modal_large" style="width: 95%; max-width: 640px; max-height: 90vh; display: flex; flex-direction: column;">
+            <header class="modal_header">
+                <h3>Lançamento de Máquina</h3>
+                <button id="fechar_modal_maquina" class="close_btn">&times;</button>
+            </header>
+            <div class="modal_body" style="padding: 20px; overflow-y: auto;">
+                <input type="hidden" id="maquina_id_edit">
+
+                <div class="form_group row_group">
+                    <div class="half_width">
+                        <label>Data</label>
+                        <input type="date" id="maquina_data">
+                    </div>
+                    <div class="half_width">
+                        <label>Bateria</label>
+                        <select id="maquina_bateria">
+                            <option value="A">A</option><option value="B">B</option><option value="C">C</option>
+                        </select>
                     </div>
                 </div>
 
+                <div class="form_group row_group">
+                    <div class="half_width">
+                        <label>Bloco</label>
+                        <select id="maquina_bloco">
+                            <option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option>
+                            <option value="5">5</option><option value="6">6</option><option value="7">7</option><option value="8">8</option>
+                        </select>
+                    </div>
+                    <div class="half_width">
+                        <label>Forno</label>
+                        <select id="maquina_forno"></select>
+                    </div>
+                </div>
+
+                <div class="form_group">
+                    <label>Máquina</label>
+                    <select id="maquina_maquina"></select>
+                </div>
+
+                <div class="form_group row_group">
+                    <div class="half_width">
+                        <label>Altura Programada</label>
+                        <select id="maquina_altura_programada">
+                            <option value="810">810</option>
+                            <option value="900">900</option>
+                            <option value="950">950</option>
+                            <option value="1000">1000</option>
+                            <option value="1050">1050</option>
+                        </select>
+                    </div>
+                    <div class="half_width">
+                        <label>Perfil de Carga</label>
+                        <select id="maquina_perfil_carga">
+                            <option value="2 camadas">2 Camadas</option>
+                            <option value="carga baixa">Carga Baixa</option>
+                            <option value="normal 1">Normal 1</option>
+                            <option value="normal 2">Normal 2</option>
+                            <option value="reduzida">Reduzida</option>
+                        </select>
+                    </div>
+                </div>
+
+                <p class="label_destaque maquinas_form_secao">Medições da Bandeja (10 a 60)</p>
+                <div class="form_group row_group">
+                    <div class="half_width"><label>Frontal Dir.</label><input type="number" id="maquina_frontal_dir" min="10" max="60"></div>
+                    <div class="half_width"><label>Frontal Esq.</label><input type="number" id="maquina_frontal_esq" min="10" max="60"></div>
+                </div>
+                <div class="form_group row_group">
+                    <div class="half_width"><label>Centro Dir.</label><input type="number" id="maquina_centro_dir" min="10" max="60"></div>
+                    <div class="half_width"><label>Centro 1 Dir.Esq.</label><input type="number" id="maquina_centro_1_dir_esq" min="10" max="60"></div>
+                </div>
+                <div class="form_group row_group">
+                    <div class="half_width"><label>Centro Esq.</label><input type="number" id="maquina_centro_esq" min="10" max="60"></div>
+                    <div class="half_width"><label>Centro 2 Dir.Esq.</label><input type="number" id="maquina_centro_2_dir_esq" min="10" max="60"></div>
+                </div>
+                <div class="form_group row_group">
+                    <div class="half_width"><label>Traseira Dir.</label><input type="number" id="maquina_traseira_dir" min="10" max="60"></div>
+                    <div class="half_width"><label>Traseira Esq.</label><input type="number" id="maquina_traseira_esq" min="10" max="60"></div>
+                </div>
+
+                <p class="label_destaque maquinas_form_secao">Compactação e Níveis</p>
+                <div class="form_group row_group">
+                    <div class="half_width"><label>Tempo de Compactação (min)</label><input type="number" step="0.1" min="0" id="maquina_tempo_compactacao"></div>
+                    <div class="half_width"><label>Pressão de Compactação (bar)</label><input type="number" step="0.1" min="0" id="maquina_pressao_compactacao"></div>
+                </div>
+                <div class="form_group row_group">
+                    <div class="half_width"><label>Nível do Óleo (%)</label><input type="number" min="0" max="100" id="maquina_nivel_oleo"></div>
+                    <div class="half_width"><label>Nível da Bacia (%)</label><input type="number" min="0" max="100" id="maquina_nivel_bacia"></div>
+                </div>
+
+                <div class="form_group">
+                    <label>Observação</label>
+                    <textarea id="maquina_observacao" rows="3"></textarea>
+                </div>
+
+                <div class="botoes_form">
+                    <button id="btn_salvar_maquina" class="btn_salvar">Adicionar Registro</button>
+                    <button id="btn_cancelar_edicao_maquina" class="btn_cancelar_edicao" style="display: none;">Cancelar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="modal_tabela_maquinas" class="modal_overlay">
+        <div class="modal_content modal_large" style="width: 95%; max-width: 2000px; height: 85vh; display: flex; flex-direction: column;">
+            <header class="modal_header">
+                <h3>Banco de Dados - Máquinas</h3>
+                <button id="fechar_modal_tabela_maquinas" class="close_btn">&times;</button>
+            </header>
+
+            <div class="tabela_filtros">
+                <div>
+                    <button id="btn_limpar_filtros_tabela_maquinas" class="btn_acao btn_secundario">✖ Limpar Filtros</button>
+                </div>
+                <div>
+                    <button id="btn_novo_tabela_maquina" class="btn_acao" style="background-color: #32CD32;">➕ Adicionar Novo</button>
+                </div>
+            </div>
+
+            <div class="modal_body" style="overflow: auto; padding: 0;">
+                <table class="data_table" id="tabela_banco_maquinas">
+                    <thead>
+                        <tr>
+                            <th>Data</th><th>Bat.</th><th>Bloco</th><th>Forno</th><th>Máquina</th>
+                            <th>Alt. Prog.</th><th>Perfil</th><th>Alt. Média</th><th>Desvio</th><th>Gatilho</th>
+                            <th>Registrado por</th><th style="width: 80px;">Ações</th>
+                        </tr>
+                        <tr class="linha_filtros_tabela">
+                            <th><input type="text" id="ftabm_data" class="input_filtro_col" placeholder="aaaa-mm-dd"></th>
+                            <th>
+                                <select id="ftabm_bateria" class="input_filtro_col">
+                                    <option value="Todas">Todas</option><option value="A">A</option><option value="B">B</option><option value="C">C</option>
+                                </select>
+                            </th>
+                            <th>
+                                <select id="ftabm_bloco" class="input_filtro_col">
+                                    <option value="Todos">Todos</option><option value="1">1</option><option value="2">2</option><option value="3">3</option>
+                                    <option value="4">4</option><option value="5">5</option><option value="6">6</option><option value="7">7</option><option value="8">8</option>
+                                </select>
+                            </th>
+                            <th><select id="ftabm_forno" class="input_filtro_col"><option value="Todos">Todos</option></select></th>
+                            <th>
+                                <select id="ftabm_maquina" class="input_filtro_col">
+                                    <option value="Todas">Todas</option>
+                                    <option value="31A">31A</option><option value="32A">32A</option>
+                                    <option value="31B">31B</option><option value="32B">32B</option>
+                                    <option value="31C">31C</option><option value="32C">32C</option>
+                                </select>
+                            </th>
+                            <th></th>
+                            <th></th>
+                            <th></th>
+                            <th></th>
+                            <th>
+                                <select id="ftabm_gatilho" class="input_filtro_col">
+                                    <option value="Todos">Todos</option><option value="OK">OK</option><option value="DESVIO">DESVIO</option>
+                                </select>
+                            </th>
+                            <th><input type="text" id="ftabm_registrado_por" class="input_filtro_col" placeholder="Filtrar..."></th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody id="tbody_banco_maquinas"></tbody>
+                </table>
             </div>
         </div>
     </div>

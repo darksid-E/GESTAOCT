@@ -14,6 +14,7 @@ const SUPABASE_KEY = window.SUPABASE_CONFIG?.key || '';
 // PostgREST tentava interpretar "storage" como parte da rota REST).
 const SUPABASE_STORAGE_BASE = SUPABASE_URL.replace(/\/rest\/v1\/?$/, '');
 const SUPABASE_TABLE = 'reparos';
+const SUPABASE_TABLE_MAQUINAS = 'maquinas';
 const SUPABASE_AUTH_BASE = `${SUPABASE_STORAGE_BASE}/auth/v1`;
 const SUPABASE_TABLE_PERFIS = 'perfis';
 const CHAVE_SESSAO_LOCAL = 'sessaoAuthCT';
@@ -32,18 +33,11 @@ function carregarSessaoLocal() {
 export const state = {
     supabaseAtivo: Boolean(SUPABASE_URL && SUPABASE_KEY),
     dbReparos: [],
+    dbMaquinas: [],
     // { access_token, refresh_token, expires_at, user, perfil }
     sessaoAtual: carregarSessaoLocal(),
-    // Dados de temperatura (buscados ao vivo do PI Web API, só em
-    // memória — nunca vão pro Supabase)
-    dadosTemperaturaPI: null,
-    periodoTempInicio: null,
-    periodoTempFim: null,
-    ordenacaoTemp: { coluna: null, direcao: 'asc' },
-    intervaloAtualizacaoTemp: null,
     // Instâncias de gráficos Chart.js
     charts: {
-        temperaturaGeral: null,
         dashboardStatus: null,
         dashboardRetro: null,
     },
@@ -67,6 +61,7 @@ export const config = {
     SUPABASE_KEY,
     SUPABASE_STORAGE_BASE,
     SUPABASE_TABLE,
+    SUPABASE_TABLE_MAQUINAS,
     SUPABASE_AUTH_BASE,
     SUPABASE_TABLE_PERFIS,
     CHAVE_SESSAO_LOCAL,
@@ -108,5 +103,17 @@ export function carregarCacheLocal() {
 }
 export function salvarCacheLocal() {
     localStorage.setItem('dbReparosCoke', JSON.stringify(state.dbReparos));
+}
+export function carregarCacheLocalMaquinas() {
+    try {
+        return JSON.parse(localStorage.getItem('dbMaquinasCoke') || '[]') || [];
+    }
+    catch (erro) {
+        console.warn('Não foi possível ler o cache local de máquinas:', erro);
+        return [];
+    }
+}
+export function salvarCacheLocalMaquinas() {
+    localStorage.setItem('dbMaquinasCoke', JSON.stringify(state.dbMaquinas));
 }
 //# sourceMappingURL=state.js.map

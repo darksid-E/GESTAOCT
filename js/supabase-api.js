@@ -12,9 +12,9 @@ function headersSupabase(extra = {}) {
     };
 }
 
-async function requisicaoSupabase(caminho, options = {}) {
+async function requisicaoSupabase(tabela, caminho, options = {}) {
     if (!state.supabaseAtivo) throw new Error('Supabase não configurado.');
-    const resposta = await fetch(`${config.SUPABASE_URL}/${config.SUPABASE_TABLE}${caminho}`, {
+    const resposta = await fetch(`${config.SUPABASE_URL}/${tabela}${caminho}`, {
         ...options,
         headers: headersSupabase(options.headers || {})
     });
@@ -27,11 +27,11 @@ async function requisicaoSupabase(caminho, options = {}) {
 }
 
 export async function listarReparosSupabase() {
-    return requisicaoSupabase('?select=*&order=id_reparo.asc');
+    return requisicaoSupabase(config.SUPABASE_TABLE, '?select=*&order=id_reparo.asc');
 }
 
 export async function criarReparoSupabase(dados) {
-    const resposta = await requisicaoSupabase('', {
+    const resposta = await requisicaoSupabase(config.SUPABASE_TABLE, '', {
         method: 'POST',
         headers: { Prefer: 'return=representation' },
         body: JSON.stringify(dados)
@@ -40,7 +40,7 @@ export async function criarReparoSupabase(dados) {
 }
 
 export async function atualizarReparoSupabase(idReparo, dados) {
-    const resposta = await requisicaoSupabase(`?id_reparo=eq.${encodeURIComponent(idReparo)}`, {
+    const resposta = await requisicaoSupabase(config.SUPABASE_TABLE, `?id_reparo=eq.${encodeURIComponent(idReparo)}`, {
         method: 'PATCH',
         headers: { Prefer: 'return=representation' },
         body: JSON.stringify(dados)
@@ -49,7 +49,38 @@ export async function atualizarReparoSupabase(idReparo, dados) {
 }
 
 export async function excluirReparoSupabase(idReparo) {
-    await requisicaoSupabase(`?id_reparo=eq.${encodeURIComponent(idReparo)}`, {
+    await requisicaoSupabase(config.SUPABASE_TABLE, `?id_reparo=eq.${encodeURIComponent(idReparo)}`, {
+        method: 'DELETE',
+        headers: { Prefer: 'return=minimal' }
+    });
+}
+
+// --- "maquinas" (lançamentos de altura/perfil de carga) ---
+
+export async function listarMaquinasSupabase() {
+    return requisicaoSupabase(config.SUPABASE_TABLE_MAQUINAS, '?select=*&order=id.desc');
+}
+
+export async function criarMaquinaSupabase(dados) {
+    const resposta = await requisicaoSupabase(config.SUPABASE_TABLE_MAQUINAS, '', {
+        method: 'POST',
+        headers: { Prefer: 'return=representation' },
+        body: JSON.stringify(dados)
+    });
+    return resposta[0];
+}
+
+export async function atualizarMaquinaSupabase(id, dados) {
+    const resposta = await requisicaoSupabase(config.SUPABASE_TABLE_MAQUINAS, `?id=eq.${encodeURIComponent(id)}`, {
+        method: 'PATCH',
+        headers: { Prefer: 'return=representation' },
+        body: JSON.stringify(dados)
+    });
+    return resposta[0];
+}
+
+export async function excluirMaquinaSupabase(id) {
+    await requisicaoSupabase(config.SUPABASE_TABLE_MAQUINAS, `?id=eq.${encodeURIComponent(id)}`, {
         method: 'DELETE',
         headers: { Prefer: 'return=minimal' }
     });
@@ -80,7 +111,7 @@ export async function uploadFotoSupabase(file, tipoDaFoto) {
 }
 
 export async function importarReparosSupabase(registros) {
-    const resposta = await requisicaoSupabase('?on_conflict=id_reparo', {
+    const resposta = await requisicaoSupabase(config.SUPABASE_TABLE, '?on_conflict=id_reparo', {
         method: 'POST',
         headers: { Prefer: 'resolution=merge-duplicates,return=representation' },
         body: JSON.stringify(registros)

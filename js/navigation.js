@@ -3,7 +3,7 @@
 // =========================================================
 import { state, config } from './state.js';
 import { renderizarDashboard } from './dashboard.js';
-import { renderizarGraficoTemperaturaTab } from './temperaturas.js';
+import { renderizarPaginaMaquinas } from './maquinas.js';
 
 let menuButton, sideBar, navButtons, pageSections, sidebarBackdrop;
 
@@ -25,7 +25,7 @@ export function irParaAba(targetId) {
     if (targetSection) targetSection.classList.add("active_section");
 
     if (targetId === 'dashboard') { renderizarDashboard(); }
-    if (targetId === 'temperaturas') { renderizarGraficoTemperaturaTab(); }
+    if (targetId === 'maquinas') { renderizarPaginaMaquinas(); }
 }
 
 export function initNavigation() {
