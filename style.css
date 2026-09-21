@@ -846,6 +846,18 @@ body {
 
 .maquinas_stat_altura { border-color: var(--cor-destaque); } .maquinas_stat_altura p { color: var(--cor-destaque-escura); }
 .maquinas_stat_aderencia { border-color: var(--cor-status-concluido); } .maquinas_stat_aderencia p { color: var(--cor-status-concluido); }
+.maquinas_card_indicadores {
+    display: flex;
+    justify-content: space-between;
+    gap: 6px;
+    font-size: 0.68rem;
+    color: var(--texto-suave);
+    background: var(--bg-sutil);
+    border-radius: var(--raio-sm);
+    padding: 4px 6px;
+    margin-bottom: 8px;
+}
+.maquinas_card_indicadores strong { color: var(--cor-primaria); font-size: 0.75rem; }
 
 .maquinas_diagrama_scroll {
     display: flex;

@@ -55,6 +55,7 @@ export const state = {
     // a contagem dos cards de resumo (Inspeção/Não Reparado/Andamento/
     // Concluído), o mapa em si continua mostrando as 3 baterias sempre.
     filtroBateriaReparos: 'Todas',
+    filtroBateriaMaquinas: 'Todas',
 };
 export const config = {
     SUPABASE_URL,

@@ -203,7 +203,7 @@ function instanciarConjuntoForno(numF, lado, bat, bloco, offsetX, offsetZ, isFro
 }
 
 export function construirCluster3D(bat, bloco, fornoStr, ladoStr) {
-    if (!state.three.fornosGroup) return;
+    if (!state.three.fornosGroup) return; // 3D ainda não inicializou (ver setTimeout em modal-reparo.js) — a próxima chamada de atualizarAlvoVisual() cobre isso
     while (state.three.fornosGroup.children.length > 0) { state.three.fornosGroup.remove(state.three.fornosGroup.children[0]); }
     let fornoCentro = parseInt(fornoStr) || 1;
     let ladoFrontal = (ladoStr === 'Ambos') ? 'LC' : ladoStr;

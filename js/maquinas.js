@@ -64,7 +64,7 @@ function abrirModalNovaMaquina() {
 // o Supabase ativo é a trigger do banco que calcula isso de verdade.
 function calcularIndicadoresLocal(dados) {
     const soma = CAMPOS_BANDEJA.reduce((acc, c) => acc + Number(dados[c] || 0), 0);
-    const alturaMedia = Math.round((soma / 8) * 100) / 100;
+    const alturaMedia = Math.round((1300 - (soma / 8) * 10) * 100) / 100;
     const desvio = Math.round((alturaMedia - dados.altura_programada) * 100) / 100;
     const gatilho = Math.abs(desvio) > 30 ? 'DESVIO' : 'OK';
     return { altura_media: alturaMedia, desvio, gatilho };
@@ -152,28 +152,41 @@ function mediaCampo(lista, campo) {
     return soma / lista.length;
 }
 
+export function aplicarFiltroBateriaMaquinas() {
+    const filtroBat = state.filtroBateriaMaquinas || 'Todas';
+    document.querySelectorAll('.maquinas_bateria_bloco').forEach(bloco => {
+        const visivel = filtroBat === 'Todas' || bloco.dataset.bateria === filtroBat;
+        bloco.style.display = visivel ? '' : 'none';
+    });
+}
+
 export function renderizarPaginaMaquinas() {
     const filtrados = obterRegistrosNoPeriodo();
 
     document.querySelectorAll('.maquinas_card').forEach(card => {
         const codigoMaquina = card.dataset.maquina;
         const registrosDaMaquina = filtrados.filter(r => r.maquina === codigoMaquina);
+
         CAMPOS_BANDEJA.forEach(campo => {
             const span = card.querySelector(`span[data-campo="${campo}"]`);
             if (!span) return;
             const media = mediaCampo(registrosDaMaquina, campo);
             span.textContent = media === null ? '-' : media.toFixed(1);
         });
+
+        const alturaMediaMaquina = mediaCampo(registrosDaMaquina, 'altura_media');
+        const indicadorAltura = card.querySelector('strong[data-indicador="altura_media"]');
+        if (indicadorAltura) indicadorAltura.textContent = alturaMediaMaquina === null ? '-' : `${alturaMediaMaquina.toFixed(1)} mm`;
+
+        const totalMaquina = registrosDaMaquina.length;
+        const totalOkMaquina = registrosDaMaquina.filter(r => r.gatilho === 'OK').length;
+        const indicadorAderencia = card.querySelector('strong[data-indicador="aderencia"]');
+        if (indicadorAderencia) {
+            indicadorAderencia.textContent = totalMaquina === 0 ? '-' : `${Math.round((totalOkMaquina / totalMaquina) * 100)}% (${totalOkMaquina}/${totalMaquina})`;
+        }
     });
 
-    const mediaAlturaGeral = mediaCampo(filtrados, 'altura_media');
-    document.getElementById('maquinas_media_altura').textContent =
-        mediaAlturaGeral === null ? '-' : `${mediaAlturaGeral.toFixed(1)} mm`;
-
-    const total = filtrados.length;
-    const totalOk = filtrados.filter(r => r.gatilho === 'OK').length;
-    document.getElementById('maquinas_aderencia').textContent =
-        total === 0 ? '-' : `${Math.round((totalOk / total) * 100)}% (${totalOk}/${total})`;
+    aplicarFiltroBateriaMaquinas();
 }
 
 // --- Tabela de dados (modal) ---
@@ -311,6 +324,11 @@ export function initMaquinas() {
 
     document.getElementById('maquina_bateria').addEventListener('change', atualizarOpcoesMaquinaPorBateria);
     atualizarOpcoesMaquinaPorBateria();
+
+    document.getElementById('maquinas_filtro_bat').addEventListener('change', (e) => {
+        state.filtroBateriaMaquinas = e.target.value;
+        aplicarFiltroBateriaMaquinas();
+    });
 
     // Período do diagrama/exportação — padrão: hoje
     const hoje = new Date().toISOString().split('T')[0];

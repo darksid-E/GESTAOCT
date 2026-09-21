@@ -104,25 +104,31 @@
                 <button id="btn_abrir_manual_maquina" class="btn_acao btn_bloco_grande">Novo Lançamento</button>
 
                 <div class="dash_filters">
-                    <label>Período (também usado no "Baixar Banco"): </label>
+                    <label>Filtro Bateria: </label>
+                    <select id="maquinas_filtro_bat">
+                        <option value="Todas">Todas</option>
+                        <option value="A">Bateria A</option>
+                        <option value="B">Bateria B</option>
+                        <option value="C">Bateria C</option>
+                    </select>
+                    <label class="maquinas_periodo_separador">Período (também usado no "Baixar Banco"): </label>
                     <input type="date" id="maquinas_filtro_data_inicio">
                     <span class="maquinas_periodo_separador">até</span>
                     <input type="date" id="maquinas_filtro_data_fim">
                 </div>
 
-                <div class="resumo_cards">
-                    <div class="card_stat maquinas_stat_altura"><h3>Altura Média de Carga</h3><p id="maquinas_media_altura">-</p></div>
-                    <div class="card_stat maquinas_stat_aderencia"><h3>Aderência à Programação</h3><p id="maquinas_aderencia">-</p></div>
-                </div>
-
-                <p class="temp_dica_zoom">💡 Os valores do diagrama abaixo são a média do período selecionado acima (padrão: hoje).</p>
+                <p class="temp_dica_zoom">💡 Os valores abaixo são a média do período selecionado acima (padrão: hoje).</p>
 
                 <div class="maquinas_diagrama_scroll">
-                    <div class="maquinas_bateria_bloco">
+                    <div class="maquinas_bateria_bloco" data-bateria="A">
                         <h3 class="maquinas_bateria_titulo">Bateria A</h3>
                         <div class="maquinas_par">
                             <div class="maquinas_card" data-maquina="31A">
                                 <h4 class="maquinas_card_titulo">Máquina 31A</h4>
+                                <div class="maquinas_card_indicadores">
+                                    <span>Alt. Média: <strong data-indicador="altura_media">-</strong></span>
+                                    <span>Aderência: <strong data-indicador="aderencia">-</strong></span>
+                                </div>
                                 <table class="maquinas_bandeja_tabela">
                                     <tr><td class="cel_esq">Frontal Esq.<br><span data-campo="frontal_esq">-</span></td><td class="cel_dir">Frontal Dir.<br><span data-campo="frontal_dir">-</span></td></tr>
                                     <tr><td class="cel_esq">Centro Esq.<br><span data-campo="centro_esq">-</span></td><td class="cel_dir">Centro Dir.<br><span data-campo="centro_dir">-</span></td></tr>
@@ -132,6 +138,10 @@
                             </div>
                             <div class="maquinas_card" data-maquina="32A">
                                 <h4 class="maquinas_card_titulo">Máquina 32A</h4>
+                                <div class="maquinas_card_indicadores">
+                                    <span>Alt. Média: <strong data-indicador="altura_media">-</strong></span>
+                                    <span>Aderência: <strong data-indicador="aderencia">-</strong></span>
+                                </div>
                                 <table class="maquinas_bandeja_tabela">
                                     <tr><td class="cel_esq">Frontal Esq.<br><span data-campo="frontal_esq">-</span></td><td class="cel_dir">Frontal Dir.<br><span data-campo="frontal_dir">-</span></td></tr>
                                     <tr><td class="cel_esq">Centro Esq.<br><span data-campo="centro_esq">-</span></td><td class="cel_dir">Centro Dir.<br><span data-campo="centro_dir">-</span></td></tr>
@@ -142,11 +152,15 @@
                         </div>
                     </div>
 
-                    <div class="maquinas_bateria_bloco">
+                    <div class="maquinas_bateria_bloco" data-bateria="B">
                         <h3 class="maquinas_bateria_titulo">Bateria B</h3>
                         <div class="maquinas_par">
                             <div class="maquinas_card" data-maquina="31B">
                                 <h4 class="maquinas_card_titulo">Máquina 31B</h4>
+                                <div class="maquinas_card_indicadores">
+                                    <span>Alt. Média: <strong data-indicador="altura_media">-</strong></span>
+                                    <span>Aderência: <strong data-indicador="aderencia">-</strong></span>
+                                </div>
                                 <table class="maquinas_bandeja_tabela">
                                     <tr><td class="cel_esq">Frontal Esq.<br><span data-campo="frontal_esq">-</span></td><td class="cel_dir">Frontal Dir.<br><span data-campo="frontal_dir">-</span></td></tr>
                                     <tr><td class="cel_esq">Centro Esq.<br><span data-campo="centro_esq">-</span></td><td class="cel_dir">Centro Dir.<br><span data-campo="centro_dir">-</span></td></tr>
@@ -156,6 +170,10 @@
                             </div>
                             <div class="maquinas_card" data-maquina="32B">
                                 <h4 class="maquinas_card_titulo">Máquina 32B</h4>
+                                <div class="maquinas_card_indicadores">
+                                    <span>Alt. Média: <strong data-indicador="altura_media">-</strong></span>
+                                    <span>Aderência: <strong data-indicador="aderencia">-</strong></span>
+                                </div>
                                 <table class="maquinas_bandeja_tabela">
                                     <tr><td class="cel_esq">Frontal Esq.<br><span data-campo="frontal_esq">-</span></td><td class="cel_dir">Frontal Dir.<br><span data-campo="frontal_dir">-</span></td></tr>
                                     <tr><td class="cel_esq">Centro Esq.<br><span data-campo="centro_esq">-</span></td><td class="cel_dir">Centro Dir.<br><span data-campo="centro_dir">-</span></td></tr>
@@ -166,11 +184,15 @@
                         </div>
                     </div>
 
-                    <div class="maquinas_bateria_bloco">
+                    <div class="maquinas_bateria_bloco" data-bateria="C">
                         <h3 class="maquinas_bateria_titulo">Bateria C</h3>
                         <div class="maquinas_par">
                             <div class="maquinas_card" data-maquina="31C">
                                 <h4 class="maquinas_card_titulo">Máquina 31C</h4>
+                                <div class="maquinas_card_indicadores">
+                                    <span>Alt. Média: <strong data-indicador="altura_media">-</strong></span>
+                                    <span>Aderência: <strong data-indicador="aderencia">-</strong></span>
+                                </div>
                                 <table class="maquinas_bandeja_tabela">
                                     <tr><td class="cel_esq">Frontal Esq.<br><span data-campo="frontal_esq">-</span></td><td class="cel_dir">Frontal Dir.<br><span data-campo="frontal_dir">-</span></td></tr>
                                     <tr><td class="cel_esq">Centro Esq.<br><span data-campo="centro_esq">-</span></td><td class="cel_dir">Centro Dir.<br><span data-campo="centro_dir">-</span></td></tr>
@@ -180,6 +202,10 @@
                             </div>
                             <div class="maquinas_card" data-maquina="32C">
                                 <h4 class="maquinas_card_titulo">Máquina 32C</h4>
+                                <div class="maquinas_card_indicadores">
+                                    <span>Alt. Média: <strong data-indicador="altura_media">-</strong></span>
+                                    <span>Aderência: <strong data-indicador="aderencia">-</strong></span>
+                                </div>
                                 <table class="maquinas_bandeja_tabela">
                                     <tr><td class="cel_esq">Frontal Esq.<br><span data-campo="frontal_esq">-</span></td><td class="cel_dir">Frontal Dir.<br><span data-campo="frontal_dir">-</span></td></tr>
                                     <tr><td class="cel_esq">Centro Esq.<br><span data-campo="centro_esq">-</span></td><td class="cel_dir">Centro Dir.<br><span data-campo="centro_dir">-</span></td></tr>

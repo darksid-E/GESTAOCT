@@ -10,9 +10,8 @@ import { initMapa2D } from './mapa2d.js';
 import { initModalReparo } from './modal-reparo.js';
 import { initImpressao } from './impressao.js';
 import { initTabela } from './tabela.js';
-import { initMaquinas } from './maquinas.js';
 import { initDashboard } from './dashboard.js';
-
+import { initMaquinas } from './maquinas.js';
 
 document.addEventListener('DOMContentLoaded', () => {
     // --- 1. Menu, abas e cadastro/login ---
@@ -31,6 +30,6 @@ document.addEventListener('DOMContentLoaded', () => {
     initModalReparo();
     initImpressao();
     initTabela();
-    initDashboard();
     initMaquinas();
+    initDashboard();
 });

@@ -57,6 +57,7 @@ interface EstadoApp {
     // a contagem dos cards de resumo (Inspeção/Não Reparado/Andamento/
     // Concluído), o mapa em si continua mostrando as 3 baterias sempre.
     filtroBateriaReparos: string;
+    filtroBateriaMaquinas: string;
 }
 
 export const state: EstadoApp = {
@@ -89,6 +90,7 @@ export const state: EstadoApp = {
     // a contagem dos cards de resumo (Inspeção/Não Reparado/Andamento/
     // Concluído), o mapa em si continua mostrando as 3 baterias sempre.
     filtroBateriaReparos: 'Todas',
+    filtroBateriaMaquinas: 'Todas',
 };
 
 export const config = {
