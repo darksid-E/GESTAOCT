@@ -151,6 +151,7 @@ body {
 .nav_btn[data-target="descarbonizacao"]::before { content: '♻'; filter: none; font-size: 15px; text-align: center; }
 .nav_btn[data-target="cadastro"]::before { content: '📋'; filter: none; font-size: 15px; text-align: center; }
 .nav_btn[data-target="dashboard"]::before { content: '📊'; filter: none; font-size: 15px; text-align: center; }
+.nav_btn[data-target="maquinas"]::before { content: '⚖'; filter: none; font-size: 15px; text-align: center; }
 
 .nav_btn:hover { background-color: rgba(255, 255, 255, 0.08); color: white; transform: translateX(2px); }
 .nav_btn.active_link {
