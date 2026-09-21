@@ -57,7 +57,7 @@ export function initDashboard() {
         const a = document.createElement('a'); a.href = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(state.dbReparos, null, 4));
         a.download = `db_reparos_${new Date().getTime()}.json`; a.click();
     });
-    document.getElementById("btn_trigger_import").addEventListener("click", () => document.getElementById("btn_importar_json").click());
+    document.getElementById("btn_trigger_import")?.addEventListener("click", () => document.getElementById("btn_importar_json").click());
     document.getElementById("btn_importar_json").addEventListener("change", (e) => {
         if (!isAdminAtual()) { alert('Apenas usuários administradores podem carregar um banco de dados.'); e.target.value = ''; return; }
         const file = e.target.files[0]; if (!file) return; const reader = new FileReader();

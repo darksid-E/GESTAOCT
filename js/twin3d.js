@@ -203,6 +203,7 @@ function instanciarConjuntoForno(numF, lado, bat, bloco, offsetX, offsetZ, isFro
 }
 
 export function construirCluster3D(bat, bloco, fornoStr, ladoStr) {
+    if (!state.three.fornosGroup) return;
     while (state.three.fornosGroup.children.length > 0) { state.three.fornosGroup.remove(state.three.fornosGroup.children[0]); }
     let fornoCentro = parseInt(fornoStr) || 1;
     let ladoFrontal = (ladoStr === 'Ambos') ? 'LC' : ladoStr;
