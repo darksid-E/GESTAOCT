@@ -3,7 +3,7 @@
 // =========================================================
 import { state, isAdminAtual, nomeExibicaoAtual, salvarCacheLocalMaquinas } from './state.js';
 import { criarMaquinaSupabase, atualizarMaquinaSupabase, excluirMaquinaSupabase } from './supabase-api.js';
-import { formatarDataBR } from './utils.js';
+import { formatarDataBR, debounce } from './utils.js';
 
 // Os 8 pontos de medição da bandeja, na ordem em que aparecem no
 // modal — usados tanto pra montar/ler o formulário quanto pra tirar a
@@ -358,7 +358,7 @@ export function initMaquinas() {
     document.getElementById('btn_limpar_filtros_tabela_maquinas').addEventListener('click', limparFiltrosTabelaMaquinas);
 
     [fBateriaM, fBlocoM, fFornoM, fMaquinaM, fGatilhoM].forEach(el => el.addEventListener('change', renderizarTabelaMaquinas));
-    [fDataM, fRegistradoPorM].forEach(el => el.addEventListener('input', renderizarTabelaMaquinas));
+    [fDataM, fRegistradoPorM].forEach(el => el.addEventListener('input', debounce(renderizarTabelaMaquinas)));
 
     document.getElementById('btn_salvar_maquina').addEventListener('click', async () => {
         if (!isAdminAtual()) { alert('Apenas usuários administradores podem lançar ou editar registros de máquina.'); return; }

@@ -97,6 +97,39 @@ const geoProtectorSuperior = criarGeometriaProtectorSuperior();
 const geoProtectorInferior = new THREE.BoxGeometry(8.6, 0.7, 0.15);
 const geoProtectorIntermediario = new THREE.BoxGeometry(1.3, 1.95, 0.15);
 
+// =========================================================
+// Renderização sob demanda (em vez de um loop de 60fps rodando pra
+// sempre): só desenha quando algo muda de verdade — a câmera sendo
+// arrastada ou os dados do cluster mudando. Um requestAnimationFrame
+// que nunca para era o que fazia a página pesar no celular (gastando
+// GPU o tempo todo, mesmo com o modal fechado) e derrubava o
+// contexto WebGL no PC depois de um tempo ocioso (o navegador
+// reclama o contexto de abas que ficam exigindo GPU sem necessidade).
+//
+// framesRestantesDamping mantém um pequeno "rabo" de ~0.6s de frames
+// depois de qualquer interação, só pra o enableDamping do
+// OrbitControls conseguir suavizar a parada (inércia) — depois disso
+// o loop se desliga sozinho até a próxima interação.
+let idFrame3D = null;
+let framesRestantesDamping = 0;
+
+export function renderizarFrame3D() {
+    if (!state.three.renderer) return;
+    state.three.controls.update();
+    state.three.renderer.render(state.three.scene, state.three.camera);
+}
+
+function loopDamping3D() {
+    renderizarFrame3D();
+    framesRestantesDamping--;
+    idFrame3D = framesRestantesDamping > 0 ? requestAnimationFrame(loopDamping3D) : null;
+}
+
+function agendarRenderComDamping3D() {
+    framesRestantesDamping = 40; // ~0.6s a 60fps
+    if (!idFrame3D) idFrame3D = requestAnimationFrame(loopDamping3D);
+}
+
 export function init3D() {
     if (state.three.scene) return;
     container3D = container3D || document.getElementById('container_3d');
@@ -109,11 +142,15 @@ export function init3D() {
     const width = container3D.clientWidth; const height = container3D.clientHeight;
     state.three.camera = new THREE.PerspectiveCamera(40, width / height, 0.1, 1000);
     state.three.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+    // Em telas retina (iPhone, por exemplo) devicePixelRatio pode ser 3 —
+    // desenhar nessa resolução é caro à toa; 2 já fica nítido o bastante.
+    state.three.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
     state.three.renderer.setSize(width, height);
     container3D.appendChild(state.three.renderer.domElement);
 
     state.three.controls = new THREE.OrbitControls(state.three.camera, state.three.renderer.domElement);
     state.three.controls.enableDamping = true; state.three.controls.dampingFactor = 0.05;
+    state.three.controls.addEventListener('change', agendarRenderComDamping3D);
 
     state.three.camera.position.set(0, 7.5, 27.5);
     state.three.controls.target.set(0, 2.5, 0);
@@ -122,12 +159,7 @@ export function init3D() {
     const dirLight = new THREE.DirectionalLight(0xffffff, 0.6);
     dirLight.position.set(15, 30, 20); state.three.scene.add(dirLight);
 
-    function animate() {
-        requestAnimationFrame(animate);
-        state.three.controls.update();
-        state.three.renderer.render(state.three.scene, state.three.camera);
-    }
-    animate();
+    renderizarFrame3D();
 }
 
 window.mudarCamera3D = function (visao) {
@@ -136,6 +168,7 @@ window.mudarCamera3D = function (visao) {
     if (visao === 'frontal') { cam.position.set(0, 7.5, 27.5); controls.target.set(0, 2.5, 0); }
     if (visao === 'topo') { cam.position.set(0, 27.5, 0.05); controls.target.set(0, 0, 0); }
     if (visao === 'lateral') { cam.position.set(22.5, 5, 0); controls.target.set(0, 2.5, 0); }
+    renderizarFrame3D();
 };
 
 function criarSpriteTexto(texto) {
@@ -218,6 +251,7 @@ export function construirCluster3D(bat, bloco, fornoStr, ladoStr) {
 }
 
 export function atualizarCores3D() {
+    if (!state.three.fornosGroup) return;
     const coresStatus = { 'inspecao': 0xFFD700, 'nao_reparado': 0xFF4C4C, 'em_andamento': 0x1E90FF, 'concluido': 0x32CD32 };
 
     state.three.fornosGroup.children.forEach(child => {

@@ -4,7 +4,7 @@
 import { state, isAdminAtual, nomeExibicaoAtual, salvarCacheLocal } from './state.js';
 import { formatarStatus, formatarDataBR, definirValorSelect } from './utils.js';
 import { criarReparoSupabase, atualizarReparoSupabase, excluirReparoSupabase, uploadFotoSupabase } from './supabase-api.js';
-import { init3D, construirCluster3D, atualizarCores3D } from './twin3d.js';
+import { init3D, construirCluster3D, atualizarCores3D, renderizarFrame3D } from './twin3d.js';
 import { processarDadosGlobais } from './mapa2d.js';
 import { renderizarTabela } from './tabela.js';
 import { aplicarPermissoes } from './auth.js';
@@ -30,6 +30,7 @@ export function atualizarAlvoVisual() {
     carregarHistorico(idGerado);
     construirCluster3D(bat, bloco, forno, lado);
     atualizarCores3D();
+    renderizarFrame3D();
     aplicarPermissoes();
 }
 

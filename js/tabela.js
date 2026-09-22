@@ -2,7 +2,7 @@
 // --- 5. TABELA DE DADOS & FILTROS ---
 // =========================================================
 import { state, isAdminAtual } from './state.js';
-import { formatarStatus, formatarDataBR, definirValorSelect, calcularSituacaoPrazo } from './utils.js';
+import { formatarStatus, formatarDataBR, definirValorSelect, calcularSituacaoPrazo, debounce } from './utils.js';
 import { init3D } from './twin3d.js';
 
 let modalTabela, tbodyBanco;
@@ -117,7 +117,7 @@ export function initTabela() {
 
     // Selects filtram no "change"; campos de texto filtram a cada tecla ("input")
     [fStatus, fBateria, fBloco, fForno, fLado, fSituacao].forEach(el => el.addEventListener('change', renderizarTabela));
-    [fData, fId, fProblema, fObservacao, fPrazo, fFim, fCriadoPor].forEach(el => el.addEventListener('input', renderizarTabela));
+    [fData, fId, fProblema, fObservacao, fPrazo, fFim, fCriadoPor].forEach(el => el.addEventListener('input', debounce(renderizarTabela)));
 
     window.abrirEdicaoPelaTabela = function (idReparo) {
         if (!isAdminAtual()) { alert('Apenas usuários administradores podem editar reparos.'); return; }

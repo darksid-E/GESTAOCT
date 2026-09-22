@@ -37,3 +37,13 @@ export function calcularSituacaoPrazo(reg) {
     if (dataHoje > reg.prazo) return { codigo: 'atrasado', texto: 'Atrasado', classe: 'prazo_atrasado' };
     return { codigo: 'no_prazo', texto: 'No Prazo', classe: 'prazo_ok' };
 }
+
+// Espera a digitação parar por `espera` ms antes de rodar `fn` — evita
+// refazer a tabela inteira a cada tecla digitada num filtro de texto.
+export function debounce(fn, espera = 300) {
+    let idTimeout;
+    return (...args) => {
+        clearTimeout(idTimeout);
+        idTimeout = setTimeout(() => fn(...args), espera);
+    };
+}
