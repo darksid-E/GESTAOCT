@@ -187,12 +187,6 @@ export function initMapa2D() {
     const mapaContainer = document.getElementById('baterias_container');
     let elementoComTooltip = null;
 
-    document.getElementById('reparos_filtro_bat').addEventListener('change', (e) => {
-        state.filtroBateriaReparos = e.target.value;
-        aplicarFiltroBateriaMapa();
-        processarDadosGlobais();
-    });
-
     function posicionarTooltipSobre(el) {
         const rect = el.getBoundingClientRect();
         tooltip.style.left = (rect.left + rect.width / 2) + 'px';

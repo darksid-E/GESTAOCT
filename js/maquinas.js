@@ -18,7 +18,7 @@ const CAMPOS_BANDEJA = [
 const MAQUINAS_POR_BATERIA = { A: ['31A', '32A'], B: ['31B', '32B'], C: ['31C', '32C'] };
 
 let modalMaquina, modalTabelaMaquinas, tbodyBancoMaquinas;
-let fDataM, fBateriaM, fBlocoM, fFornoM, fMaquinaM, fGatilhoM, fRegistradoPorM;
+let fDataM, fBateriaM, fBlocoM, fFornoM, fMaquinaM, fGatilhoM, fRegistradoPorM, fObservacaoM;
 
 function textoContem(valorCampo, termoFiltro) {
     if (!termoFiltro) return true;
@@ -202,6 +202,7 @@ function obterRegistrosFiltradosTabelaMaquinas() {
 
     filtrados = filtrados.filter(r => textoContem(r.data, fDataM.value));
     filtrados = filtrados.filter(r => textoContem(r.registrado_por, fRegistradoPorM.value));
+    filtrados = filtrados.filter(r => textoContem(r.observacao, fObservacaoM.value));
 
     return filtrados;
 }
@@ -212,7 +213,7 @@ export function renderizarTabelaMaquinas() {
     const filtrados = obterRegistrosFiltradosTabelaMaquinas();
 
     if (filtrados.length === 0) {
-        tbodyBancoMaquinas.innerHTML = '<tr><td colspan="12" style="text-align:center; color:#888; padding:24px;">Nenhum registro encontrado com os filtros atuais.</td></tr>';
+        tbodyBancoMaquinas.innerHTML = '<tr><td colspan="13" style="text-align:center; color:#888; padding:24px;">Nenhum registro encontrado com os filtros atuais.</td></tr>';
         return;
     }
 
@@ -230,6 +231,7 @@ export function renderizarTabelaMaquinas() {
             <td>${reg.desvio ?? '-'}</td>
             <td><span class="badge_prazo ${reg.gatilho === 'DESVIO' ? 'prazo_atrasado' : 'prazo_ok'}">${reg.gatilho || '-'}</span></td>
             <td>${reg.registrado_por || '-'}</td>
+            <td>${reg.observacao || '-'}</td>
             <td>
                 ${isAdminAtual() ? `
                 <button onclick="editarRegistroMaquina('${reg.id}')" title="Editar">✏️</button>
@@ -242,7 +244,7 @@ export function renderizarTabelaMaquinas() {
 }
 
 function limparFiltrosTabelaMaquinas() {
-    fDataM.value = ''; fRegistradoPorM.value = '';
+    fDataM.value = ''; fRegistradoPorM.value = ''; fObservacaoM.value = '';
     fBateriaM.value = 'Todas'; fBlocoM.value = 'Todos'; fFornoM.value = 'Todos';
     fMaquinaM.value = 'Todas'; fGatilhoM.value = 'Todos';
     renderizarTabelaMaquinas();
@@ -313,6 +315,8 @@ export function initMaquinas() {
     fMaquinaM = document.getElementById('ftabm_maquina');
     fGatilhoM = document.getElementById('ftabm_gatilho');
     fRegistradoPorM = document.getElementById('ftabm_registrado_por');
+    fObservacaoM = document.getElementById('ftabm_observacao');
+    fObservacaoM = document.getElementById('ftabm_observacao');
 
     // Selects de forno (modal e filtro da tabela), padrão "01".."18" do resto do app
     const selForno = document.getElementById('maquina_forno');
@@ -324,11 +328,6 @@ export function initMaquinas() {
 
     document.getElementById('maquina_bateria').addEventListener('change', atualizarOpcoesMaquinaPorBateria);
     atualizarOpcoesMaquinaPorBateria();
-
-    document.getElementById('maquinas_filtro_bat').addEventListener('change', (e) => {
-        state.filtroBateriaMaquinas = e.target.value;
-        aplicarFiltroBateriaMaquinas();
-    });
 
     // Período do diagrama/exportação — padrão: hoje
     const hoje = new Date().toISOString().split('T')[0];
@@ -358,7 +357,7 @@ export function initMaquinas() {
     document.getElementById('btn_limpar_filtros_tabela_maquinas').addEventListener('click', limparFiltrosTabelaMaquinas);
 
     [fBateriaM, fBlocoM, fFornoM, fMaquinaM, fGatilhoM].forEach(el => el.addEventListener('change', renderizarTabelaMaquinas));
-    [fDataM, fRegistradoPorM].forEach(el => el.addEventListener('input', debounce(renderizarTabelaMaquinas)));
+    [fDataM, fRegistradoPorM, fObservacaoM].forEach(el => el.addEventListener('input', debounce(renderizarTabelaMaquinas)));
 
     document.getElementById('btn_salvar_maquina').addEventListener('click', async () => {
         if (!isAdminAtual()) { alert('Apenas usuários administradores podem lançar ou editar registros de máquina.'); return; }

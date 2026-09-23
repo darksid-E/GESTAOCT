@@ -27,7 +27,21 @@
         <aside class="side_bar" id="side_bar">
             <nav>
                 <button class="nav_btn active_link" data-target="reparos">Gestão de Reparos</button>
+                <div class="nav_submenu">
+                    <button class="nav_sub_btn active_link" data-pagina="reparos" data-bateria="Todas">Todas</button>
+                    <button class="nav_sub_btn" data-pagina="reparos" data-bateria="A">Bateria A</button>
+                    <button class="nav_sub_btn" data-pagina="reparos" data-bateria="B">Bateria B</button>
+                    <button class="nav_sub_btn" data-pagina="reparos" data-bateria="C">Bateria C</button>
+                </div>
+
                 <button class="nav_btn" data-target="maquinas">Máquinas</button>
+                <div class="nav_submenu">
+                    <button class="nav_sub_btn active_link" data-pagina="maquinas" data-bateria="Todas">Todas</button>
+                    <button class="nav_sub_btn" data-pagina="maquinas" data-bateria="A">Bateria A</button>
+                    <button class="nav_sub_btn" data-pagina="maquinas" data-bateria="B">Bateria B</button>
+                    <button class="nav_sub_btn" data-pagina="maquinas" data-bateria="C">Bateria C</button>
+                </div>
+
                 <!-- <button class="nav_btn" data-target="tltb">TL=TB</button> -->
                 <!-- <button class="nav_btn" data-target="descarbonizacao">Descarbonização</button> -->
                 <button class="nav_btn" data-target="cadastro">Login</button> 
@@ -50,16 +64,6 @@
                 </div>
 
                 <button id="btn_abrir_manual" class="btn_acao btn_bloco_grande">Novo Reparo</button>
-
-                <div class="dash_filters">
-                    <label>Filtro Bateria: </label>
-                    <select id="reparos_filtro_bat">
-                        <option value="Todas">Todas</option>
-                        <option value="A">Bateria A</option>
-                        <option value="B">Bateria B</option>
-                        <option value="C">Bateria C</option>
-                    </select>
-                </div>
 
                 <div class="resumo_cards">
                     <div class="card_stat inspecao"><h3>Inspeção</h3><p id="count_inspecao">0</p></div>
@@ -104,14 +108,7 @@
                 <button id="btn_abrir_manual_maquina" class="btn_acao btn_bloco_grande">Novo Lançamento</button>
 
                 <div class="dash_filters">
-                    <label>Filtro Bateria: </label>
-                    <select id="maquinas_filtro_bat">
-                        <option value="Todas">Todas</option>
-                        <option value="A">Bateria A</option>
-                        <option value="B">Bateria B</option>
-                        <option value="C">Bateria C</option>
-                    </select>
-                    <label class="maquinas_periodo_separador">Período (também usado no "Baixar Banco"): </label>
+                    <label>Período (também usado no "Baixar Banco"): </label>
                     <input type="date" id="maquinas_filtro_data_inicio">
                     <span class="maquinas_periodo_separador">até</span>
                     <input type="date" id="maquinas_filtro_data_fim">
@@ -533,7 +530,7 @@
                         <tr>
                             <th>Data</th><th>Bat.</th><th>Bloco</th><th>Forno</th><th>Máquina</th>
                             <th>Alt. Prog.</th><th>Perfil</th><th>Alt. Média</th><th>Desvio</th><th>Gatilho</th>
-                            <th>Registrado por</th><th style="width: 80px;">Ações</th>
+                            <th>Registrado por</th><th>Observação</th><th style="width: 80px;">Ações</th>
                         </tr>
                         <tr class="linha_filtros_tabela">
                             <th><input type="text" id="ftabm_data" class="input_filtro_col" placeholder="aaaa-mm-dd"></th>
@@ -567,6 +564,7 @@
                                 </select>
                             </th>
                             <th><input type="text" id="ftabm_registrado_por" class="input_filtro_col" placeholder="Filtrar..."></th>
+                            <th><input type="text" id="ftabm_observacao" class="input_filtro_col" placeholder="Filtrar..."></th>
                             <th></th>
                         </tr>
                     </thead>
