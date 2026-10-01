@@ -877,9 +877,9 @@ body {
 .maquinas_stat_altura { border-color: var(--cor-destaque); } .maquinas_stat_altura p { color: var(--cor-destaque-escura); }
 .maquinas_stat_aderencia { border-color: var(--cor-status-concluido); } .maquinas_stat_aderencia p { color: var(--cor-status-concluido); }
 .maquinas_card_indicadores {
-    display: flex;
-    justify-content: space-between;
-    gap: 6px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 4px 10px;
     font-size: 0.68rem;
     color: var(--texto-suave);
     background: var(--bg-sutil);

@@ -20,6 +20,14 @@ const MAQUINAS_POR_BATERIA = { A: ['31A', '32A'], B: ['31B', '32B'], C: ['31C', 
 let modalMaquina, modalTabelaMaquinas, tbodyBancoMaquinas;
 let fDataM, fBateriaM, fBlocoM, fFornoM, fMaquinaM, fGatilhoM, fRegistradoPorM, fObservacaoM;
 
+// Lê um input numérico opcional: campo vazio vira null (e não 0).
+function lerNumeroOpcional(id) {
+    const bruto = document.getElementById(id).value;
+    if (bruto === '' || bruto === null) return null;
+    const n = Number(bruto);
+    return Number.isFinite(n) ? n : null;
+}
+
 function textoContem(valorCampo, termoFiltro) {
     if (!termoFiltro) return true;
     return String(valorCampo || '').toLowerCase().includes(termoFiltro.trim().toLowerCase());
@@ -63,30 +71,35 @@ function abrirModalNovaMaquina() {
 // quando o Supabase está fora do ar (modo offline com cache local); com
 // o Supabase ativo é a trigger do banco que calcula isso de verdade.
 function calcularIndicadoresLocal(dados) {
-    const soma = CAMPOS_BANDEJA.reduce((acc, c) => acc + Number(dados[c] || 0), 0);
-    const alturaMedia = Math.round((1300 - (soma / 8) * 10) * 100) / 100;
+    // Usa só as medições preenchidas; sem nenhuma medição não há como calcular.
+    const medidas = CAMPOS_BANDEJA.map(c => dados[c]).filter(v => v !== null && v !== undefined && Number.isFinite(v));
+    if (medidas.length === 0) return { altura_media: null, desvio: null, gatilho: null };
+    const soma = medidas.reduce((acc, v) => acc + v, 0);
+    const alturaMedia = Math.round((1300 - (soma / medidas.length) * 10) * 100) / 100;
     const desvio = Math.round((alturaMedia - dados.altura_programada) * 100) / 100;
     const gatilho = Math.abs(desvio) > 30 ? 'DESVIO' : 'OK';
     return { altura_media: alturaMedia, desvio, gatilho };
 }
 
+// Campos de medição/compactação/níveis são opcionais: só valida a faixa
+// quando o campo foi preenchido (null = não informado).
 function validarFormularioMaquina(dados) {
     for (const c of CAMPOS_BANDEJA) {
-        if (!Number.isFinite(dados[c]) || dados[c] < 10 || dados[c] > 60) {
-            return `Todas as medições da bandeja precisam ser um número entre 10 e 60 (campo inválido: ${c.replace(/_/g, ' ')}).`;
+        if (dados[c] !== null && (dados[c] < 10 || dados[c] > 60)) {
+            return `A medição da bandeja precisa estar entre 10 e 60 (campo inválido: ${c.replace(/_/g, ' ')}).`;
         }
     }
-    if (!Number.isFinite(dados.nivel_oleo_pct) || dados.nivel_oleo_pct < 0 || dados.nivel_oleo_pct > 100) {
-        return 'O nível do óleo precisa ser um número entre 0 e 100%.';
+    if (dados.nivel_oleo_pct !== null && (dados.nivel_oleo_pct < 0 || dados.nivel_oleo_pct > 100)) {
+        return 'O nível do óleo precisa estar entre 0 e 100%.';
     }
-    if (!Number.isFinite(dados.nivel_bacia_pct) || dados.nivel_bacia_pct < 0 || dados.nivel_bacia_pct > 100) {
-        return 'O nível da bacia precisa ser um número entre 0 e 100%.';
+    if (dados.nivel_bacia_pct !== null && (dados.nivel_bacia_pct < 0 || dados.nivel_bacia_pct > 100)) {
+        return 'O nível da bacia precisa estar entre 0 e 100%.';
     }
-    if (!Number.isFinite(dados.tempo_compactacao_min) || dados.tempo_compactacao_min <= 0) {
-        return 'Informe o tempo de compactação (minutos).';
+    if (dados.tempo_compactacao_min !== null && dados.tempo_compactacao_min < 0) {
+        return 'O tempo de compactação não pode ser negativo.';
     }
-    if (!Number.isFinite(dados.pressao_compactacao_bar) || dados.pressao_compactacao_bar <= 0) {
-        return 'Informe a pressão de compactação (bar).';
+    if (dados.pressao_compactacao_bar !== null && dados.pressao_compactacao_bar < 0) {
+        return 'A pressão de compactação não pode ser negativa.';
     }
     return null;
 }
@@ -105,11 +118,11 @@ window.editarRegistroMaquina = function (id) {
     document.getElementById('maquina_maquina').value = reg.maquina;
     document.getElementById('maquina_altura_programada').value = String(reg.altura_programada);
     document.getElementById('maquina_perfil_carga').value = reg.perfil_carga;
-    CAMPOS_BANDEJA.forEach(c => { document.getElementById(`maquina_${c}`).value = reg[c]; });
-    document.getElementById('maquina_tempo_compactacao').value = reg.tempo_compactacao_min;
-    document.getElementById('maquina_pressao_compactacao').value = reg.pressao_compactacao_bar;
-    document.getElementById('maquina_nivel_oleo').value = reg.nivel_oleo_pct;
-    document.getElementById('maquina_nivel_bacia').value = reg.nivel_bacia_pct;
+    CAMPOS_BANDEJA.forEach(c => { document.getElementById(`maquina_${c}`).value = reg[c] ?? ''; });
+    document.getElementById('maquina_tempo_compactacao').value = reg.tempo_compactacao_min ?? '';
+    document.getElementById('maquina_pressao_compactacao').value = reg.pressao_compactacao_bar ?? '';
+    document.getElementById('maquina_nivel_oleo').value = reg.nivel_oleo_pct ?? '';
+    document.getElementById('maquina_nivel_bacia').value = reg.nivel_bacia_pct ?? '';
     document.getElementById('maquina_observacao').value = reg.observacao || '';
     document.getElementById('btn_salvar_maquina').innerText = 'Atualizar Registro';
     document.getElementById('btn_cancelar_edicao_maquina').style.display = 'block';
@@ -146,10 +159,14 @@ function obterRegistrosNoPeriodo() {
     });
 }
 
+// Média só dos registros em que o campo foi preenchido (null/'' são ignorados).
 function mediaCampo(lista, campo) {
-    if (lista.length === 0) return null;
-    const soma = lista.reduce((acc, r) => acc + Number(r[campo] || 0), 0);
-    return soma / lista.length;
+    const valores = lista
+        .map(r => r[campo])
+        .filter(v => v !== null && v !== undefined && v !== '' && Number.isFinite(Number(v)))
+        .map(Number);
+    if (valores.length === 0) return null;
+    return valores.reduce((acc, v) => acc + v, 0) / valores.length;
 }
 
 export function aplicarFiltroBateriaMaquinas() {
@@ -177,6 +194,18 @@ export function renderizarPaginaMaquinas() {
         const alturaMediaMaquina = mediaCampo(registrosDaMaquina, 'altura_media');
         const indicadorAltura = card.querySelector('strong[data-indicador="altura_media"]');
         if (indicadorAltura) indicadorAltura.textContent = alturaMediaMaquina === null ? '-' : `${alturaMediaMaquina.toFixed(1)} mm`;
+
+        const indicadoresExtras = [
+            ['nivel_oleo_pct', '%'],
+            ['pressao_compactacao_bar', ' bar'],
+            ['tempo_compactacao_min', ' min'],
+        ];
+        indicadoresExtras.forEach(([campo, unidade]) => {
+            const el = card.querySelector(`strong[data-indicador="${campo}"]`);
+            if (!el) return;
+            const media = mediaCampo(registrosDaMaquina, campo);
+            el.textContent = media === null ? '-' : `${media.toFixed(1)}${unidade}`;
+        });
 
         const totalMaquina = registrosDaMaquina.length;
         const totalOkMaquina = registrosDaMaquina.filter(r => r.gatilho === 'OK').length;
@@ -372,18 +401,18 @@ export function initMaquinas() {
             maquina: document.getElementById('maquina_maquina').value,
             altura_programada: Number(document.getElementById('maquina_altura_programada').value),
             perfil_carga: document.getElementById('maquina_perfil_carga').value,
-            frontal_dir: Number(document.getElementById('maquina_frontal_dir').value),
-            frontal_esq: Number(document.getElementById('maquina_frontal_esq').value),
-            centro_dir: Number(document.getElementById('maquina_centro_dir').value),
-            centro_1_dir_esq: Number(document.getElementById('maquina_centro_1_dir_esq').value),
-            centro_esq: Number(document.getElementById('maquina_centro_esq').value),
-            centro_2_dir_esq: Number(document.getElementById('maquina_centro_2_dir_esq').value),
-            traseira_dir: Number(document.getElementById('maquina_traseira_dir').value),
-            traseira_esq: Number(document.getElementById('maquina_traseira_esq').value),
-            tempo_compactacao_min: Number(document.getElementById('maquina_tempo_compactacao').value),
-            pressao_compactacao_bar: Number(document.getElementById('maquina_pressao_compactacao').value),
-            nivel_oleo_pct: Number(document.getElementById('maquina_nivel_oleo').value),
-            nivel_bacia_pct: Number(document.getElementById('maquina_nivel_bacia').value),
+            frontal_dir: lerNumeroOpcional('maquina_frontal_dir'),
+            frontal_esq: lerNumeroOpcional('maquina_frontal_esq'),
+            centro_dir: lerNumeroOpcional('maquina_centro_dir'),
+            centro_1_dir_esq: lerNumeroOpcional('maquina_centro_1_dir_esq'),
+            centro_esq: lerNumeroOpcional('maquina_centro_esq'),
+            centro_2_dir_esq: lerNumeroOpcional('maquina_centro_2_dir_esq'),
+            traseira_dir: lerNumeroOpcional('maquina_traseira_dir'),
+            traseira_esq: lerNumeroOpcional('maquina_traseira_esq'),
+            tempo_compactacao_min: lerNumeroOpcional('maquina_tempo_compactacao'),
+            pressao_compactacao_bar: lerNumeroOpcional('maquina_pressao_compactacao'),
+            nivel_oleo_pct: lerNumeroOpcional('maquina_nivel_oleo'),
+            nivel_bacia_pct: lerNumeroOpcional('maquina_nivel_bacia'),
             observacao: document.getElementById('maquina_observacao').value.toUpperCase(),
         };
 
