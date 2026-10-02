@@ -832,6 +832,10 @@ body {
     color: var(--texto-suave);
 }
 
+.auth_input_codigo { text-align: center; font-size: 1.35rem !important; font-weight: 700; letter-spacing: 6px; font-variant-numeric: tabular-nums; }
+.auth_rodape_split { justify-content: space-between; }
+.auth_painel .auth_painel { animation: none; }
+
 .auth_msg { padding: 10px 12px; border-radius: var(--raio-sm); font-size: 0.88rem; line-height: 1.4; border-left: 4px solid transparent; }
 .auth_msg.erro { background: #fdecea; color: #a12622; border-left-color: var(--cor-status-nao-reparado); }
 .auth_msg.sucesso { background: #e9f8e9; color: #1f6b1f; border-left-color: var(--cor-status-concluido); }

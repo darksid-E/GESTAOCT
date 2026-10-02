@@ -15,12 +15,14 @@ import {
 import { mostrarToast } from './toast.js';
 
 const CHAVE_EMAIL_LEMBRADO = 'emailLembradoCT';
-const PAINEIS = ['login', 'cadastro', 'recuperar', 'nova_senha'];
+const PAINEIS = ['login', 'cadastro', 'recuperar', 'codigo', 'nova_senha'];
 const COOLDOWN_RECUPERACAO_S = 60;
 
 // Dados que vêm do link de "esqueci minha senha" (só em memória) e avisos
 // que precisam esperar a interface ficar pronta para serem exibidos.
 let tokenRecuperacao = null;
+// Fluxo por código de 6 dígitos: { modo: 'recuperacao' | 'cadastro', email }
+let fluxoCodigo = null;
 let avisoInicial = null;
 
 const $ = (id) => document.getElementById(id);
@@ -50,6 +52,7 @@ function traduzirErroAuth(erro) {
     const segundos = m.match(/after (\d+) seconds?/);
     if (segundos) return `Aguarde ${segundos[1]} segundos para tentar novamente.`;
     if (m.includes('rate limit')) return 'Muitas tentativas. Aguarde alguns minutos e tente novamente.';
+    if (m.includes('token has expired') || m.includes('otp_expired') || m.includes('invalid otp')) return 'Código inválido ou expirado. Confira os números ou solicite um novo código.';
     if (m.includes('expired') || m.includes('invalid or has expired') || m.includes('otp')) return 'O link expirou ou já foi utilizado. Solicite um novo.';
     return msg || 'Não foi possível concluir a operação.';
 }
@@ -83,6 +86,14 @@ function entrarComEmailSenha(email, senha) {
 
 function solicitarRecuperacaoSenha(email) {
     return authFetch(`/recover?redirect_to=${encodeURIComponent(urlDoApp())}`, { method: 'POST', body: JSON.stringify({ email }) });
+}
+
+function verificarCodigoEmail(tipo, email, codigo) {
+    return authFetch('/verify', { method: 'POST', body: JSON.stringify({ type: tipo, email, token: codigo }) });
+}
+
+function reenviarCodigoCadastro(email) {
+    return authFetch(`/resend?redirect_to=${encodeURIComponent(urlDoApp())}`, { method: 'POST', body: JSON.stringify({ type: 'signup', email }) });
 }
 
 function definirNovaSenha(accessToken, senha) {
@@ -165,6 +176,20 @@ function mostrarPainelAuth(nome, { focar = true } = {}) {
         // setTimeout: o painel acabou de ser exibido e só aceita foco no próximo ciclo
         if (primeiro) setTimeout(() => primeiro.focus(), 30);
     }
+}
+
+// Prepara e exibe o painel de código (login por código enviado por email,
+// sem precisar clicar em link — links do Supabase podem ser barrados pela
+// rede/filtro de email corporativo).
+function abrirPainelCodigo(modo, email, mensagem) {
+    fluxoCodigo = { modo, email };
+    const recuperacao = modo === 'recuperacao';
+    $('codigo_titulo').textContent = recuperacao ? 'Redefinir senha' : 'Confirmar cadastro';
+    $('btn_codigo').textContent = recuperacao ? 'Salvar senha' : 'Confirmar';
+    $('codigo_campos_senha').hidden = !recuperacao;
+    ['codigo_valor', 'codigo_senha', 'codigo_senha_confirma'].forEach(id => { $(id).value = ''; });
+    mostrarPainelAuth('codigo');
+    if (mensagem) mostrarMensagem('codigo', mensagem, 'sucesso');
 }
 
 function mostrarMensagem(painel, texto, tipo = 'erro') {
@@ -487,9 +512,7 @@ async function aoCadastrar(evento) {
         } else {
             $('login_email').value = email;
             $('cad_email').value = '';
-            mostrarPainelAuth('login', { focar: false });
-            mostrarMensagem('login', `Cadastro realizado! Confirme sua conta pelo email enviado para ${email} e depois entre.`, 'sucesso');
-            $('login_senha').focus();
+            abrirPainelCodigo('cadastro', email, `Cadastro realizado! Enviamos um código para ${email}.`);
         }
     } catch (erro) {
         console.error('Erro ao cadastrar usuário:', erro);
@@ -515,12 +538,12 @@ async function aoRecuperarSenha(evento) {
     try {
         await solicitarRecuperacaoSenha(email);
         // Mesma resposta exista ou não conta com esse email (não revela quem é cadastrado)
-        mostrarMensagem('recuperar', 'Se este email estiver cadastrado, você receberá um link para redefinir a senha.', 'sucesso');
-        definirCarregando(btn, false);
-        iniciarCooldown(btn, COOLDOWN_RECUPERACAO_S, btn.dataset.rotulo || 'Enviar link');
+        abrirPainelCodigo('recuperacao', email, `Se ${email} estiver cadastrado, enviamos um código para ele.`);
+        iniciarCooldown($('btn_reenviar_codigo'), COOLDOWN_RECUPERACAO_S, 'Reenviar código');
     } catch (erro) {
         console.error('Erro ao solicitar recuperação de senha:', erro);
         mostrarMensagem('recuperar', traduzirErroAuth(erro));
+    } finally {
         definirCarregando(btn, false);
     }
 }
@@ -564,6 +587,74 @@ async function aoDefinirNovaSenha(evento) {
     }
 }
 
+async function aoConfirmarCodigo(evento) {
+    evento.preventDefault();
+    if (!fluxoCodigo) return mostrarPainelAuth('login');
+    const { modo, email } = fluxoCodigo;
+    const recuperacao = modo === 'recuperacao';
+    const btn = $('btn_codigo');
+    const codigo = $('codigo_valor').value.replace(/\s+/g, '');
+    const senha = $('codigo_senha').value;
+    const confirma = $('codigo_senha_confirma').value;
+    limparFeedback();
+
+    if (!/^\d{6,10}$/.test(codigo)) {
+        mostrarMensagem('codigo', 'Informe o código numérico recebido por email.');
+        return marcarInvalidos(['codigo_valor']);
+    }
+    if (recuperacao) {
+        if (senha.length < 6) {
+            mostrarMensagem('codigo', 'A senha precisa ter pelo menos 6 caracteres.');
+            return marcarInvalidos(['codigo_senha']);
+        }
+        if (senha !== confirma) {
+            mostrarMensagem('codigo', 'As senhas não conferem.');
+            return marcarInvalidos(['codigo_senha_confirma']);
+        }
+    }
+
+    definirCarregando(btn, true, 'Verificando...');
+    try {
+        const sessaoVerificada = await verificarCodigoEmail(recuperacao ? 'recovery' : 'signup', email, codigo);
+        let tokens = sessaoVerificada;
+        if (recuperacao) {
+            const user = await definirNovaSenha(sessaoVerificada.access_token, senha);
+            tokens = { ...sessaoVerificada, user };
+        }
+        const { erroPerfil } = await iniciarSessaoAPartirDoToken(tokens);
+        fluxoCodigo = null;
+        ['codigo_valor', 'codigo_senha', 'codigo_senha_confirma'].forEach(id => { $(id).value = ''; });
+        aplicarEstadoSessao();
+        if (erroPerfil) mostrarToast(`Login feito, mas houve um problema ao carregar seu perfil: ${erroPerfil}`, 'erro', 9000);
+        else mostrarToast(recuperacao ? 'Senha redefinida com sucesso.' : `Cadastro confirmado! Bem-vindo(a), ${nomeExibicaoAtual()}.`, 'sucesso');
+        irParaPaginaInicial();
+    } catch (erro) {
+        console.error('Erro ao confirmar código:', erro);
+        mostrarMensagem('codigo', traduzirErroAuth(erro));
+        marcarInvalidos(['codigo_valor']);
+    } finally {
+        definirCarregando(btn, false);
+    }
+}
+
+async function aoReenviarCodigo() {
+    if (!fluxoCodigo) return;
+    const btn = $('btn_reenviar_codigo');
+    const { modo, email } = fluxoCodigo;
+    limparFeedback();
+    btn.disabled = true;
+    try {
+        if (modo === 'recuperacao') await solicitarRecuperacaoSenha(email);
+        else await reenviarCodigoCadastro(email);
+        mostrarMensagem('codigo', `Novo código enviado para ${email}.`, 'sucesso');
+        iniciarCooldown(btn, COOLDOWN_RECUPERACAO_S, 'Reenviar código');
+    } catch (erro) {
+        console.error('Erro ao reenviar código:', erro);
+        mostrarMensagem('codigo', traduzirErroAuth(erro));
+        btn.disabled = false;
+    }
+}
+
 function alternarVisibilidadeSenha(botao) {
     const input = $(botao.dataset.alvo);
     if (!input) return;
@@ -586,6 +677,8 @@ export function initAuth() {
     $('painel_login')?.addEventListener('submit', aoEntrar);
     $('painel_cadastro')?.addEventListener('submit', aoCadastrar);
     $('painel_recuperar')?.addEventListener('submit', aoRecuperarSenha);
+    $('painel_codigo')?.addEventListener('submit', aoConfirmarCodigo);
+    $('btn_reenviar_codigo')?.addEventListener('click', aoReenviarCodigo);
     $('painel_nova_senha')?.addEventListener('submit', aoDefinirNovaSenha);
 
     $('auth_card')?.addEventListener('click', (e) => {
@@ -596,7 +689,7 @@ export function initAuth() {
         if (!ir) return;
         const destino = ir.dataset.authIr;
         if (destino === 'recuperar') $('rec_email').value = $('login_email').value.trim();
-        if (destino === 'login') tokenRecuperacao = null;
+        if (destino === 'login') { tokenRecuperacao = null; fluxoCodigo = null; }
         mostrarPainelAuth(destino);
     });
 

@@ -361,6 +361,39 @@
                             </div>
                         </form>
 
+                        <form id="painel_codigo" class="auth_painel" novalidate hidden>
+                            <div class="auth_cabecalho">
+                                <span class="auth_icone"><svg class="icone" aria-hidden="true"><use href="#i-lock"></use></svg></span>
+                                <h3 id="codigo_titulo">Digite o código</h3>
+                            </div>
+                            <div id="msg_codigo" class="auth_msg" role="alert" hidden></div>
+                            <div class="auth_campo">
+                                <label for="codigo_valor">Código</label>
+                                <input type="text" id="codigo_valor" class="auth_input_codigo" name="one-time-code" inputmode="numeric" autocomplete="one-time-code" maxlength="10" spellcheck="false">
+                            </div>
+                            <div id="codigo_campos_senha" class="auth_painel" hidden>
+                                <div class="auth_campo">
+                                    <label for="codigo_senha">Nova senha</label>
+                                    <div class="auth_senha">
+                                        <input type="password" id="codigo_senha" name="new-password" autocomplete="new-password">
+                                        <button type="button" class="btn_icone auth_toggle_senha" data-alvo="codigo_senha" aria-label="Mostrar senha"><svg class="icone" aria-hidden="true"><use href="#i-eye"></use></svg></button>
+                                    </div>
+                                </div>
+                                <div class="auth_campo">
+                                    <label for="codigo_senha_confirma">Confirmar nova senha</label>
+                                    <div class="auth_senha">
+                                        <input type="password" id="codigo_senha_confirma" name="confirm-password" autocomplete="new-password">
+                                        <button type="button" class="btn_icone auth_toggle_senha" data-alvo="codigo_senha_confirma" aria-label="Mostrar senha"><svg class="icone" aria-hidden="true"><use href="#i-eye"></use></svg></button>
+                                    </div>
+                                </div>
+                            </div>
+                            <button type="submit" id="btn_codigo" class="btn_acao auth_btn">Confirmar</button>
+                            <div class="auth_rodape auth_rodape_split">
+                                <button type="button" class="auth_link" id="btn_reenviar_codigo">Reenviar código</button>
+                                <button type="button" class="auth_link auth_link_voltar" data-auth-ir="login"><svg class="icone" aria-hidden="true"><use href="#i-arrow-left"></use></svg>Voltar ao login</button>
+                            </div>
+                        </form>
+
                         <form id="painel_nova_senha" class="auth_painel" novalidate hidden>
                             <div class="auth_cabecalho">
                                 <span class="auth_icone"><svg class="icone" aria-hidden="true"><use href="#i-lock"></use></svg></span>
