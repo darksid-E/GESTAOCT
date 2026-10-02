@@ -2,6 +2,7 @@
 // --- 1. LÓGICA DO MENU E ABAS ---
 // =========================================================
 import { state, config } from './state.js';
+import { mostrarToast } from './toast.js';
 import { renderizarDashboard } from './dashboard.js';
 import { renderizarPaginaMaquinas, aplicarFiltroBateriaMaquinas } from './maquinas.js';
 import { aplicarFiltroBateriaMapa, processarDadosGlobais } from './mapa2d.js';
@@ -35,7 +36,7 @@ export function irParaAba(targetId) {
 function podeNavegarPara(targetId) {
     const logado = !!state.sessaoAtual;
     if (!logado && !config.ABAS_LIVRES_SEM_LOGIN.includes(targetId)) {
-        alert('Faça login para acessar esta área.');
+        mostrarToast('Faça login para acessar esta área.', 'info');
         irParaAba('cadastro');
         if (window.innerWidth <= 768) fecharSidebar();
         return false;

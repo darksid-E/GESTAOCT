@@ -1,22 +1,16 @@
 // =========================================================
 // --- INTEGRAÇÃO COM SUPABASE (tabela "reparos" + Storage de fotos) ---
 // =========================================================
-import { state, config, tokenAtual } from './state.js';
+import { state, config } from './state.js';
+import { fetchAutenticado } from './sessao.js';
 
-function headersSupabase(extra = {}) {
-    return {
-        apikey: config.SUPABASE_KEY,
-        Authorization: `Bearer ${tokenAtual()}`,
-        'Content-Type': 'application/json',
-        ...extra
-    };
-}
-
+// Toda requisição passa por fetchAutenticado: o token é renovado antes de
+// vencer e, se o servidor responder 401 (JWT expired), renova e repete.
 async function requisicaoSupabase(tabela, caminho, options = {}) {
     if (!state.supabaseAtivo) throw new Error('Supabase não configurado.');
-    const resposta = await fetch(`${config.SUPABASE_URL}/${tabela}${caminho}`, {
+    const resposta = await fetchAutenticado(`${config.SUPABASE_URL}/${tabela}${caminho}`, {
         ...options,
-        headers: headersSupabase(options.headers || {})
+        headers: { 'Content-Type': 'application/json', ...(options.headers || {}) }
     });
     if (!resposta.ok) {
         const detalhe = await resposta.text();
@@ -91,11 +85,9 @@ export async function uploadFotoSupabase(file, tipoDaFoto) {
     if (!state.supabaseAtivo) return null;
     const path = `reparos/${Date.now()}_${tipoDaFoto}_${file.name.replace(/\s+/g, '_')}`;
 
-    const resposta = await fetch(`${config.SUPABASE_STORAGE_BASE}/storage/v1/object/fotos_reparos/${path}`, {
+    const resposta = await fetchAutenticado(`${config.SUPABASE_STORAGE_BASE}/storage/v1/object/fotos_reparos/${path}`, {
         method: 'POST',
         headers: {
-            apikey: config.SUPABASE_KEY,
-            Authorization: `Bearer ${tokenAtual()}`,
             'Content-Type': file.type,
             'x-upsert': 'true'
         },
