@@ -62,10 +62,10 @@ export function renderizarTabela() {
             <td><span class="badge_prazo ${situacao.classe}">${situacao.texto}</span></td>
             <td>${reg.criado_por || '-'}</td>
             <td>
-                ${isAdminAtual() ? `
-                <button onclick="abrirEdicaoPelaTabela('${reg.id_reparo}')" title="Editar">✏️</button>
-                <button onclick="deletarRegistro('${reg.id_reparo}')" title="Excluir">🗑️</button>
-                ` : '<span style="color:#aaa;">🔒</span>'}
+                ${isAdminAtual() ? `<div class="acoes_linha">
+                    <button class="btn_icone icone_editar" onclick="abrirEdicaoPelaTabela('${reg.id_reparo}')" aria-label="Editar"><svg class="icone" aria-hidden="true"><use href="#i-pencil"></use></svg></button>
+                    <button class="btn_icone icone_excluir" onclick="deletarRegistro('${reg.id_reparo}')" aria-label="Excluir"><svg class="icone" aria-hidden="true"><use href="#i-trash"></use></svg></button>
+                </div>` : ''}
             </td>
         `;
         tbodyBanco.appendChild(tr);

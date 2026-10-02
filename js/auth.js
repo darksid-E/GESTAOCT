@@ -223,9 +223,6 @@ export function aplicarPermissoes() {
     const btnImportar = document.getElementById('btn_trigger_import');
     if (btnImportar) btnImportar.style.display = admin ? '' : 'none';
 
-    const avisoReadonly = document.getElementById('aviso_readonly_modal');
-    if (avisoReadonly) avisoReadonly.style.display = admin ? 'none' : 'block';
-
     const camposModal = document.querySelectorAll(
         '#modal_reparo .col_form select, #modal_reparo .col_form textarea, ' +
         '#modal_reparo .col_form input, #modal_reparo .col_form button'

@@ -90,7 +90,7 @@ window.editarRegistro = function (idReparo) {
         document.getElementById("prazo_reparo").value = reg.prazo || '';
         document.getElementById("data_fim").value = reg.data_fim || '';
         document.getElementById("obs_reparo").value = reg.observacao || '';
-        document.getElementById("btn_salvar").innerText = "Atualizar Registro"; document.getElementById("btn_cancelar_edicao").style.display = "block";
+        document.getElementById("btn_salvar").innerText = "Atualizar Registro"; document.getElementById("btn_cancelar_edicao").style.display = "";
 
         // Exibir as imagens caso existam
         if (reg.foto_antes || reg.foto_depois) {
@@ -98,13 +98,13 @@ window.editarRegistro = function (idReparo) {
             if (reg.foto_antes) {
                 document.getElementById("img_preview_antes").src = reg.foto_antes;
                 document.getElementById("img_preview_antes").style.display = 'block';
-                document.getElementById("foto_antes_texto").innerText = 'Foto atual (clique para trocar)';
+                document.getElementById("foto_antes_texto").innerText = 'Foto atual';
                 document.querySelector('label[for="foto_antes"]')?.classList.add('has_file');
             }
             if (reg.foto_depois) {
                 document.getElementById("img_preview_depois").src = reg.foto_depois;
                 document.getElementById("img_preview_depois").style.display = 'block';
-                document.getElementById("foto_depois_texto").innerText = 'Foto atual (clique para trocar)';
+                document.getElementById("foto_depois_texto").innerText = 'Foto atual';
                 document.querySelector('label[for="foto_depois"]')?.classList.add('has_file');
             }
         }
@@ -156,9 +156,10 @@ function carregarHistorico(idBuscado) {
             (reg.andamento === 'concluido' ? (reg.data_fim > reg.prazo ? `<span class="badge_prazo prazo_atrasado">Atraso</span>` : `<span class="badge_prazo prazo_ok">No Prazo</span>`) :
                 (dataAtraso > reg.prazo ? `<span class="badge_prazo prazo_atrasado">Atrasado</span>` : `<span class="badge_prazo prazo_ok">No Prazo</span>`));
 
+        const btnImprimirHist = `<button class="btn_icone" onclick="imprimirRegistroUnico('${reg.id_reparo}')" aria-label="Imprimir"><svg class="icone" aria-hidden="true"><use href="#i-printer"></use></svg></button>`;
         const acoesHist = isAdminAtual()
-            ? `<button class="btn_editar_hist" onclick="editarRegistro('${reg.id_reparo}')">✏️</button><button class="btn_deletar_hist" onclick="deletarRegistro('${reg.id_reparo}')">🗑️</button><button class="btn_imprimir_hist" onclick="imprimirRegistroUnico('${reg.id_reparo}')" title="Imprimir este registro">🖨️</button>`
-            : `<button class="btn_imprimir_hist" onclick="imprimirRegistroUnico('${reg.id_reparo}')" title="Imprimir este registro">🖨️</button>`;
+            ? `<button class="btn_icone icone_editar" onclick="editarRegistro('${reg.id_reparo}')" aria-label="Editar"><svg class="icone" aria-hidden="true"><use href="#i-pencil"></use></svg></button><button class="btn_icone icone_excluir" onclick="deletarRegistro('${reg.id_reparo}')" aria-label="Excluir"><svg class="icone" aria-hidden="true"><use href="#i-trash"></use></svg></button>${btnImprimirHist}`
+            : btnImprimirHist;
 
         let fotosHtml = '';
         if (reg.foto_antes || reg.foto_depois) {
@@ -179,7 +180,7 @@ function carregarHistorico(idBuscado) {
         const card = document.createElement('div'); card.className = `hist_card ${reg.andamento}`;
         card.innerHTML = `
             <div class="hist_card_header"><div class="hist_data">${reg.data_registro} <br> ${badge}</div>
-            <div>${acoesHist}</div></div>
+            <div class="acoes_linha">${acoesHist}</div></div>
             <strong>Alvo:</strong> ${reg.id_referencia}<br><strong>Status:</strong> ${formatarStatus(reg.andamento)}<br>
             <strong>Problema:</strong> ${reg.desc_problema || '-'}<br> <strong>Observação:</strong> ${reg.observacao || '-'} <br><strong>Prazo:</strong> ${formatarDataBR(reg.prazo)}<br>
             <strong>Registrado por:</strong> ${reg.criado_por || '-'}

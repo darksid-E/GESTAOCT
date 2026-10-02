@@ -125,7 +125,7 @@ window.editarRegistroMaquina = function (id) {
     document.getElementById('maquina_nivel_bacia').value = reg.nivel_bacia_pct ?? '';
     document.getElementById('maquina_observacao').value = reg.observacao || '';
     document.getElementById('btn_salvar_maquina').innerText = 'Atualizar Registro';
-    document.getElementById('btn_cancelar_edicao_maquina').style.display = 'block';
+    document.getElementById('btn_cancelar_edicao_maquina').style.display = '';
 
     modalTabelaMaquinas.classList.remove('active');
     modalMaquina.classList.add('active');
@@ -262,10 +262,10 @@ export function renderizarTabelaMaquinas() {
             <td>${reg.registrado_por || '-'}</td>
             <td>${reg.observacao || '-'}</td>
             <td>
-                ${isAdminAtual() ? `
-                <button onclick="editarRegistroMaquina('${reg.id}')" title="Editar">✏️</button>
-                <button onclick="deletarRegistroMaquina('${reg.id}')" title="Excluir">🗑️</button>
-                ` : '<span style="color:#aaa;">🔒</span>'}
+                ${isAdminAtual() ? `<div class="acoes_linha">
+                    <button class="btn_icone icone_editar" onclick="editarRegistroMaquina('${reg.id}')" aria-label="Editar"><svg class="icone" aria-hidden="true"><use href="#i-pencil"></use></svg></button>
+                    <button class="btn_icone icone_excluir" onclick="deletarRegistroMaquina('${reg.id}')" aria-label="Excluir"><svg class="icone" aria-hidden="true"><use href="#i-trash"></use></svg></button>
+                </div>` : ''}
             </td>
         `;
         tbodyBancoMaquinas.appendChild(tr);

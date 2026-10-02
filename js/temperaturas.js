@@ -243,10 +243,10 @@ function renderizarTabelaLeituras(dados) {
 function atualizarStatusFonte(carregando, erro) {
     const el = document.getElementById('status_fonte_temp');
     if (!el) return;
-    if (erro) { el.innerText = `⚠️ ${erro}`; return; }
-    if (carregando) { el.innerText = '🔄 Buscando dados no PI System...'; return; }
+    if (erro) { el.innerText = `${erro}`; return; }
+    if (carregando) { el.innerText = 'Buscando dados no PI System...'; return; }
     const agora = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
-    el.innerText = `🟢 Ao vivo — última atualização: ${agora} (atualiza a cada 5 min)`;
+    el.innerText = `Ao vivo — última atualização: ${agora} (atualiza a cada 5 min)`;
 }
 
 export async function renderizarGraficoTemperaturaTab() {

@@ -309,12 +309,12 @@ export function initMapa2D() {
         if (enquadrado) {
             aplicarEnquadramento();
             mapaContainer.classList.add('mapa_enquadrado');
-            btnEnquadrar.innerText = '↔️ Ver Tamanho Normal';
+            btnEnquadrar.innerHTML = '<svg class="icone" aria-hidden="true"><use href="#i-minimize"></use></svg>Ver Tamanho Normal';
             btnEnquadrar.classList.add('ativo');
         } else {
             removerEnquadramento();
             mapaContainer.classList.remove('mapa_enquadrado');
-            btnEnquadrar.innerText = '⛶ Enquadrar as 3 Baterias';
+            btnEnquadrar.innerHTML = '<svg class="icone" aria-hidden="true"><use href="#i-maximize"></use></svg>Enquadrar as 3 Baterias';
             btnEnquadrar.classList.remove('ativo');
         }
     });
