@@ -54,7 +54,10 @@ function gerarHtmlProntuario(idReferencia, registros) {
                 <tr><td>Alvo</td><td>${reg.id_referencia}</td></tr>
                 <tr><td>Problema</td><td>${reg.desc_problema || '-'}</td></tr>
                 <tr><td>Solução</td><td>${reg.desc_solucao || '-'}</td></tr>
+                <tr><td>Data da Ocorrência</td><td>${formatarDataBR(reg.data_ocorrencia)}</td></tr>
+                <tr><td>Ranking do Problema</td><td>${reg.ranking_problema || '-'}</td></tr>
                 <tr><td>Avaliação CT</td><td>${reg.avaliacao_ct || '-'}</td></tr>
+                <tr><td>Avaliador CT</td><td>${reg.avaliador_ct || '-'}</td></tr>
                 <tr><td>Observação</td><td>${reg.observacao || '-'}</td></tr>
                 <tr><td>Prazo</td><td>${formatarDataBR(reg.prazo)}</td></tr>
                 <tr><td>Data Fim</td><td>${formatarDataBR(reg.data_fim)}</td></tr>
@@ -71,7 +74,7 @@ function gerarHtmlProntuario(idReferencia, registros) {
     return `<!DOCTYPE html><html lang="pt-br"><head><meta charset="UTF-8">
         <title>Prontuário ${idReferencia}</title><style>${CSS_IMPRESSAO}</style></head><body>
         <header class="cabecalho_impresso">
-            <h1>Central de Dados Controle Térmico</h1>
+            <h1>Central de Dados Coqueria</h1>
             <h2>Prontuário de Reparos — ${idReferencia}</h2>
             <p>Gerado em ${dataGeracao} • ${registros.length} registro(s)</p>
         </header>
@@ -86,10 +89,14 @@ function gerarHtmlTabelaGeral(registros) {
         return `
         <tr>
             <td>${reg.data_registro}</td>
+            <td>${formatarDataBR(reg.data_ocorrencia)}</td>
             <td>${reg.id_referencia}</td>
             <td>${formatarStatus(reg.andamento)}</td>
             <td>${reg.bateria}</td><td>${reg.bloco}</td><td>${reg.forno}</td><td>${reg.lado}</td>
             <td>${reg.desc_problema || '-'}</td>
+            <td>${reg.ranking_problema || '-'}</td>
+            <td>${reg.avaliacao_ct || '-'}</td>
+            <td>${reg.avaliador_ct || '-'}</td>
             <td>${reg.observacao || '-'}</td>
             <td>${formatarDataBR(reg.prazo)}</td>
             <td>${formatarDataBR(reg.data_fim)}</td>
@@ -102,16 +109,16 @@ function gerarHtmlTabelaGeral(registros) {
     return `<!DOCTYPE html><html lang="pt-br"><head><meta charset="UTF-8">
         <title>Histórico Geral de Reparos</title><style>${CSS_IMPRESSAO}</style></head><body>
         <header class="cabecalho_impresso">
-            <h1>Central de Dados Controle Térmico</h1>
+            <h1>Central de Dados Coqueria</h1>
             <h2>Histórico Geral de Reparos</h2>
             <p>Gerado em ${dataGeracao} • ${registros.length} registro(s) • filtros da tabela aplicados</p>
         </header>
         <table class="tabela_geral_impressa">
             <thead><tr>
-                <th>Data</th><th>ID Alvo</th><th>Status</th><th>Bat.</th><th>Bloco</th><th>Forno</th><th>Lado</th>
-                <th>Problema</th><th>Observação</th><th>Prazo</th><th>Fim</th><th>Situação</th><th>Registrado por</th>
+                <th>Data</th><th>Ocorrência</th><th>ID Alvo</th><th>Status</th><th>Bat.</th><th>Bloco</th><th>Forno</th><th>Lado</th>
+                <th>Problema</th><th>Rank.</th><th>Aval. CT</th><th>Avaliador CT</th><th>Observação</th><th>Prazo</th><th>Fim</th><th>Situação</th><th>Registrado por</th>
             </tr></thead>
-            <tbody>${linhas || '<tr><td colspan="13">Nenhum registro encontrado com os filtros atuais.</td></tr>'}</tbody>
+            <tbody>${linhas || '<tr><td colspan="17">Nenhum registro encontrado com os filtros atuais.</td></tr>'}</tbody>
         </table>
     </body></html>`;
 }
@@ -142,7 +149,7 @@ function gerarHtmlMapaColorido() {
         </style>
         </head><body>
         <header class="cabecalho_impresso">
-            <h1>Central de Dados Controle Térmico</h1>
+            <h1>Central de Dados Coqueria</h1>
             <p>Mapa Térmico — Baterias A, B e C • Gerado em ${dataGeracao}</p>
         </header>
         <div class="legenda_impressa">

@@ -28,7 +28,10 @@ export interface Reparo {
     andamento: StatusReparo;
     prazo: string | null;
     data_fim: string | null;
-    avaliacao_ct: string;
+    avaliacao_ct: string;         // 'OK' | 'NOK' (registros antigos podem ter texto livre)
+    avaliador_ct?: string;        // nome de quem fez a avaliação CT
+    ranking_problema?: number | null; // 1 a 5
+    data_ocorrencia?: string | null;  // yyyy-mm-dd, quando o problema ocorreu (≠ data_registro)
     observacao: string;
     foto_antes: string | null;
     foto_depois: string | null;

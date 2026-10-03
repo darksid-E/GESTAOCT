@@ -6,7 +6,7 @@ import { formatarStatus, formatarDataBR, definirValorSelect, calcularSituacaoPra
 import { init3D } from './twin3d.js';
 
 let modalTabela, tbodyBanco;
-let fData, fId, fStatus, fBateria, fBloco, fForno, fLado, fProblema, fObservacao, fPrazo, fFim, fSituacao, fCriadoPor;
+let fData, fOcorrencia, fRanking, fAvalCT, fAvaliadorCT, fId, fStatus, fBateria, fBloco, fForno, fLado, fProblema, fObservacao, fPrazo, fFim, fSituacao, fCriadoPor;
 
 function textoContem(valorCampo, termoFiltro) {
     if (!termoFiltro) return true;
@@ -22,8 +22,12 @@ export function obterRegistrosFiltradosTabela() {
     if (fForno.value !== 'Todos') filtrados = filtrados.filter(r => r.forno === fForno.value);
     if (fLado.value !== 'Todos') filtrados = filtrados.filter(r => r.lado === fLado.value);
     if (fSituacao.value !== 'Todos') filtrados = filtrados.filter(r => calcularSituacaoPrazo(r).codigo === fSituacao.value);
+    if (fRanking.value !== 'Todos') filtrados = filtrados.filter(r => String(r.ranking_problema || '') === fRanking.value);
+    if (fAvalCT.value !== 'Todos') filtrados = filtrados.filter(r => String(r.avaliacao_ct || '').toUpperCase() === fAvalCT.value);
 
     filtrados = filtrados.filter(r => textoContem(r.data_registro, fData.value));
+    filtrados = filtrados.filter(r => textoContem(formatarDataBR(r.data_ocorrencia), fOcorrencia.value));
+    filtrados = filtrados.filter(r => textoContem(r.avaliador_ct, fAvaliadorCT.value));
     filtrados = filtrados.filter(r => textoContem(r.id_referencia, fId.value));
     filtrados = filtrados.filter(r => textoContem(r.desc_problema, fProblema.value));
     filtrados = filtrados.filter(r => textoContem(r.observacao, fObservacao.value));
@@ -39,7 +43,7 @@ export function renderizarTabela() {
     const filtrados = obterRegistrosFiltradosTabela();
 
     if (filtrados.length === 0) {
-        tbodyBanco.innerHTML = '<tr><td colspan="14" style="text-align:center; color:#888; padding:24px;">Nenhum registro encontrado com os filtros atuais.</td></tr>';
+        tbodyBanco.innerHTML = '<tr><td colspan="18" style="text-align:center; color:#888; padding:24px;">Nenhum registro encontrado com os filtros atuais.</td></tr>';
         return;
     }
 
@@ -49,6 +53,7 @@ export function renderizarTabela() {
 
         tr.innerHTML = `
             <td><strong>${reg.data_registro}</strong></td>
+            <td>${formatarDataBR(reg.data_ocorrencia)}</td>
             <td style="color: rgb(225, 51, 0); font-weight: bold;">${reg.id_referencia}</td>
             <td>${formatarStatus(reg.andamento)}</td>
             <td>${reg.bateria}</td>
@@ -56,6 +61,9 @@ export function renderizarTabela() {
             <td>${reg.forno}</td>
             <td>${reg.lado}</td>
             <td>${reg.desc_problema || '-'}</td>
+            <td>${reg.ranking_problema || '-'}</td>
+            <td>${reg.avaliacao_ct || '-'}</td>
+            <td>${reg.avaliador_ct || '-'}</td>
             <td>${reg.observacao || '-'}</td>
             <td>${formatarDataBR(reg.prazo)}</td>
             <td>${formatarDataBR(reg.data_fim)}</td>
@@ -74,7 +82,8 @@ export function renderizarTabela() {
 
 function limparFiltrosTabela() {
     fData.value = ''; fId.value = ''; fProblema.value = ''; fObservacao.value = '';
-    fPrazo.value = ''; fFim.value = ''; fCriadoPor.value = '';
+    fPrazo.value = ''; fFim.value = ''; fCriadoPor.value = ''; fOcorrencia.value = ''; fAvaliadorCT.value = '';
+    fRanking.value = 'Todos'; fAvalCT.value = 'Todos';
     fStatus.value = 'Todos'; fBateria.value = 'Todas'; fBloco.value = 'Todos';
     fForno.value = 'Todos'; fLado.value = 'Todos'; fSituacao.value = 'Todos';
     renderizarTabela();
@@ -85,6 +94,10 @@ export function initTabela() {
     tbodyBanco = document.getElementById('tbody_banco');
 
     fData = document.getElementById('ftab_data');
+    fOcorrencia = document.getElementById('ftab_ocorrencia');
+    fRanking = document.getElementById('ftab_ranking');
+    fAvalCT = document.getElementById('ftab_aval_ct');
+    fAvaliadorCT = document.getElementById('ftab_avaliador_ct');
     fId = document.getElementById('ftab_id');
     fStatus = document.getElementById('ftab_status');
     fBateria = document.getElementById('ftab_bateria');
@@ -116,8 +129,8 @@ export function initTabela() {
     document.getElementById('btn_limpar_filtros_tabela').addEventListener('click', limparFiltrosTabela);
 
     // Selects filtram no "change"; campos de texto filtram a cada tecla ("input")
-    [fStatus, fBateria, fBloco, fForno, fLado, fSituacao].forEach(el => el.addEventListener('change', renderizarTabela));
-    [fData, fId, fProblema, fObservacao, fPrazo, fFim, fCriadoPor].forEach(el => el.addEventListener('input', debounce(renderizarTabela)));
+    [fStatus, fBateria, fBloco, fForno, fLado, fSituacao, fRanking, fAvalCT].forEach(el => el.addEventListener('change', renderizarTabela));
+    [fData, fOcorrencia, fAvaliadorCT, fId, fProblema, fObservacao, fPrazo, fFim, fCriadoPor].forEach(el => el.addEventListener('input', debounce(renderizarTabela)));
 
     window.abrirEdicaoPelaTabela = function (idReparo) {
         if (!isAdminAtual()) { alert('Apenas usuários administradores podem editar reparos.'); return; }

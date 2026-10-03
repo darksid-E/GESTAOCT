@@ -51,9 +51,36 @@ export function abrirModalMapClick(tipoItem, bat, bloco, forno, lado) {
     setTimeout(() => { init3D(); atualizarAlvoVisual(); }, 100);
 }
 
+function dataHojeISO() {
+    // Data local (não UTC) no formato yyyy-mm-dd, como o input type="date"
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
+// Avaliação CT agora é OK/NOK. Registros antigos foram digitados em texto
+// livre: se o valor não for OK/NOK, ele é mantido como opção extra para
+// não ser apagado sem querer quando o registro for editado.
+function definirAvaliacaoCT(valor) {
+    const sel = document.getElementById("aval_ct");
+    sel.querySelectorAll('option[data-legado]').forEach(o => o.remove());
+    const v = (valor || '').trim();
+    if (v && !['OK', 'NOK'].includes(v.toUpperCase())) {
+        const opt = document.createElement('option');
+        opt.value = v; opt.textContent = v; opt.dataset.legado = '1';
+        sel.appendChild(opt);
+        sel.value = v;
+    } else {
+        sel.value = v.toUpperCase();
+    }
+}
+
 function limparFormulario() {
     document.getElementById("id_reparo_edit").value = ''; document.getElementById("desc_problema").value = ''; document.getElementById("desc_solucao").value = '';
-    document.getElementById("status_reparo").value = 'inspecao'; document.getElementById("aval_ct").value = ''; document.getElementById("prazo_reparo").value = '';
+    document.getElementById("status_reparo").value = 'inspecao'; definirAvaliacaoCT(''); document.getElementById("prazo_reparo").value = '';
+    document.getElementById("avaliador_ct").value = ''; document.getElementById("ranking_problema").value = '';
+    // Ocorrência: sugere hoje (editável) e não aceita data futura
+    const inputOcorrencia = document.getElementById("data_ocorrencia");
+    inputOcorrencia.max = dataHojeISO(); inputOcorrencia.value = dataHojeISO();
     document.getElementById("data_fim").value = ''; document.getElementById("obs_reparo").value = '';
     document.getElementById("btn_salvar").innerText = "Adicionar Registro"; document.getElementById("btn_cancelar_edicao").style.display = "none";
 
@@ -86,7 +113,10 @@ window.editarRegistro = function (idReparo) {
         document.getElementById("desc_problema").value = reg.desc_problema || '';
         document.getElementById("desc_solucao").value = reg.desc_solucao || '';
         document.getElementById("status_reparo").value = reg.andamento || 'inspecao';
-        document.getElementById("aval_ct").value = reg.avaliacao_ct || '';
+        definirAvaliacaoCT(reg.avaliacao_ct);
+        document.getElementById("avaliador_ct").value = reg.avaliador_ct || '';
+        document.getElementById("ranking_problema").value = reg.ranking_problema ? String(reg.ranking_problema) : '';
+        document.getElementById("data_ocorrencia").value = reg.data_ocorrencia || '';
         document.getElementById("prazo_reparo").value = reg.prazo || '';
         document.getElementById("data_fim").value = reg.data_fim || '';
         document.getElementById("obs_reparo").value = reg.observacao || '';
@@ -182,6 +212,8 @@ function carregarHistorico(idBuscado) {
             <div class="hist_card_header"><div class="hist_data">${reg.data_registro} <br> ${badge}</div>
             <div class="acoes_linha">${acoesHist}</div></div>
             <strong>Alvo:</strong> ${reg.id_referencia}<br><strong>Status:</strong> ${formatarStatus(reg.andamento)}<br>
+            <strong>Ocorrência:</strong> ${formatarDataBR(reg.data_ocorrencia)}${reg.ranking_problema ? ` &nbsp;<strong>Ranking:</strong> ${reg.ranking_problema}` : ''}<br>
+            ${(reg.avaliacao_ct || reg.avaliador_ct) ? `<strong>Avaliação CT:</strong> ${reg.avaliacao_ct || '-'}${reg.avaliador_ct ? ` (${reg.avaliador_ct})` : ''}<br>` : ''}
             <strong>Problema:</strong> ${reg.desc_problema || '-'}<br> <strong>Observação:</strong> ${reg.observacao || '-'} <br><strong>Prazo:</strong> ${formatarDataBR(reg.prazo)}<br>
             <strong>Registrado por:</strong> ${reg.criado_por || '-'}
             ${fotosHtml}
@@ -242,6 +274,13 @@ export function initModalReparo() {
         const botaoSalvar = document.getElementById("btn_salvar");
         const idEdit = document.getElementById("id_reparo_edit").value;
 
+        const dataOcorrencia = document.getElementById("data_ocorrencia").value;
+        if (dataOcorrencia && dataOcorrencia > dataHojeISO()) {
+            alert('A data da ocorrência não pode ser futura.');
+            document.getElementById("data_ocorrencia").focus();
+            return;
+        }
+
         botaoSalvar.disabled = true;
         botaoSalvar.innerText = 'Salvando e enviando fotos...';
 
@@ -268,6 +307,9 @@ export function initModalReparo() {
                 prazo: document.getElementById("prazo_reparo").value || null,
                 data_fim: document.getElementById("data_fim").value || null,
                 avaliacao_ct: document.getElementById("aval_ct").value.toUpperCase(),
+                avaliador_ct: document.getElementById("avaliador_ct").value.trim().toUpperCase(),
+                ranking_problema: document.getElementById("ranking_problema").value ? Number(document.getElementById("ranking_problema").value) : null,
+                data_ocorrencia: document.getElementById("data_ocorrencia").value || null,
                 observacao: document.getElementById("obs_reparo").value.toUpperCase(),
                 foto_antes: urlAntes !== window.location.href ? urlAntes : null,
                 foto_depois: urlDepois !== window.location.href ? urlDepois : null,

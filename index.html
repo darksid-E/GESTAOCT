@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Central De Dados Controle Térmico</title>
+    <title>Central De Dados Coqueria</title>
     <link rel="icon" href="assets/favicon.png" type="image/x-icon">
     <link rel="stylesheet" href="style.css">
     
@@ -34,7 +34,7 @@
     </svg>
     <header class="top_bar">
         <button id="menu" class="menu_button" aria-label="Menu"><svg class="icone" aria-hidden="true"><use href="#i-menu"></use></svg></button>
-        <h1 id="titulo_geral">Central De Dados Controle Térmico</h1>
+        <h1 id="titulo_geral">Central De Dados Coqueria</h1>
         <img id="logo" src="./assets/logo.png" class="logo-ternium" height="35" width="109" alkt="Logo Ternium">
     </header>
 
@@ -73,7 +73,7 @@
                     <div class="botoes_acao">
                         <input type="file" id="btn_importar_json" accept=".json" style="display: none;">
                         <!-- <button id="btn_trigger_import" class="btn_acao btn_secundario">Carregar Banco</button> -->
-                        <button id="btn_exportar_json" class="btn_acao">Baixar Banco</button>
+                        <button id="btn_baixar_excel_reparos" class="btn_acao">Baixar Banco</button>
                         <button id="btn_abrir_tabela" class="btn_acao btn_secundario">Tabela de Dados</button>
                     </div>
                 </div>
@@ -486,9 +486,16 @@
                     <div class="form_group"><label>Solução:</label><textarea id="desc_solucao" rows="2"></textarea></div>
 
                     <div class="form_group row_group">
-                        <div class="half_width"><label>Andamento:</label><select id="status_reparo"><option value="inspecao">Inspeção</option><option value="nao_reparado">Não Reparado</option><option value="em_andamento">Em Andamento</option><option value="concluido">Concluído</option></select></div>
-                        <div class="half_width"><label>Avaliação CT:</label><input type="text" id="aval_ct"></div>
+                        <div class="half_width"><label>Data da Ocorrência:</label><input type="date" id="data_ocorrencia"></div>
+                        <div class="half_width"><label>Ranking do Problema:</label><select id="ranking_problema"><option value=""></option><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option></select></div>
                     </div>
+
+                    <div class="form_group row_group">
+                        <div class="half_width"><label>Andamento:</label><select id="status_reparo"><option value="inspecao">Inspeção</option><option value="nao_reparado">Não Reparado</option><option value="em_andamento">Em Andamento</option><option value="concluido">Concluído</option></select></div>
+                        <div class="half_width"><label>Avaliação CT:</label><select id="aval_ct"><option value=""></option><option value="OK">OK</option><option value="NOK">NOK</option></select></div>
+                    </div>
+
+                    <div class="form_group"><label>Avaliador CT:</label><input type="text" id="avaliador_ct" autocomplete="off"></div>
 
                     <div class="form_group row_group">
                         <div class="half_width"><label>Prazo:</label><input type="date" id="prazo_reparo"></div>
@@ -743,11 +750,12 @@
                 <table class="data_table" id="tabela_banco">
                     <thead>
                         <tr>
-                            <th>Data</th><th>ID Alvo</th><th>Status</th><th>Bat.</th><th>Bloco</th><th>Forno</th>
-                            <th>Lado</th><th>Problema</th><th>Observação</th><th>Prazo</th><th>Fim</th><th>Situação</th><th>Registrado por</th><th style="width: 80px;">Ações</th>
+                            <th>Data</th><th>Ocorrência</th><th>ID Alvo</th><th>Status</th><th>Bat.</th><th>Bloco</th><th>Forno</th>
+                            <th>Lado</th><th>Problema</th><th>Rank.</th><th>Aval. CT</th><th>Avaliador CT</th><th>Observação</th><th>Prazo</th><th>Fim</th><th>Situação</th><th>Registrado por</th><th style="width: 80px;">Ações</th>
                         </tr>
                         <tr class="linha_filtros_tabela">
                             <th><input type="text" id="ftab_data" class="input_filtro_col"></th>
+                            <th><input type="text" id="ftab_ocorrencia" class="input_filtro_col" placeholder="dd/mm/aaaa"></th>
                             <th><input type="text" id="ftab_id" class="input_filtro_col"></th>
                             <th>
                                 <select id="ftab_status" class="input_filtro_col">
@@ -773,6 +781,17 @@
                                 </select>
                             </th>
                             <th><input type="text" id="ftab_problema" class="input_filtro_col"></th>
+                            <th>
+                                <select id="ftab_ranking" class="input_filtro_col">
+                                    <option value="Todos">Todos</option><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option>
+                                </select>
+                            </th>
+                            <th>
+                                <select id="ftab_aval_ct" class="input_filtro_col">
+                                    <option value="Todos">Todos</option><option value="OK">OK</option><option value="NOK">NOK</option>
+                                </select>
+                            </th>
+                            <th><input type="text" id="ftab_avaliador_ct" class="input_filtro_col"></th>
                             <th><input type="text" id="ftab_observacao" class="input_filtro_col"></th>
                             <th><input type="text" id="ftab_prazo" class="input_filtro_col" placeholder="dd/mm/aaaa"></th>
                             <th><input type="text" id="ftab_fim" class="input_filtro_col" placeholder="dd/mm/aaaa"></th>
