@@ -71,9 +71,16 @@ export interface Maquina {
 }
 
 export interface Perfil {
+    id?: string;
     nome: string;
     sobrenome: string;
+    matricula?: string;
+    email?: string | null;
     isAdmin: boolean;
+    isDev?: boolean;                  // desenvolvedor: o isAdmin dele só muda direto no Supabase
+    cadastrado_em?: string | null;
+    // Visibilidade por página: colunas ver_<pagina> (padrão true no banco)
+    [coluna: `ver_${string}`]: boolean | undefined;
 }
 
 export interface SessaoAuth {

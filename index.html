@@ -59,6 +59,7 @@
 
                 <!-- <button class="nav_btn" data-target="tltb">TL=TB</button> -->
                 <!-- <button class="nav_btn" data-target="descarbonizacao">Descarbonização</button> -->
+                <button class="nav_btn" data-target="permissoes" style="display: none;">Permissões</button>
                 <button class="nav_btn" data-target="cadastro">Login</button> 
                 <!-- <button class="nav_btn" data-target="dashboard">Dashboard (Gráficos)</button> -->
             </nav>
@@ -435,6 +436,45 @@
 
                 </div>
             </section>
+
+            <section id="permissoes" class="page_section">
+                <div class="header_reparos">
+                    <h2>Permissões</h2>
+                    <div class="botoes_acao">
+                        <button id="btn_atualizar_permissoes" class="btn_acao btn_secundario">Atualizar</button>
+                    </div>
+                </div>
+
+                <div id="perm_resumo" class="resumo_cards"></div>
+
+                <div class="perm_filtros">
+                    <input type="search" id="perm_busca" placeholder="Buscar" aria-label="Buscar usuário" autocomplete="off">
+                    <select id="perm_filtro" aria-label="Filtrar usuários">
+                        <option value="todos">Todos</option>
+                        <option value="admins">Administradores</option>
+                        <option value="usuarios">Sem administração</option>
+                        <option value="sem_lancamento">Sem lançamentos</option>
+                    </select>
+                    <select id="perm_ordem" aria-label="Ordenar usuários">
+                        <option value="lancamentos">Mais lançamentos</option>
+                        <option value="recentes">Lançamento mais recente</option>
+                        <option value="nome">Nome</option>
+                    </select>
+                </div>
+
+                <div class="perm_tabela_wrap">
+                    <table class="data_table" id="tabela_permissoes">
+                        <thead>
+                            <tr>
+                                <th>Usuário</th><th>Matrícula</th><th>Admin</th><th>Páginas</th>
+                                <th>Reparos</th><th>Máquinas</th><th>Total</th><th>30 dias</th><th>Último lançamento</th><th>Cadastro</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tbody_permissoes"></tbody>
+                    </table>
+                </div>
+            </section>
+
 
         </main>
     </div>

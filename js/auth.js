@@ -1,9 +1,9 @@
 // =========================================================
 // --- LOGIN / CADASTRO / RECUPERAÇÃO (Supabase Auth) ---
 // =========================================================
-import { state, config, salvarSessaoLocal, isAdminAtual, nomeExibicaoAtual, carregarCacheLocal, salvarCacheLocal, carregarCacheLocalMaquinas, salvarCacheLocalMaquinas } from './state.js';
+import { state, config, salvarSessaoLocal, isAdminAtual, nomeExibicaoAtual, PAGINAS_PERMISSAO, carregarCacheLocal, salvarCacheLocal, carregarCacheLocalMaquinas, salvarCacheLocalMaquinas } from './state.js';
 import { listarReparosSupabase, listarMaquinasSupabase } from './supabase-api.js';
-import { irParaAba, getNavElements } from './navigation.js';
+import { irParaAba, getNavElements, abaDisponivel, primeiraAbaDisponivel } from './navigation.js';
 import { gerarMapaBaterias } from './mapa2d.js';
 import { processarDadosGlobais } from './mapa2d.js';
 import { renderizarTabela } from './tabela.js';
@@ -117,11 +117,18 @@ async function sairAuth() {
 }
 
 async function criarPerfilProprio(userId, tokenAcesso, dados) {
-    const resposta = await fetch(`${config.SUPABASE_URL}/${config.SUPABASE_TABLE_PERFIS}`, {
+    const enviar = (corpo) => fetch(`${config.SUPABASE_URL}/${config.SUPABASE_TABLE_PERFIS}`, {
         method: 'POST',
         headers: { apikey: config.SUPABASE_KEY, Authorization: `Bearer ${tokenAcesso}`, 'Content-Type': 'application/json', Prefer: 'return=representation' },
-        body: JSON.stringify({ id: userId, ...dados, isAdmin: false })
+        body: JSON.stringify({ id: userId, ...corpo, isAdmin: false })
     });
+    let resposta = await enviar(dados);
+    // Se o SQL de permissões ainda não foi rodado, a coluna "email" não
+    // existe: cria o perfil sem ela em vez de impedir o primeiro acesso.
+    if (!resposta.ok && dados.email !== undefined) {
+        const { email, ...semEmail } = dados;
+        resposta = await enviar(semEmail);
+    }
     if (!resposta.ok) throw new Error(`Supabase ${resposta.status}: ${await resposta.text()}`);
     const lista = await resposta.json();
     return lista[0];
@@ -146,7 +153,8 @@ async function iniciarSessaoAPartirDoToken(tokenResposta) {
             perfil = await criarPerfilProprio(tokenResposta.user.id, tokenResposta.access_token, {
                 nome: meta.nome || '',
                 sobrenome: meta.sobrenome || '',
-                matricula: meta.matricula || ''
+                matricula: meta.matricula || '',
+                email: tokenResposta.user?.email
             });
         }
     } catch (erro) {
@@ -264,8 +272,8 @@ function renderizarCadastroUI() {
     $('auth_matricula').textContent = p?.matricula || '-';
     $('auth_email').textContent = email;
     const badge = $('auth_badge');
-    badge.textContent = p?.isAdmin ? 'Administrador' : 'Somente Navegação';
-    badge.className = `badge_admin ${p?.isAdmin ? 'sim' : 'nao'}`;
+    badge.textContent = p?.isDev ? 'Desenvolvedor' : (p?.isAdmin ? 'Administrador' : 'Somente Navegação');
+    badge.className = `badge_admin ${(p?.isAdmin || p?.isDev) ? 'sim' : 'nao'}`;
 }
 
 function aplicarEstadoSessao() {
@@ -273,23 +281,29 @@ function aplicarEstadoSessao() {
     aplicarPermissoes();
 }
 
-// Mostra/esconde as abas do menu lateral conforme o login. Sem sessão
-// ativa, só a aba "Cadastro" (login/cadastro) fica visível; se a pessoa
-// deslogar estando em outra aba, ela é redirecionada pra lá.
+// Depois de entrar: mostra o cartão do usuário, busca os dados que a
+// pessoa tem permissão de ver (antes do login o banco devolve vazio) e
+// aplica as permissões.
+async function aposLogin() {
+    renderizarCadastroUI();
+    await recarregarDados();
+    aplicarPermissoes();
+}
+
+// Mostra/esconde as abas do menu lateral conforme login e permissões:
+// sem sessão só "Login"; logado, cada página de PAGINAS_PERMISSAO depende
+// da coluna ver_<pagina> do perfil e "Permissões" é só para admins. Se a
+// aba aberta deixar de estar disponível, a pessoa é levada para outra.
 export function aplicarVisibilidadeAbas() {
-    const logado = !!state.sessaoAtual;
     const { navButtons, pageSections } = getNavElements();
 
     navButtons.forEach(btn => {
-        const targetId = btn.getAttribute('data-target');
-        btn.style.display = (logado || config.ABAS_LIVRES_SEM_LOGIN.includes(targetId)) ? '' : 'none';
+        btn.style.display = abaDisponivel(btn.getAttribute('data-target')) ? '' : 'none';
     });
 
-    if (!logado) {
-        const secaoAtiva = Array.from(pageSections).find(s => s.classList.contains('active_section'));
-        if (secaoAtiva && !config.ABAS_LIVRES_SEM_LOGIN.includes(secaoAtiva.id)) {
-            irParaAba('cadastro');
-        }
+    const secaoAtiva = Array.from(pageSections).find(s => s.classList.contains('active_section'));
+    if (secaoAtiva && !abaDisponivel(secaoAtiva.id)) {
+        irParaAba(state.sessaoAtual ? primeiraAbaDisponivel() : 'cadastro');
     }
 }
 window.aplicarVisibilidadeAbas = aplicarVisibilidadeAbas;
@@ -415,7 +429,8 @@ function exibirAvisoInicial(retorno) {
 // --- Handlers dos formulários (Enter dispara o submit nativo) ---
 
 function irParaPaginaInicial() {
-    document.querySelector('.nav_btn[data-target="reparos"]')?.click();
+    const destino = primeiraAbaDisponivel();
+    document.querySelector(`.nav_btn[data-target="${destino}"]`)?.click();
 }
 
 async function aoEntrar(evento) {
@@ -443,7 +458,7 @@ async function aoEntrar(evento) {
         else localStorage.removeItem(CHAVE_EMAIL_LEMBRADO);
 
         $('login_senha').value = '';
-        aplicarEstadoSessao();
+        await aposLogin();
         if (erroPerfil) mostrarToast(`Login feito, mas houve um problema ao carregar seu perfil: ${erroPerfil}`, 'erro', 9000);
         else mostrarToast(`Bem-vindo(a), ${nomeExibicaoAtual()}!`, 'sucesso');
         irParaPaginaInicial();
@@ -505,7 +520,7 @@ async function aoCadastrar(evento) {
             // Confirmação de email desligada no projeto: já vem logado
             const { erroPerfil } = await iniciarSessaoAPartirDoToken(resultado);
             $('cad_email').value = '';
-            aplicarEstadoSessao();
+            await aposLogin();
             if (erroPerfil) mostrarToast(`Sua conta foi criada, mas houve um problema ao salvar o perfil: ${erroPerfil}`, 'erro', 9000);
             else mostrarToast(`Cadastro realizado, ${nome}! Você está como usuário de navegação até um administrador liberar sua permissão.`, 'sucesso', 8000);
             irParaPaginaInicial();
@@ -575,7 +590,7 @@ async function aoDefinirNovaSenha(evento) {
         tokenRecuperacao = null;
         $('nova_senha').value = '';
         $('nova_senha_confirma').value = '';
-        aplicarEstadoSessao();
+        await aposLogin();
         if (erroPerfil) mostrarToast(`Senha redefinida, mas houve um problema ao carregar seu perfil: ${erroPerfil}`, 'erro', 9000);
         else mostrarToast('Senha redefinida com sucesso.', 'sucesso');
         irParaPaginaInicial();
@@ -624,7 +639,7 @@ async function aoConfirmarCodigo(evento) {
         const { erroPerfil } = await iniciarSessaoAPartirDoToken(tokens);
         fluxoCodigo = null;
         ['codigo_valor', 'codigo_senha', 'codigo_senha_confirma'].forEach(id => { $(id).value = ''; });
-        aplicarEstadoSessao();
+        await aposLogin();
         if (erroPerfil) mostrarToast(`Login feito, mas houve um problema ao carregar seu perfil: ${erroPerfil}`, 'erro', 9000);
         else mostrarToast(recuperacao ? 'Senha redefinida com sucesso.' : `Cadastro confirmado! Bem-vindo(a), ${nomeExibicaoAtual()}.`, 'sucesso');
         irParaPaginaInicial();
@@ -704,17 +719,23 @@ export function initAuth() {
     });
 
     // --- Eventos vindos de sessao.js ---
-    window.addEventListener('sessao:perfil', (e) => {
+    window.addEventListener('sessao:perfil', async (e) => {
         const { anterior, atual } = e.detail;
-        aplicarEstadoSessao();
+        const mudou = assinaturaPermissoes(anterior) !== assinaturaPermissoes(atual);
+        renderizarCadastroUI();
+        if (mudou) await recarregarDados();     // o que a pessoa pode ver mudou
+        aplicarPermissoes();
         if (anterior && anterior.isAdmin !== atual.isAdmin) {
             mostrarToast(atual.isAdmin
                 ? 'Permissão atualizada: você agora é Administrador.'
-                : 'Permissão atualizada: seu acesso agora é somente de navegação.', 'info', 7000);
+                : 'Permissão atualizada: seu acesso de administrador foi removido.', 'info', 7000);
+        } else if (mudou) {
+            mostrarToast('Suas permissões de acesso foram atualizadas.', 'info', 7000);
         }
     });
 
     window.addEventListener('sessao:encerrada', (e) => {
+        limparDadosEmMemoria();
         mostrarPainelAuth('login', { focar: false });
         aplicarEstadoSessao();
         if (e.detail?.motivo === 'expirada') {
@@ -724,10 +745,17 @@ export function initAuth() {
     });
 
     // Login/logout/renovação feito em outra aba do mesmo navegador
-    window.addEventListener('sessao:externa', () => {
-        if (!state.sessaoAtual) mostrarPainelAuth('login', { focar: false });
+    window.addEventListener('sessao:externa', async () => {
+        if (!state.sessaoAtual) { limparDadosEmMemoria(); mostrarPainelAuth('login', { focar: false }); }
+        else await recarregarDados();
         aplicarEstadoSessao();
     });
+}
+
+// Resumo do que define o acesso: se mudar, os dados precisam ser relidos.
+function assinaturaPermissoes(perfil) {
+    if (!perfil) return '';
+    return JSON.stringify([perfil.isAdmin === true, perfil.isDev === true, ...PAGINAS_PERMISSAO.map(p => perfil[`ver_${p.id}`] !== false)]);
 }
 
 // Ao abrir o app: renova o token se já venceu e traz o perfil atual do
@@ -744,10 +772,10 @@ async function restaurarSessaoAoIniciar() {
     if (state.sessaoAtual) await sincronizarPerfil({ forcar: true });
 }
 
-export async function inicializarApp() {
-    const retornoLink = await processarRedirectAuth();
-    if (retornoLink !== 'login') await restaurarSessaoAoIniciar();
-
+// Carrega reparos e máquinas do Supabase (com cache local como plano B).
+// O banco só devolve o que a pessoa pode ver (RLS por página), então isto
+// precisa rodar de novo sempre que login/permissões mudam.
+async function carregarDados() {
     try {
         state.dbReparos = await listarReparosSupabase();
         salvarCacheLocal();
@@ -771,6 +799,35 @@ export async function inicializarApp() {
         console.error('Falha ao carregar lançamentos de máquinas. Usando cache local:', erro);
         state.dbMaquinas = carregarCacheLocalMaquinas();
     }
+}
+
+// Redesenha mapa/máquinas/tabelas com os dados em memória.
+function redesenharDados() {
+    processarDadosGlobais();
+    renderizarPaginaMaquinas();
+    if (document.getElementById('tbody_banco')) renderizarTabela();
+    if (document.getElementById('tbody_banco_maquinas')) renderizarTabelaMaquinas();
+}
+
+async function recarregarDados() {
+    await carregarDados();
+    redesenharDados();
+}
+
+// Ao sair: nada dos dados fica na tela nem no cache do navegador.
+function limparDadosEmMemoria() {
+    state.dbReparos = [];
+    state.dbMaquinas = [];
+    salvarCacheLocal();
+    salvarCacheLocalMaquinas();
+    redesenharDados();
+}
+
+export async function inicializarApp() {
+    const retornoLink = await processarRedirectAuth();
+    if (retornoLink !== 'login') await restaurarSessaoAoIniciar();
+
+    await carregarDados();
 
     window.mapaStatusAtual = {};
     gerarMapaBaterias();

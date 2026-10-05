@@ -12,6 +12,7 @@ import { initImpressao } from './impressao.js';
 import { initTabela } from './tabela.js';
 import { initDashboard } from './dashboard.js';
 import { initMaquinas } from './maquinas.js';
+import { initPermissoes } from './permissoes.js';
 
 document.addEventListener('DOMContentLoaded', () => {
     // --- 1. Menu, abas e cadastro/login ---
@@ -31,5 +32,6 @@ document.addEventListener('DOMContentLoaded', () => {
     initImpressao();
     initTabela();
     initMaquinas();
+    initPermissoes();
     initDashboard();
 });

@@ -110,3 +110,20 @@ export async function importarReparosSupabase(registros) {
     });
     return resposta;
 }
+
+// --- "perfis" (usado pela página Permissões; só admins enxergam todos) ---
+
+export async function listarPerfisSupabase() {
+    return requisicaoSupabase(config.SUPABASE_TABLE_PERFIS, '?select=*&order=nome.asc');
+}
+
+export async function atualizarPerfilSupabase(id, dados) {
+    const resposta = await requisicaoSupabase(config.SUPABASE_TABLE_PERFIS, `?id=eq.${encodeURIComponent(id)}`, {
+        method: 'PATCH',
+        headers: { Prefer: 'return=representation' },
+        body: JSON.stringify(dados)
+    });
+    // O RLS não dá erro quando filtra a linha: devolve lista vazia.
+    if (!resposta || resposta.length === 0) throw new Error('Nenhum perfil foi atualizado (sem permissão ou usuário inexistente).');
+    return resposta[0];
+}

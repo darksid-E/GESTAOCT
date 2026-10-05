@@ -84,6 +84,27 @@ export function tokenAtual() {
 export function isAdminAtual() {
     return !!(state.sessaoAtual?.perfil?.isAdmin === true);
 }
+export function isDevAtual() {
+    return state.sessaoAtual?.perfil?.isDev === true;
+}
+// Páginas cujo acesso é controlado pelas colunas ver_<id> da tabela perfis.
+// Para controlar uma página nova: criar a coluna no banco e incluí-la aqui.
+export const PAGINAS_PERMISSAO = [
+    { id: 'reparos', rotulo: 'Reparos' },
+    { id: 'maquinas', rotulo: 'Máquinas' },
+];
+// Administrador vê tudo; os demais dependem da coluna ver_<pagina>.
+// Coluna ausente conta como liberada (mesmo padrão do banco).
+export function podeVerPagina(pagina) {
+    if (!state.sessaoAtual)
+        return false;
+    const perfil = state.sessaoAtual.perfil;
+    if (!perfil)
+        return true;
+    if (perfil.isAdmin === true)
+        return true;
+    return perfil[`ver_${pagina}`] !== false;
+}
 export function nomeExibicaoAtual() {
     const p = state.sessaoAtual?.perfil;
     if (p)

@@ -1,11 +1,12 @@
 // =========================================================
 // --- 1. LÓGICA DO MENU E ABAS ---
 // =========================================================
-import { state, config } from './state.js';
+import { state, config, isAdminAtual, podeVerPagina, PAGINAS_PERMISSAO } from './state.js';
 import { mostrarToast } from './toast.js';
 import { renderizarDashboard } from './dashboard.js';
 import { renderizarPaginaMaquinas, aplicarFiltroBateriaMaquinas } from './maquinas.js';
 import { aplicarFiltroBateriaMapa, processarDadosGlobais } from './mapa2d.js';
+import { renderizarPermissoes } from './permissoes.js';
 
 let menuButton, sideBar, navButtons, subBotoesBateria, pageSections, sidebarBackdrop;
 
@@ -28,6 +29,26 @@ export function irParaAba(targetId) {
 
     if (targetId === 'dashboard') { renderizarDashboard(); }
     if (targetId === 'maquinas') { renderizarPaginaMaquinas(); }
+    if (targetId === 'permissoes') { renderizarPermissoes(); }
+}
+
+// Regra única de "esta aba existe para a pessoa atual?" — usada pelo menu
+// (esconder botões), pela navegação (bloquear) e pelo auth.js.
+export function abaDisponivel(targetId) {
+    if (config.ABAS_LIVRES_SEM_LOGIN.includes(targetId)) return true;
+    if (!state.sessaoAtual) return false;
+    if (targetId === 'permissoes') return isAdminAtual();
+    if (PAGINAS_PERMISSAO.some(p => p.id === targetId)) return podeVerPagina(targetId);
+    return true;
+}
+
+// Primeira aba do menu que a pessoa pode abrir (fora a de login).
+export function primeiraAbaDisponivel() {
+    const botao = Array.from(navButtons).find(b => {
+        const id = b.getAttribute('data-target');
+        return id !== 'cadastro' && abaDisponivel(id);
+    });
+    return botao ? botao.getAttribute('data-target') : 'cadastro';
 }
 
 // Confere login antes de navegar; usado tanto pelos botões principais
@@ -38,6 +59,11 @@ function podeNavegarPara(targetId) {
     if (!logado && !config.ABAS_LIVRES_SEM_LOGIN.includes(targetId)) {
         mostrarToast('Faça login para acessar esta área.', 'info');
         irParaAba('cadastro');
+        if (window.innerWidth <= 768) fecharSidebar();
+        return false;
+    }
+    if (logado && !abaDisponivel(targetId)) {
+        mostrarToast('Você não tem acesso a esta página.', 'info');
         if (window.innerWidth <= 768) fecharSidebar();
         return false;
     }
