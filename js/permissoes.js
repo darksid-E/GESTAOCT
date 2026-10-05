@@ -4,12 +4,13 @@
 // Lista todos os perfis cadastrados, permite trocar isAdmin e a
 // visibilidade de cada página (colunas ver_<pagina>) e mostra
 // indicadores de lançamentos por pessoa. Quem enxerga a página é definido
-// por ver_permissoes; quem edita, por isAdmin. A coluna ver_permissoes em
-// si só é alterada direto no Supabase. As travas reais (quem pode
+// por ver_permissoes; quem edita é só quem tem isDev (isAdmin serve apenas
+// para editar/lançar dados). Desenvolvedores só são alterados por eles
+// mesmos ou direto no Supabase, e a coluna ver_permissoes também. As travas reais (quem pode
 // alterar o quê, proteção dos desenvolvedores) ficam no banco —
 // ver supabase-permissoes.sql; aqui a interface só evita ações que o
 // servidor recusaria.
-import { state, isAdminAtual, podeVerPagina, paginaLiberadaParaPerfil, PAGINAS_PERMISSAO } from './state.js';
+import { state, isDevAtual, podeVerPagina, paginaLiberadaParaPerfil, PAGINAS_PERMISSAO } from './state.js';
 import { listarPerfisSupabase, atualizarPerfilSupabase } from './supabase-api.js';
 import { mostrarToast } from './toast.js';
 
@@ -107,19 +108,18 @@ function renderizarResumo(ind, semCorrespondencia) {
     elResumo.dataset.semCorrespondencia = semCorrespondencia;
 }
 
-function linhaUsuario(p, i, maxTotal, euId, euAdmin) {
+function linhaUsuario(p, i, maxTotal, euId, euDev) {
     const total = i.reparos + i.maquinas;
     const ehEu = p.id === euId;
     const bloqueado = p.isDev === true && !ehEu;      // dev: só ele mesmo / o Supabase
-    const adminSwitchDesabilitado = !euAdmin || bloqueado || ehEu;
+    const adminSwitchDesabilitado = !euDev || bloqueado || ehEu;
 
     const chips = PAGINAS_PERMISSAO.map(pg => {
         const ativo = paginaLiberadaParaPerfil(p, pg.id);
-        // Travado: quem só visualiza (sem isAdmin), páginas só editáveis no
-        // Supabase e desenvolvedores (só o próprio dev ou o Supabase mudam).
-        // Administradores NÃO ficam travados: a visibilidade de página vale
-        // para eles também.
-        const travado = !euAdmin || !pg.editavelNoApp || bloqueado;
+        // Travado: quem não é dev (só visualiza), páginas só editáveis no
+        // Supabase e outros desenvolvedores. Administradores comuns podem
+        // ter as páginas alteradas por um dev.
+        const travado = !euDev || !pg.editavelNoApp || bloqueado;
         return `<button type="button" class="chip_pagina${ativo ? ' ativo' : ''}" data-acao="pagina" data-id="${esc(p.id)}" data-pagina="${esc(pg.id)}" aria-pressed="${ativo}"${travado ? ' disabled' : ''}>${esc(pg.rotulo)}</button>`;
     }).join('');
 
@@ -188,8 +188,8 @@ function renderizarTabela() {
     }
     const maxTotal = Math.max(...perfis.map(total), 0);
     const euId = state.sessaoAtual?.user?.id;
-    const euAdmin = isAdminAtual();
-    elTbody.innerHTML = lista.map(p => linhaUsuario(p, ind.get(p.id), maxTotal, euId, euAdmin)).join('');
+    const euDev = isDevAtual();
+    elTbody.innerHTML = lista.map(p => linhaUsuario(p, ind.get(p.id), maxTotal, euId, euDev)).join('');
 }
 
 function mensagemDeErro(erro) {
