@@ -95,14 +95,13 @@ export const PAGINAS_PERMISSAO = [
     { id: 'maquinas', rotulo: 'Máquinas', editavelNoApp: true },
     { id: 'permissoes', rotulo: 'Permissões', editavelNoApp: false },
 ];
-// A página Permissões é liberada SOMENTE pela coluna ver_permissoes
-// (padrão false, nem administrador tem acesso automático). Nas demais,
-// administrador vê tudo e os outros dependem de ver_<pagina> (padrão true).
+// Visibilidade de página depende SÓ das colunas ver_<pagina> (isAdmin
+// decide apenas a edição). Vale para todos, inclusive administradores:
+// ver_<pagina> ausente conta como liberada (padrão true), exceto
+// ver_permissoes (padrão false).
 export function paginaLiberadaParaPerfil(perfil, pagina) {
     if (pagina === 'permissoes')
         return perfil.ver_permissoes === true;
-    if (perfil.isAdmin === true)
-        return true;
     return perfil[`ver_${pagina}`] !== false;
 }
 export function podeVerPagina(pagina) {

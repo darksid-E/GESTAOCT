@@ -115,9 +115,11 @@ function linhaUsuario(p, i, maxTotal, euId, euAdmin) {
 
     const chips = PAGINAS_PERMISSAO.map(pg => {
         const ativo = paginaLiberadaParaPerfil(p, pg.id);
-        // Travado: quem vê sem editar, páginas só editáveis no Supabase,
-        // administradores (já veem tudo) e desenvolvedores de outras pessoas
-        const travado = !euAdmin || !pg.editavelNoApp || p.isAdmin === true || bloqueado;
+        // Travado: quem só visualiza (sem isAdmin), páginas só editáveis no
+        // Supabase e desenvolvedores (só o próprio dev ou o Supabase mudam).
+        // Administradores NÃO ficam travados: a visibilidade de página vale
+        // para eles também.
+        const travado = !euAdmin || !pg.editavelNoApp || bloqueado;
         return `<button type="button" class="chip_pagina${ativo ? ' ativo' : ''}" data-acao="pagina" data-id="${esc(p.id)}" data-pagina="${esc(pg.id)}" aria-pressed="${ativo}"${travado ? ' disabled' : ''}>${esc(pg.rotulo)}</button>`;
     }).join('');
 
