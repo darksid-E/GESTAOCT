@@ -1,7 +1,7 @@
 // =========================================================
 // --- LOGIN / CADASTRO / RECUPERAÇÃO (Supabase Auth) ---
 // =========================================================
-import { state, config, salvarSessaoLocal, isAdminAtual, nomeExibicaoAtual, PAGINAS_PERMISSAO, carregarCacheLocal, salvarCacheLocal, carregarCacheLocalMaquinas, salvarCacheLocalMaquinas } from './state.js';
+import { state, config, salvarSessaoLocal, isAdminAtual, nomeExibicaoAtual, PAGINAS_PERMISSAO, paginaLiberadaParaPerfil, carregarCacheLocal, salvarCacheLocal, carregarCacheLocalMaquinas, salvarCacheLocalMaquinas } from './state.js';
 import { listarReparosSupabase, listarMaquinasSupabase } from './supabase-api.js';
 import { irParaAba, getNavElements, abaDisponivel, primeiraAbaDisponivel } from './navigation.js';
 import { gerarMapaBaterias } from './mapa2d.js';
@@ -292,7 +292,7 @@ async function aposLogin() {
 
 // Mostra/esconde as abas do menu lateral conforme login e permissões:
 // sem sessão só "Login"; logado, cada página de PAGINAS_PERMISSAO depende
-// da coluna ver_<pagina> do perfil e "Permissões" é só para admins. Se a
+// da coluna ver_<pagina> do perfil ("Permissões" só por ver_permissoes). Se a
 // aba aberta deixar de estar disponível, a pessoa é levada para outra.
 export function aplicarVisibilidadeAbas() {
     const { navButtons, pageSections } = getNavElements();
@@ -755,7 +755,7 @@ export function initAuth() {
 // Resumo do que define o acesso: se mudar, os dados precisam ser relidos.
 function assinaturaPermissoes(perfil) {
     if (!perfil) return '';
-    return JSON.stringify([perfil.isAdmin === true, perfil.isDev === true, ...PAGINAS_PERMISSAO.map(p => perfil[`ver_${p.id}`] !== false)]);
+    return JSON.stringify([perfil.isAdmin === true, perfil.isDev === true, ...PAGINAS_PERMISSAO.map(p => paginaLiberadaParaPerfil(perfil, p.id))]);
 }
 
 // Ao abrir o app: renova o token se já venceu e traz o perfil atual do

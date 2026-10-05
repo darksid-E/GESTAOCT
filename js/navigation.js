@@ -1,7 +1,7 @@
 // =========================================================
 // --- 1. LÓGICA DO MENU E ABAS ---
 // =========================================================
-import { state, config, isAdminAtual, podeVerPagina, PAGINAS_PERMISSAO } from './state.js';
+import { state, config, podeVerPagina, PAGINAS_PERMISSAO } from './state.js';
 import { mostrarToast } from './toast.js';
 import { renderizarDashboard } from './dashboard.js';
 import { renderizarPaginaMaquinas, aplicarFiltroBateriaMaquinas } from './maquinas.js';
@@ -37,7 +37,6 @@ export function irParaAba(targetId) {
 export function abaDisponivel(targetId) {
     if (config.ABAS_LIVRES_SEM_LOGIN.includes(targetId)) return true;
     if (!state.sessaoAtual) return false;
-    if (targetId === 'permissoes') return isAdminAtual();
     if (PAGINAS_PERMISSAO.some(p => p.id === targetId)) return podeVerPagina(targetId);
     return true;
 }

@@ -3,11 +3,13 @@
 // =========================================================
 // Lista todos os perfis cadastrados, permite trocar isAdmin e a
 // visibilidade de cada página (colunas ver_<pagina>) e mostra
-// indicadores de lançamentos por pessoa. As travas reais (quem pode
+// indicadores de lançamentos por pessoa. Quem enxerga a página é definido
+// por ver_permissoes; quem edita, por isAdmin. A coluna ver_permissoes em
+// si só é alterada direto no Supabase. As travas reais (quem pode
 // alterar o quê, proteção dos desenvolvedores) ficam no banco —
 // ver supabase-permissoes.sql; aqui a interface só evita ações que o
 // servidor recusaria.
-import { state, isAdminAtual, PAGINAS_PERMISSAO } from './state.js';
+import { state, isAdminAtual, podeVerPagina, paginaLiberadaParaPerfil, PAGINAS_PERMISSAO } from './state.js';
 import { listarPerfisSupabase, atualizarPerfilSupabase } from './supabase-api.js';
 import { mostrarToast } from './toast.js';
 
@@ -105,15 +107,17 @@ function renderizarResumo(ind, semCorrespondencia) {
     elResumo.dataset.semCorrespondencia = semCorrespondencia;
 }
 
-function linhaUsuario(p, i, maxTotal, euId) {
+function linhaUsuario(p, i, maxTotal, euId, euAdmin) {
     const total = i.reparos + i.maquinas;
     const ehEu = p.id === euId;
     const bloqueado = p.isDev === true && !ehEu;      // dev: só ele mesmo / o Supabase
-    const adminSwitchDesabilitado = bloqueado || ehEu;
+    const adminSwitchDesabilitado = !euAdmin || bloqueado || ehEu;
 
     const chips = PAGINAS_PERMISSAO.map(pg => {
-        const ativo = p.isAdmin === true || p[`ver_${pg.id}`] !== false;
-        const travado = p.isAdmin === true || bloqueado;
+        const ativo = paginaLiberadaParaPerfil(p, pg.id);
+        // Travado: quem vê sem editar, páginas só editáveis no Supabase,
+        // administradores (já veem tudo) e desenvolvedores de outras pessoas
+        const travado = !euAdmin || !pg.editavelNoApp || p.isAdmin === true || bloqueado;
         return `<button type="button" class="chip_pagina${ativo ? ' ativo' : ''}" data-acao="pagina" data-id="${esc(p.id)}" data-pagina="${esc(pg.id)}" aria-pressed="${ativo}"${travado ? ' disabled' : ''}>${esc(pg.rotulo)}</button>`;
     }).join('');
 
@@ -182,7 +186,8 @@ function renderizarTabela() {
     }
     const maxTotal = Math.max(...perfis.map(total), 0);
     const euId = state.sessaoAtual?.user?.id;
-    elTbody.innerHTML = lista.map(p => linhaUsuario(p, ind.get(p.id), maxTotal, euId)).join('');
+    const euAdmin = isAdminAtual();
+    elTbody.innerHTML = lista.map(p => linhaUsuario(p, ind.get(p.id), maxTotal, euId, euAdmin)).join('');
 }
 
 function mensagemDeErro(erro) {
@@ -221,7 +226,7 @@ async function aoAlterarAdmin(input) {
 async function aoAlterarPagina(botao) {
     const perfil = perfis.find(p => p.id === botao.dataset.id);
     const pagina = PAGINAS_PERMISSAO.find(pg => pg.id === botao.dataset.pagina);
-    if (!perfil || !pagina) return;
+    if (!perfil || !pagina || !pagina.editavelNoApp) return;
     const coluna = `ver_${pagina.id}`;
     const novo = perfil[coluna] === false;       // estava oculta -> liberar
     botao.disabled = true;
@@ -230,7 +235,7 @@ async function aoAlterarPagina(botao) {
 }
 
 export async function renderizarPermissoes() {
-    if (!elTbody || !isAdminAtual() || carregando) return;
+    if (!elTbody || !podeVerPagina('permissoes') || carregando) return;
     carregando = true;
     elTbody.innerHTML = '<tr><td colspan="10" class="perm_vazio">Carregando...</td></tr>';
     try {

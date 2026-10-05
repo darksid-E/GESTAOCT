@@ -89,21 +89,29 @@ export function isDevAtual() {
 }
 // Páginas cujo acesso é controlado pelas colunas ver_<id> da tabela perfis.
 // Para controlar uma página nova: criar a coluna no banco e incluí-la aqui.
+// editavelNoApp: false = a coluna só pode ser alterada direto no Supabase.
 export const PAGINAS_PERMISSAO = [
-    { id: 'reparos', rotulo: 'Reparos' },
-    { id: 'maquinas', rotulo: 'Máquinas' },
+    { id: 'reparos', rotulo: 'Reparos', editavelNoApp: true },
+    { id: 'maquinas', rotulo: 'Máquinas', editavelNoApp: true },
+    { id: 'permissoes', rotulo: 'Permissões', editavelNoApp: false },
 ];
-// Administrador vê tudo; os demais dependem da coluna ver_<pagina>.
-// Coluna ausente conta como liberada (mesmo padrão do banco).
+// A página Permissões é liberada SOMENTE pela coluna ver_permissoes
+// (padrão false, nem administrador tem acesso automático). Nas demais,
+// administrador vê tudo e os outros dependem de ver_<pagina> (padrão true).
+export function paginaLiberadaParaPerfil(perfil, pagina) {
+    if (pagina === 'permissoes')
+        return perfil.ver_permissoes === true;
+    if (perfil.isAdmin === true)
+        return true;
+    return perfil[`ver_${pagina}`] !== false;
+}
 export function podeVerPagina(pagina) {
     if (!state.sessaoAtual)
         return false;
     const perfil = state.sessaoAtual.perfil;
     if (!perfil)
-        return true;
-    if (perfil.isAdmin === true)
-        return true;
-    return perfil[`ver_${pagina}`] !== false;
+        return pagina !== 'permissoes';
+    return paginaLiberadaParaPerfil(perfil, pagina);
 }
 export function nomeExibicaoAtual() {
     const p = state.sessaoAtual?.perfil;
