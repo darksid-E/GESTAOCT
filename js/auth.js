@@ -464,6 +464,20 @@ async function aoEntrar(evento) {
         irParaPaginaInicial();
     } catch (erro) {
         console.error('Erro ao entrar:', erro);
+        // Cadastro feito mas nunca confirmado: leva direto ao painel do código
+        // e já reenvia um código novo (o anterior pode ter expirado).
+        if (String(erro?.message || '').toLowerCase().includes('email not confirmed')) {
+            abrirPainelCodigo('cadastro', email);
+            try {
+                await reenviarCodigoCadastro(email);
+                mostrarMensagem('codigo', `Seu email ainda não foi confirmado. Enviamos um novo código para ${email}.`, 'sucesso');
+                iniciarCooldown($('btn_reenviar_codigo'), COOLDOWN_RECUPERACAO_S, 'Reenviar código');
+            } catch (erroReenvio) {
+                console.error('Erro ao reenviar código de cadastro:', erroReenvio);
+                mostrarMensagem('codigo', traduzirErroAuth(erroReenvio));
+            }
+            return;
+        }
         mostrarMensagem('login', traduzirErroAuth(erro));
         if (erro instanceof ErroAuth && erro.status === 400) { $('login_senha').value = ''; marcarInvalidos(['login_senha']); }
     } finally {
