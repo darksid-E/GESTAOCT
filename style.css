@@ -1238,3 +1238,8 @@ body {
     .botoes_acao .btn_acao, .tabela_filtros .btn_acao { min-width: 100%; }
     #container_3d { height: 190px; }
 }
+/* Máquinas: prévia do desvio e justificativa obrigatória */
+.maquina_desvio_previa { margin: 12px 0; padding: 10px 14px; border-radius: 6px; font-size: 0.9rem; font-weight: 600; border-left: 4px solid var(--cor-status-concluido); background: rgba(50, 205, 50, 0.10); }
+.maquina_desvio_previa.desvio { border-left-color: var(--cor-status-nao-reparado); background: rgba(255, 76, 76, 0.10); }
+.maquina_obrig { color: var(--cor-status-nao-reparado); font-weight: 700; text-transform: none; }
+#maquina_justificativa.invalido { border-color: var(--cor-status-nao-reparado); box-shadow: 0 0 0 3px rgba(255, 76, 76, 0.12); }

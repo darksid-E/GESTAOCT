@@ -690,6 +690,12 @@
                     <div class="half_width"><label>Nível da Bacia (%)</label><input type="number" min="0" max="100" id="maquina_nivel_bacia"></div>
                 </div>
 
+                <div id="maquina_desvio_previa" class="maquina_desvio_previa" hidden></div>
+                <div class="form_group">
+                    <label for="maquina_justificativa">Justificativa <span id="maquina_justificativa_obrig" class="maquina_obrig" hidden>(obrigatória)</span></label>
+                    <textarea id="maquina_justificativa" rows="3"></textarea>
+                </div>
+
                 <div class="form_group">
                     <label>Observação</label>
                     <textarea id="maquina_observacao" rows="3"></textarea>
@@ -725,7 +731,7 @@
                         <tr>
                             <th>Data</th><th>Bat.</th><th>Bloco</th><th>Forno</th><th>Máquina</th>
                             <th>Alt. Prog.</th><th>Perfil</th><th>Alt. Média</th><th>Desvio</th><th>Gatilho</th>
-                            <th>Registrado por</th><th>Observação</th><th style="width: 80px;">Ações</th>
+                            <th>Registrado por</th><th>Observação</th><th>Justificativa</th><th style="width: 80px;">Ações</th>
                         </tr>
                         <tr class="linha_filtros_tabela">
                             <th><input type="text" id="ftabm_data" class="input_filtro_col" placeholder="aaaa-mm-dd"></th>
@@ -760,6 +766,7 @@
                             </th>
                             <th><input type="text" id="ftabm_registrado_por" class="input_filtro_col"></th>
                             <th><input type="text" id="ftabm_observacao" class="input_filtro_col"></th>
+                            <th></th>
                             <th></th>
                         </tr>
                     </thead>

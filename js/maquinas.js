@@ -57,6 +57,8 @@ function limparFormularioMaquina() {
     document.getElementById('maquina_nivel_oleo').value = '';
     document.getElementById('maquina_nivel_bacia').value = '';
     document.getElementById('maquina_observacao').value = '';
+    document.getElementById('maquina_justificativa').value = '';
+    atualizarPreviaDesvio();
     document.getElementById('btn_salvar_maquina').innerText = 'Adicionar Registro';
     document.getElementById('btn_cancelar_edicao_maquina').style.display = 'none';
 }
@@ -79,6 +81,39 @@ function calcularIndicadoresLocal(dados) {
     const desvio = Math.round((alturaMedia - dados.altura_programada) * 100) / 100;
     const gatilho = Math.abs(desvio) > 30 ? 'DESVIO' : 'OK';
     return { altura_media: alturaMedia, desvio, gatilho };
+}
+
+// Lê só o que importa pro cálculo do desvio (medições + altura programada),
+// pra a prévia ao vivo no modal e a validação do envio usarem a mesma conta.
+function lerDadosParaDesvio() {
+    const dados = { altura_programada: Number(document.getElementById('maquina_altura_programada').value) };
+    CAMPOS_BANDEJA.forEach(c => { dados[c] = lerNumeroOpcional(`maquina_${c}`); });
+    return dados;
+}
+
+// Mostra se o lançamento vai dar desvio (mesma regra do banco: |desvio| > 30)
+// e sinaliza que a justificativa passa a ser obrigatória. Sem nenhuma medição
+// da bandeja preenchida não há desvio — e o envio é livre.
+function atualizarPreviaDesvio() {
+    const previa = document.getElementById('maquina_desvio_previa');
+    const rotuloObrig = document.getElementById('maquina_justificativa_obrig');
+    const campoJust = document.getElementById('maquina_justificativa');
+    if (!previa || !rotuloObrig || !campoJust) return;
+
+    const ind = calcularIndicadoresLocal(lerDadosParaDesvio());
+    const temDesvio = ind.gatilho === 'DESVIO';
+
+    if (ind.gatilho === null) {
+        previa.hidden = true;
+    } else {
+        previa.hidden = false;
+        previa.classList.toggle('desvio', temDesvio);
+        previa.textContent = temDesvio
+            ? `Desvio previsto: ${ind.desvio} (altura média ${ind.altura_media}) — justificativa obrigatória.`
+            : `Sem desvio (altura média ${ind.altura_media}, desvio ${ind.desvio}).`;
+    }
+    rotuloObrig.hidden = !temDesvio;
+    if (!temDesvio || campoJust.value.trim()) campoJust.classList.remove('invalido');
 }
 
 // Campos de medição/compactação/níveis são opcionais: só valida a faixa
@@ -124,6 +159,8 @@ window.editarRegistroMaquina = function (id) {
     document.getElementById('maquina_nivel_oleo').value = reg.nivel_oleo_pct ?? '';
     document.getElementById('maquina_nivel_bacia').value = reg.nivel_bacia_pct ?? '';
     document.getElementById('maquina_observacao').value = reg.observacao || '';
+    document.getElementById('maquina_justificativa').value = reg.justificativa || '';
+    atualizarPreviaDesvio();
     document.getElementById('btn_salvar_maquina').innerText = 'Atualizar Registro';
     document.getElementById('btn_cancelar_edicao_maquina').style.display = '';
 
@@ -242,7 +279,7 @@ export function renderizarTabelaMaquinas() {
     const filtrados = obterRegistrosFiltradosTabelaMaquinas();
 
     if (filtrados.length === 0) {
-        tbodyBancoMaquinas.innerHTML = '<tr><td colspan="13" style="text-align:center; color:#888; padding:24px;">Nenhum registro encontrado com os filtros atuais.</td></tr>';
+        tbodyBancoMaquinas.innerHTML = '<tr><td colspan="14" style="text-align:center; color:#888; padding:24px;">Nenhum registro encontrado com os filtros atuais.</td></tr>';
         return;
     }
 
@@ -261,6 +298,7 @@ export function renderizarTabelaMaquinas() {
             <td><span class="badge_prazo ${reg.gatilho === 'DESVIO' ? 'prazo_atrasado' : 'prazo_ok'}">${reg.gatilho || '-'}</span></td>
             <td>${reg.registrado_por || '-'}</td>
             <td>${reg.observacao || '-'}</td>
+            <td>${reg.justificativa || '-'}</td>
             <td>
                 ${isAdminAtual() ? `<div class="acoes_linha">
                     <button class="btn_icone icone_editar" onclick="editarRegistroMaquina('${reg.id}')" aria-label="Editar"><svg class="icone" aria-hidden="true"><use href="#i-pencil"></use></svg></button>
@@ -317,6 +355,7 @@ function exportarExcelMaquinas() {
         'Nível Óleo (%)': r.nivel_oleo_pct,
         'Nível Bacia (%)': r.nivel_bacia_pct,
         Observação: r.observacao,
+        Justificativa: r.justificativa,
         'Registrado Por': r.registrado_por,
     }));
 
@@ -357,6 +396,11 @@ export function initMaquinas() {
 
     document.getElementById('maquina_bateria').addEventListener('change', atualizarOpcoesMaquinaPorBateria);
     atualizarOpcoesMaquinaPorBateria();
+
+    // Prévia do desvio ao vivo: recalcula a cada mudança nas medições/altura programada
+    CAMPOS_BANDEJA.forEach(c => document.getElementById(`maquina_${c}`).addEventListener('input', atualizarPreviaDesvio));
+    document.getElementById('maquina_altura_programada').addEventListener('change', atualizarPreviaDesvio);
+    document.getElementById('maquina_justificativa').addEventListener('input', atualizarPreviaDesvio);
 
     // Período do diagrama/exportação — padrão: hoje
     const hoje = new Date().toISOString().split('T')[0];
@@ -414,12 +458,23 @@ export function initMaquinas() {
             nivel_oleo_pct: lerNumeroOpcional('maquina_nivel_oleo'),
             nivel_bacia_pct: lerNumeroOpcional('maquina_nivel_bacia'),
             observacao: document.getElementById('maquina_observacao').value.toUpperCase(),
+            justificativa: document.getElementById('maquina_justificativa').value.trim().toUpperCase(),
         };
 
         if (!dadosForm.data) { alert('Informe a data do lançamento.'); return; }
 
         const erroValidacao = validarFormularioMaquina(dadosForm);
         if (erroValidacao) { alert(erroValidacao); return; }
+
+        // Com desvio, a justificativa é obrigatória. Sem nenhuma medição de
+        // carga preenchida não existe desvio, então o envio é liberado.
+        if (calcularIndicadoresLocal(dadosForm).gatilho === 'DESVIO' && !dadosForm.justificativa) {
+            const campoJust = document.getElementById('maquina_justificativa');
+            campoJust.classList.add('invalido');
+            campoJust.focus();
+            alert('Este lançamento tem desvio. Preencha a justificativa para enviar.');
+            return;
+        }
 
         botaoSalvar.disabled = true;
         botaoSalvar.innerText = 'Salvando...';
