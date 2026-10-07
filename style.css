@@ -1307,3 +1307,4 @@ body {
 #rt_ed_just.invalido { border-color: var(--cor-status-nao-reparado); box-shadow: 0 0 0 3px rgba(255, 76, 76, 0.12); }
 .rt_tab_msg { text-align: center; color: #888; padding: 24px; }
 .rt_tab_periodo { display: inline-flex; align-items: center; gap: 6px; font-size: 0.82rem; color: var(--texto-suave); }
+.rt_tab_periodo { display: inline-flex; align-items: center; gap: 6px; font-size: 0.82rem; color: var(--texto-suave); }
