@@ -13,6 +13,7 @@ import { initTabela } from './tabela.js';
 import { initDashboard } from './dashboard.js';
 import { initMaquinas } from './maquinas.js';
 import { initPermissoes } from './permissoes.js';
+import { initRelatorioTurno } from './relatorio-turno.js';
 
 document.addEventListener('DOMContentLoaded', () => {
     // --- 1. Menu, abas e cadastro/login ---
@@ -32,6 +33,7 @@ document.addEventListener('DOMContentLoaded', () => {
     initImpressao();
     initTabela();
     initMaquinas();
+    initRelatorioTurno();
     initPermissoes();
     initDashboard();
 });

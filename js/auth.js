@@ -3,6 +3,7 @@
 // =========================================================
 import { state, config, salvarSessaoLocal, isAdminAtual, nomeExibicaoAtual, PAGINAS_PERMISSAO, paginaLiberadaParaPerfil, carregarCacheLocal, salvarCacheLocal, carregarCacheLocalMaquinas, salvarCacheLocalMaquinas } from './state.js';
 import { listarReparosSupabase, listarMaquinasSupabase } from './supabase-api.js';
+import { carregarRelatorioTurno, renderizarRelatorioTurno, limparRelatorioTurno } from './relatorio-turno.js';
 import { irParaAba, getNavElements, abaDisponivel, primeiraAbaDisponivel } from './navigation.js';
 import { gerarMapaBaterias } from './mapa2d.js';
 import { processarDadosGlobais } from './mapa2d.js';
@@ -813,12 +814,16 @@ async function carregarDados() {
         console.error('Falha ao carregar lançamentos de máquinas. Usando cache local:', erro);
         state.dbMaquinas = carregarCacheLocalMaquinas();
     }
+
+    // Relatório de passagem de turno (catálogo + lançamentos do dia); trata os próprios erros.
+    await carregarRelatorioTurno();
 }
 
 // Redesenha mapa/máquinas/tabelas com os dados em memória.
 function redesenharDados() {
     processarDadosGlobais();
     renderizarPaginaMaquinas();
+    renderizarRelatorioTurno();
     if (document.getElementById('tbody_banco')) renderizarTabela();
     if (document.getElementById('tbody_banco_maquinas')) renderizarTabelaMaquinas();
 }
@@ -832,6 +837,7 @@ async function recarregarDados() {
 function limparDadosEmMemoria() {
     state.dbReparos = [];
     state.dbMaquinas = [];
+    limparRelatorioTurno();
     salvarCacheLocal();
     salvarCacheLocalMaquinas();
     redesenharDados();

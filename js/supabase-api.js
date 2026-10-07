@@ -80,6 +80,55 @@ export async function excluirMaquinaSupabase(id) {
     });
 }
 
+// --- "relatorio_turno" (Relatório de passagem de turno) ---
+
+export async function listarRelatorioItensSupabase() {
+    return requisicaoSupabase(config.SUPABASE_TABLE_RELATORIO_ITENS, '?select=*&order=ordem.asc,id.asc&limit=1000');
+}
+
+// O PostgREST devolve no máximo 1000 linhas por resposta, então busca em
+// páginas até acabar. Filtra por período (datas aaaa-mm-dd) para não
+// trazer o histórico inteiro.
+export async function listarRelatorioTurnoSupabase({ inicio, fim } = {}) {
+    const filtros = [];
+    if (inicio) filtros.push(`data=gte.${encodeURIComponent(inicio)}`);
+    if (fim) filtros.push(`data=lte.${encodeURIComponent(fim)}`);
+    const TAMANHO_PAGINA = 1000;
+    let todos = [];
+    for (let pagina = 0; pagina < 100; pagina++) {
+        const consulta = ['select=*', ...filtros, 'order=data.desc,id.desc', `limit=${TAMANHO_PAGINA}`, `offset=${pagina * TAMANHO_PAGINA}`].join('&');
+        const lote = await requisicaoSupabase(config.SUPABASE_TABLE_RELATORIO_TURNO, `?${consulta}`);
+        todos = todos.concat(lote);
+        if (lote.length < TAMANHO_PAGINA) break;
+    }
+    return todos;
+}
+
+// Upsert: um item só tem uma linha por data/bateria/tipo; relançar atualiza a existente.
+export async function gravarRelatorioTurnoSupabase(linhas) {
+    return requisicaoSupabase(config.SUPABASE_TABLE_RELATORIO_TURNO, '?on_conflict=data,bateria,tipo,item_id', {
+        method: 'POST',
+        headers: { Prefer: 'resolution=merge-duplicates,return=representation' },
+        body: JSON.stringify(linhas)
+    });
+}
+
+export async function atualizarRelatorioTurnoSupabase(id, dados) {
+    const resposta = await requisicaoSupabase(config.SUPABASE_TABLE_RELATORIO_TURNO, `?id=eq.${encodeURIComponent(id)}`, {
+        method: 'PATCH',
+        headers: { Prefer: 'return=representation' },
+        body: JSON.stringify(dados)
+    });
+    return resposta[0];
+}
+
+export async function excluirRelatorioTurnoSupabase(id) {
+    await requisicaoSupabase(config.SUPABASE_TABLE_RELATORIO_TURNO, `?id=eq.${encodeURIComponent(id)}`, {
+        method: 'DELETE',
+        headers: { Prefer: 'return=minimal' }
+    });
+}
+
 // NOVO: Função de Upload para o Supabase
 export async function uploadFotoSupabase(file, tipoDaFoto) {
     if (!state.supabaseAtivo) return null;

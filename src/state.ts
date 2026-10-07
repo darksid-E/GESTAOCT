@@ -1,4 +1,4 @@
-import type { Reparo, Maquina, SessaoAuth, Perfil } from './types.js';
+import type { Reparo, Maquina, SessaoAuth, Perfil, RelatorioItem, RelatorioRegistro } from './types.js';
 
 // =========================================================
 // --- ESTADO COMPARTILHADO ---
@@ -18,6 +18,8 @@ const SUPABASE_KEY = window.SUPABASE_CONFIG?.key || '';
 const SUPABASE_STORAGE_BASE = SUPABASE_URL.replace(/\/rest\/v1\/?$/, '');
 const SUPABASE_TABLE = 'reparos';
 const SUPABASE_TABLE_MAQUINAS = 'maquinas';
+const SUPABASE_TABLE_RELATORIO_TURNO = 'relatorio_turno';
+const SUPABASE_TABLE_RELATORIO_ITENS = 'relatorio_turno_itens';
 const SUPABASE_AUTH_BASE = `${SUPABASE_STORAGE_BASE}/auth/v1`;
 const SUPABASE_TABLE_PERFIS = 'perfis';
 const CHAVE_SESSAO_LOCAL = 'sessaoAuthCT';
@@ -39,6 +41,8 @@ interface EstadoApp {
     supabaseAtivo: boolean;
     dbReparos: Reparo[];
     dbMaquinas: Maquina[];
+    dbRelatorioItens: RelatorioItem[];
+    dbRelatorio: RelatorioRegistro[];
     sessaoAtual: SessaoAuth | null;
     charts: {
         dashboardStatus: unknown | null;
@@ -58,12 +62,16 @@ interface EstadoApp {
     // Concluído), o mapa em si continua mostrando as 3 baterias sempre.
     filtroBateriaReparos: string;
     filtroBateriaMaquinas: string;
+    filtroBateriaRelatorio: string;
 }
 
 export const state: EstadoApp = {
     supabaseAtivo: Boolean(SUPABASE_URL && SUPABASE_KEY),
     dbReparos: [],
     dbMaquinas: [],
+    // Relatório de passagem de turno: catálogo de itens + lançamentos do dia aberto na página
+    dbRelatorioItens: [],
+    dbRelatorio: [],
 
     // { access_token, refresh_token, expires_at, user, perfil }
     sessaoAtual: carregarSessaoLocal(),
@@ -91,6 +99,7 @@ export const state: EstadoApp = {
     // Concluído), o mapa em si continua mostrando as 3 baterias sempre.
     filtroBateriaReparos: 'Todas',
     filtroBateriaMaquinas: 'Todas',
+    filtroBateriaRelatorio: 'Todas',
 };
 
 export const config = {
@@ -99,6 +108,8 @@ export const config = {
     SUPABASE_STORAGE_BASE,
     SUPABASE_TABLE,
     SUPABASE_TABLE_MAQUINAS,
+    SUPABASE_TABLE_RELATORIO_TURNO,
+    SUPABASE_TABLE_RELATORIO_ITENS,
     SUPABASE_AUTH_BASE,
     SUPABASE_TABLE_PERFIS,
     CHAVE_SESSAO_LOCAL,
@@ -132,6 +143,7 @@ export function isDevAtual(): boolean {
 export const PAGINAS_PERMISSAO = [
     { id: 'reparos', rotulo: 'Reparos', editavelNoApp: true },
     { id: 'maquinas', rotulo: 'Máquinas', editavelNoApp: true },
+    { id: 'relatorio_turno', rotulo: 'Relatório de Turno', editavelNoApp: true },
     { id: 'permissoes', rotulo: 'Permissões', editavelNoApp: false },
 ] as const;
 

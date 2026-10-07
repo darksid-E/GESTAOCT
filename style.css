@@ -1243,3 +1243,67 @@ body {
 .maquina_desvio_previa.desvio { border-left-color: var(--cor-status-nao-reparado); background: rgba(255, 76, 76, 0.10); }
 .maquina_obrig { color: var(--cor-status-nao-reparado); font-weight: 700; text-transform: none; }
 #maquina_justificativa.invalido { border-color: var(--cor-status-nao-reparado); box-shadow: 0 0 0 3px rgba(255, 76, 76, 0.12); }
+
+/* =============================================================
+   RELATÓRIO DE PASSAGEM DE TURNO
+   ============================================================= */
+.rt_legenda { display: inline-flex; align-items: center; gap: 6px; margin-left: auto; font-size: 0.78rem; color: var(--texto-suave); }
+.rt_ponto { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-left: 8px; }
+.rt_ponto_ok { background: var(--cor-status-concluido); }
+.rt_ponto_nok { background: var(--cor-status-nao-reparado); }
+.rt_ponto_sem { background: #b9bfc7; }
+
+.rt_conteudo { display: flex; flex-direction: column; gap: 18px; }
+.rt_vazio { text-align: center; color: var(--texto-suave); padding: 32px 12px; line-height: 1.6; }
+.rt_bateria_bloco { background: var(--bg-sutil); border: 1px solid var(--borda); border-radius: var(--raio-lg); padding: 16px; }
+.rt_bateria_titulo { color: var(--cor-secundaria); margin-bottom: 12px; font-size: 1rem; text-align: center; }
+.rt_cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 14px; align-items: start; }
+
+.rt_card { background: var(--bg-superficie); border: 1px solid var(--borda); border-radius: var(--raio-md); box-shadow: var(--sombra-sm); overflow: hidden; }
+.rt_card_header { display: flex; align-items: center; gap: 8px; padding: 10px 12px; border-bottom: 1px solid var(--borda); flex-wrap: wrap; }
+.rt_card_titulo { flex: 1; min-width: 110px; }
+.rt_card_titulo h4 { font-size: 0.9rem; color: var(--cor-primaria); font-weight: 700; margin: 0; }
+.rt_card_titulo small { color: var(--texto-suave); font-size: 0.72rem; }
+.rt_btn_lancar { padding: 5px 10px; font-size: 0.78rem; }
+.rt_chip { font-size: 0.7rem; font-weight: 700; padding: 3px 8px; border-radius: 999px; color: #fff; white-space: nowrap; }
+.rt_chip_ok { background: var(--cor-status-concluido); }
+.rt_chip_nok { background: var(--cor-status-nao-reparado); }
+.rt_chip_sem { background: #b9bfc7; }
+.rt_card_corpo { padding: 6px 8px 10px; display: flex; flex-direction: column; gap: 4px; }
+.rt_equip { font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.3px; color: var(--texto-suave); margin: 8px 2px 2px; }
+
+.rt_item { border-left: 4px solid #b9bfc7; background: var(--bg-sutil); border-radius: var(--raio-sm); padding: 6px 8px; }
+.rt_item.rt_ok { border-left-color: var(--cor-status-concluido); background: rgba(50, 205, 50, 0.08); }
+.rt_item.rt_nok { border-left-color: var(--cor-status-nao-reparado); background: rgba(255, 76, 76, 0.12); }
+.rt_item_topo { display: flex; justify-content: space-between; gap: 10px; align-items: baseline; }
+.rt_item_nome { font-size: 0.74rem; font-weight: 600; color: var(--texto); line-height: 1.25; }
+.rt_item_valor { font-size: 0.9rem; font-weight: 700; color: var(--texto); white-space: nowrap; }
+.rt_item.rt_nok .rt_item_valor { color: var(--cor-status-nao-reparado); }
+.rt_item_meta { display: flex; justify-content: space-between; gap: 8px; font-size: 0.68rem; color: var(--texto-suave); margin-top: 2px; }
+.rt_item_tipo { font-weight: 700; }
+.rt_item_just { margin-top: 4px; font-size: 0.68rem; color: var(--cor-status-nao-reparado); font-weight: 600; }
+
+/* Modal de lançamento */
+.rt_itens_form { display: flex; flex-direction: column; gap: 8px; margin: 10px 0 6px; }
+.rt_form_secao { margin: 10px 0 2px; }
+.rt_form_item { border: 1px solid var(--borda); border-left: 4px solid var(--borda); border-radius: var(--raio-sm); padding: 8px 10px; }
+.rt_form_item_ok { border-left-color: var(--cor-status-concluido); }
+.rt_form_item_nok { border-left-color: var(--cor-status-nao-reparado); background: rgba(255, 76, 76, 0.06); }
+.rt_form_linha { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.rt_form_nome { flex: 1 1 200px; font-size: 0.82rem; font-weight: 600; margin: 0; }
+.rt_form_valor { width: 110px !important; }
+.rt_form_status { width: 100px !important; }
+.rt_form_un { font-size: 0.75rem; color: var(--texto-suave); min-width: 34px; }
+.rt_tag_auto { margin-left: 6px; font-size: 0.62rem; font-weight: 700; text-transform: uppercase; background: var(--cor-primaria); color: #fff; padding: 1px 6px; border-radius: 999px; vertical-align: middle; }
+.rt_form_extra { display: flex; flex-direction: column; gap: 6px; margin-top: 6px; }
+.rt_form_extra input { width: 100%; font-size: 0.8rem; }
+.rt_form_just.invalido { border-color: var(--cor-status-nao-reparado); box-shadow: 0 0 0 3px rgba(255, 76, 76, 0.12); }
+
+/* Modal de edição e tabela */
+.rt_ed_titulo { font-weight: 700; color: var(--cor-primaria); margin-bottom: 2px; }
+.rt_ed_param { font-size: 0.82rem; color: var(--texto-suave); margin-bottom: 12px; }
+.rt_obrig_edicao { display: none; }
+.rt_just_obrigatoria .rt_obrig_edicao { display: inline; }
+#rt_ed_just.invalido { border-color: var(--cor-status-nao-reparado); box-shadow: 0 0 0 3px rgba(255, 76, 76, 0.12); }
+.rt_tab_msg { text-align: center; color: #888; padding: 24px; }
+.rt_tab_periodo { display: inline-flex; align-items: center; gap: 6px; font-size: 0.82rem; color: var(--texto-suave); }

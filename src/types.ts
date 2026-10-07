@@ -101,3 +101,49 @@ declare global {
         SUPABASE_CONFIG?: SupabaseConfigWindow;
     }
 }
+
+// --- Relatório de passagem de turno ---
+// Catálogo de itens (tabela relatorio_turno_itens, vinda da aba INDICADORES).
+export interface RelatorioItem {
+    id: number;
+    setor: 'CONTROLE_TERMICO' | 'CALDEIRAS' | 'MAQUINAS' | 'FGDS';
+    equipamento: string | null;     // '31A', 'A1'... (null = card inteiro)
+    item: string;
+    unidade: string | null;
+    parametro: string | null;       // texto exibido no card
+    entrada: 'NUMERO' | 'STATUS' | 'NUMERO_STATUS';
+    meta_min: number | null;
+    min_inclusivo: boolean;
+    meta_max: number | null;
+    max_inclusivo: boolean;
+    bateria: string | null;         // null = vale pras 3 baterias
+    fonte_auto: 'MAQUINA_PRESSAO' | 'MAQUINA_DESVIO' | null;
+    ordem: number;
+    ativo: boolean;
+}
+
+// Uma linha por item lançado (tabela relatorio_turno). setor/meta/parametro
+// e o status OK/NOK (quando há meta numérica) são preenchidos pela trigger.
+export interface RelatorioRegistro {
+    id?: number;
+    lote_id?: string;
+    data: string;                   // yyyy-mm-dd
+    bateria: string;                // 'A' | 'B' | 'C'
+    setor?: string;
+    equipamento?: string | null;
+    tipo: 'ADM' | 'TURNO';
+    item_id: number;
+    valor: number | null;
+    parametro?: string | null;
+    meta_min?: number | null;
+    min_inclusivo?: boolean;
+    meta_max?: number | null;
+    max_inclusivo?: boolean;
+    status: 'OK' | 'NOK' | null;
+    justificativa: string | null;
+    observacao: string | null;
+    origem?: 'MANUAL' | 'AUTO';
+    registrado_por?: string;
+    criado_em?: string;
+    atualizado_em?: string;
+}

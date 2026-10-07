@@ -7,6 +7,7 @@ import { renderizarDashboard } from './dashboard.js';
 import { renderizarPaginaMaquinas, aplicarFiltroBateriaMaquinas } from './maquinas.js';
 import { aplicarFiltroBateriaMapa, processarDadosGlobais } from './mapa2d.js';
 import { renderizarPermissoes } from './permissoes.js';
+import { renderizarRelatorioTurno } from './relatorio-turno.js';
 
 let menuButton, sideBar, navButtons, subBotoesBateria, pageSections, sidebarBackdrop;
 
@@ -29,6 +30,7 @@ export function irParaAba(targetId) {
 
     if (targetId === 'dashboard') { renderizarDashboard(); }
     if (targetId === 'maquinas') { renderizarPaginaMaquinas(); }
+    if (targetId === 'relatorio_turno') { renderizarRelatorioTurno(); }
     if (targetId === 'permissoes') { renderizarPermissoes(); }
 }
 
@@ -114,6 +116,8 @@ export function initNavigation() {
             } else if (pagina === 'maquinas') {
                 state.filtroBateriaMaquinas = botao.dataset.bateria;
                 aplicarFiltroBateriaMaquinas();
+            } else if (pagina === 'relatorio_turno') {
+                state.filtroBateriaRelatorio = botao.dataset.bateria;
             }
 
             irParaAba(pagina);

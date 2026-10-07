@@ -57,6 +57,14 @@
                     <button class="nav_sub_btn" data-pagina="maquinas" data-bateria="C">Bateria C</button>
                 </div>
 
+                <button class="nav_btn" data-target="relatorio_turno">Relatório de Turno</button>
+                <div class="nav_submenu">
+                    <button class="nav_sub_btn active_link" data-pagina="relatorio_turno" data-bateria="Todas">Todas</button>
+                    <button class="nav_sub_btn" data-pagina="relatorio_turno" data-bateria="A">Bateria A</button>
+                    <button class="nav_sub_btn" data-pagina="relatorio_turno" data-bateria="B">Bateria B</button>
+                    <button class="nav_sub_btn" data-pagina="relatorio_turno" data-bateria="C">Bateria C</button>
+                </div>
+
                 <!-- <button class="nav_btn" data-target="tltb">TL=TB</button> -->
                 <!-- <button class="nav_btn" data-target="descarbonizacao">Descarbonização</button> -->
                 <button class="nav_btn" data-target="permissoes" style="display: none;">Permissões</button>
@@ -242,6 +250,32 @@
                         </div>
                     </div>
                 </div>
+            </section>
+
+            <section id="relatorio_turno" class="page_section">
+                <div class="header_reparos">
+                    <h2>Relatório de Passagem de Turno</h2>
+                    <div class="botoes_acao">
+                        <button id="btn_baixar_excel_relatorio" class="btn_acao">Baixar Banco</button>
+                        <button id="btn_abrir_tabela_relatorio" class="btn_acao btn_secundario">Tabela de Dados</button>
+                    </div>
+                </div>
+
+                <button id="btn_abrir_lancamento_relatorio" class="btn_acao btn_bloco_grande">Novo Lançamento</button>
+
+                <div class="dash_filters">
+                    <label>Data:</label>
+                    <input type="date" id="rt_filtro_data">
+                    <label>Lançamento:</label>
+                    <select id="rt_filtro_tipo">
+                        <option value="Todos">ADM + Turno</option>
+                        <option value="ADM">ADM</option>
+                        <option value="TURNO">Turno</option>
+                    </select>
+                    <span class="rt_legenda"><i class="rt_ponto rt_ponto_ok"></i>Na meta <i class="rt_ponto rt_ponto_nok"></i>Fora da meta <i class="rt_ponto rt_ponto_sem"></i>Sem lançamento</span>
+                </div>
+
+                <div id="rt_conteudo" class="rt_conteudo"></div>
             </section>
 
             <section id="dashboard" class="page_section">
@@ -771,6 +805,146 @@
                         </tr>
                     </thead>
                     <tbody id="tbody_banco_maquinas"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div id="modal_relatorio" class="modal_overlay">
+        <div class="modal_content modal_large" style="width: 95%; max-width: 680px; max-height: 90vh; display: flex; flex-direction: column;">
+            <header class="modal_header">
+                <h3 id="rt_modal_titulo">Lançamento — Relatório de Turno</h3>
+                <button id="fechar_modal_relatorio" class="close_btn" aria-label="Fechar"><svg class="icone" aria-hidden="true"><use href="#i-x"></use></svg></button>
+            </header>
+            <div class="modal_body" style="padding: 20px; overflow-y: auto;">
+                <div class="form_group row_group">
+                    <div class="half_width"><label for="rt_data">Data</label><input type="date" id="rt_data"></div>
+                    <div class="half_width">
+                        <label for="rt_tipo">Lançamento</label>
+                        <select id="rt_tipo">
+                            <option value="">Selecione</option>
+                            <option value="ADM">ADM</option>
+                            <option value="TURNO">TURNO</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form_group row_group">
+                    <div class="half_width">
+                        <label for="rt_bateria">Bateria</label>
+                        <select id="rt_bateria"><option value="A">A</option><option value="B">B</option><option value="C">C</option></select>
+                    </div>
+                    <div class="half_width"><label for="rt_setor">Card</label><select id="rt_setor"></select></div>
+                </div>
+
+                <div id="rt_itens_form" class="rt_itens_form"></div>
+
+                <div class="botoes_form">
+                    <button id="btn_salvar_relatorio" class="btn_salvar">Salvar Lançamento</button>
+                    <button id="btn_cancelar_relatorio" class="btn_cancelar_edicao">Cancelar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="modal_relatorio_edicao" class="modal_overlay">
+        <div class="modal_content modal_large" style="width: 95%; max-width: 560px; max-height: 90vh; display: flex; flex-direction: column;">
+            <header class="modal_header">
+                <h3>Editar Lançamento</h3>
+                <button id="fechar_modal_relatorio_edicao" class="close_btn" aria-label="Fechar"><svg class="icone" aria-hidden="true"><use href="#i-x"></use></svg></button>
+            </header>
+            <div class="modal_body" style="padding: 20px; overflow-y: auto;">
+                <input type="hidden" id="rt_ed_id">
+                <p id="rt_ed_titulo" class="rt_ed_titulo"></p>
+                <p id="rt_ed_param" class="rt_ed_param"></p>
+
+                <div class="form_group row_group">
+                    <div class="half_width"><label for="rt_ed_data">Data</label><input type="date" id="rt_ed_data"></div>
+                    <div class="half_width">
+                        <label for="rt_ed_tipo">Lançamento</label>
+                        <select id="rt_ed_tipo"><option value="ADM">ADM</option><option value="TURNO">TURNO</option></select>
+                    </div>
+                </div>
+                <div class="form_group row_group">
+                    <div class="half_width" id="rt_ed_valor_grupo"><label for="rt_ed_valor">Valor</label><input type="number" step="any" id="rt_ed_valor"></div>
+                    <div class="half_width">
+                        <label for="rt_ed_status">Status</label>
+                        <select id="rt_ed_status"><option value="">-</option><option value="OK">OK</option><option value="NOK">NOK</option></select>
+                    </div>
+                </div>
+                <div class="form_group" id="rt_ed_just_grupo">
+                    <label for="rt_ed_just">Justificativa <span class="maquina_obrig rt_obrig_edicao">(obrigatória)</span></label>
+                    <textarea id="rt_ed_just" rows="2"></textarea>
+                </div>
+                <div class="form_group">
+                    <label for="rt_ed_obs">Anotações / Observações</label>
+                    <textarea id="rt_ed_obs" rows="2"></textarea>
+                </div>
+
+                <div class="botoes_form">
+                    <button id="btn_salvar_edicao_relatorio" class="btn_salvar">Atualizar Registro</button>
+                    <button id="btn_cancelar_edicao_relatorio" class="btn_cancelar_edicao">Cancelar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="modal_tabela_relatorio" class="modal_overlay">
+        <div class="modal_content modal_large" style="width: 95%; max-width: 2000px; height: 85vh; display: flex; flex-direction: column;">
+            <header class="modal_header">
+                <h3>Banco de Dados - Relatório de Turno</h3>
+                <button id="fechar_modal_tabela_relatorio" class="close_btn" aria-label="Fechar"><svg class="icone" aria-hidden="true"><use href="#i-x"></use></svg></button>
+            </header>
+
+            <div class="tabela_filtros">
+                <div class="tabela_filtros_grupo">
+                    <button id="btn_limpar_filtros_tabela_relatorio" class="btn_acao btn_secundario"><svg class="icone" aria-hidden="true"><use href="#i-x"></use></svg>Limpar Filtros</button>
+                    <label class="rt_tab_periodo">Período:
+                        <input type="date" id="rt_tab_inicio"> até <input type="date" id="rt_tab_fim">
+                    </label>
+                </div>
+                <div class="tabela_filtros_grupo">
+                    <button id="btn_novo_tabela_relatorio" class="btn_acao btn_sucesso"><svg class="icone" aria-hidden="true"><use href="#i-plus"></use></svg>Adicionar Novo</button>
+                </div>
+            </div>
+
+            <div class="modal_body" style="overflow: auto; padding: 0;">
+                <table class="data_table" id="tabela_banco_relatorio">
+                    <thead>
+                        <tr>
+                            <th>Data</th><th>Bat.</th><th>Card</th><th>Equip.</th><th>Tipo</th><th>Item</th>
+                            <th>Valor</th><th>Parâmetro / Meta</th><th>Status</th><th>Justificativa</th>
+                            <th>Anotações</th><th>Origem</th><th>Registrado por</th><th style="width: 80px;">Ações</th>
+                        </tr>
+                        <tr class="linha_filtros_tabela">
+                            <th><input type="text" id="ftabr_data" class="input_filtro_col" placeholder="aaaa-mm-dd"></th>
+                            <th>
+                                <select id="ftabr_bateria" class="input_filtro_col">
+                                    <option value="Todas">Todas</option><option value="A">A</option><option value="B">B</option><option value="C">C</option>
+                                </select>
+                            </th>
+                            <th><select id="ftabr_setor" class="input_filtro_col"></select></th>
+                            <th></th>
+                            <th>
+                                <select id="ftabr_tipo" class="input_filtro_col">
+                                    <option value="Todos">Todos</option><option value="ADM">ADM</option><option value="TURNO">TURNO</option>
+                                </select>
+                            </th>
+                            <th><input type="text" id="ftabr_item" class="input_filtro_col"></th>
+                            <th></th>
+                            <th></th>
+                            <th>
+                                <select id="ftabr_status" class="input_filtro_col">
+                                    <option value="Todos">Todos</option><option value="OK">OK</option><option value="NOK">NOK</option>
+                                </select>
+                            </th>
+                            <th></th>
+                            <th></th>
+                            <th></th>
+                            <th><input type="text" id="ftabr_registrado_por" class="input_filtro_col"></th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody id="tbody_banco_relatorio"></tbody>
                 </table>
             </div>
         </div>
