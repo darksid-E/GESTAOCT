@@ -264,7 +264,7 @@
                 <button id="btn_abrir_lancamento_relatorio" class="btn_acao btn_bloco_grande">Novo Lançamento</button>
 
                 <div class="dash_filters">
-                    <label>Data:</label>
+                    <label>Últimos registros até:</label>
                     <input type="date" id="rt_filtro_data">
                     <label>Lançamento:</label>
                     <select id="rt_filtro_tipo">
@@ -865,7 +865,7 @@
                     </div>
                 </div>
                 <div class="form_group row_group">
-                    <div class="half_width" id="rt_ed_valor_grupo"><label for="rt_ed_valor">Valor</label><input type="number" step="any" id="rt_ed_valor"></div>
+                    <div class="half_width" id="rt_ed_valor_grupo"><label for="rt_ed_valor">Valor</label><input type="text" inputmode="decimal" autocomplete="off" id="rt_ed_valor"></div>
                     <div class="half_width">
                         <label for="rt_ed_status">Status</label>
                         <select id="rt_ed_status"><option value="">-</option><option value="OK">OK</option><option value="NOK">NOK</option></select>

@@ -4,13 +4,13 @@
 // Catálogo de itens (tabela relatorio_turno_itens, vinda da aba INDICADORES)
 // + lançamentos (tabela relatorio_turno, uma linha por item). A página só
 // serve de sinaleiro: cada card (Controle Térmico, Caldeiras, Máquinas,
-// FGDs) mostra o último lançamento de cada item do dia escolhido, com
-// parâmetro/meta e cor (verde = na meta, vermelho = fora). Os dados são
-// editados na "Tabela de Dados".
+// FGDs) mostra o ÚLTIMO registro de cada item até a data escolhida (padrão:
+// hoje), com a data do registro, parâmetro/meta e cor (verde = na meta,
+// vermelho = fora). Os dados são editados na "Tabela de Dados".
 import { state, isAdminAtual, nomeExibicaoAtual } from './state.js';
 import {
-    listarRelatorioItensSupabase, listarRelatorioTurnoSupabase, gravarRelatorioTurnoSupabase,
-    atualizarRelatorioTurnoSupabase, excluirRelatorioTurnoSupabase
+    listarRelatorioItensSupabase, listarRelatorioTurnoSupabase, listarUltimosRelatorioTurnoSupabase,
+    gravarRelatorioTurnoSupabase, atualizarRelatorioTurnoSupabase, excluirRelatorioTurnoSupabase
 } from './supabase-api.js';
 import { formatarDataBR, debounce } from './utils.js';
 import { mostrarToast } from './toast.js';
@@ -151,10 +151,20 @@ function valorAutomatico(item, data) {
 
 // --- Carga de dados ---
 
+// Último registro de cada item (por bateria e tipo) até a data da página.
+// Usa a função relatorio_turno_ultimos do banco; se ela ainda não existir
+// (SQL não rodado), cai pra uma busca dos últimos 30 dias.
+const DIAS_FALLBACK = 30;
 async function carregarDiaRelatorio() {
-    const data = el('rt_filtro_data')?.value || hojeLocal();
+    const ate = el('rt_filtro_data')?.value || hojeLocal();
     try {
-        state.dbRelatorio = await listarRelatorioTurnoSupabase({ inicio: data, fim: data });
+        state.dbRelatorio = await listarUltimosRelatorioTurnoSupabase(ate);
+        return;
+    } catch (erro) {
+        console.warn('Função relatorio_turno_ultimos indisponível; buscando os últimos dias:', erro);
+    }
+    try {
+        state.dbRelatorio = await listarRelatorioTurnoSupabase({ inicio: somarDias(ate, -DIAS_FALLBACK), fim: ate });
     } catch (erro) {
         console.warn('Não foi possível carregar os lançamentos do relatório de turno:', erro);
         state.dbRelatorio = [];
@@ -195,16 +205,17 @@ async function recarregarRelatorio() {
 
 // --- Página: cards sinaleiro ---
 
-function registrosDoDia(data, bateria, tipo) {
-    return state.dbRelatorio.filter(r => r.data === data && r.bateria === bateria && (tipo === 'Todos' || r.tipo === tipo));
+function registrosDaBateria(ate, bateria, tipo) {
+    return state.dbRelatorio.filter(r => r.data <= ate && r.bateria === bateria && (tipo === 'Todos' || r.tipo === tipo));
 }
 
-// Último lançamento (maior id) de cada item
+// Último registro de cada item: data mais recente; no mesmo dia, o maior id
 function ultimoPorItem(registros) {
     const mapa = new Map();
     registros.forEach(r => {
         const atual = mapa.get(Number(r.item_id));
-        if (!atual || Number(r.id) > Number(atual.id)) mapa.set(Number(r.item_id), r);
+        const maisNovo = !atual || r.data > atual.data || (r.data === atual.data && Number(r.id) > Number(atual.id));
+        if (maisNovo) mapa.set(Number(r.item_id), r);
     });
     return mapa;
 }
@@ -219,8 +230,9 @@ function htmlItemCard(item, reg) {
     const classe = !reg || !reg.status ? 'rt_sem' : (reg.status === 'NOK' ? 'rt_nok' : 'rt_ok');
     const parametro = reg?.parametro ?? item.parametro ?? '';
     const just = reg?.status === 'NOK' && reg.justificativa ? `<div class="rt_item_just">${esc(reg.justificativa)}</div>` : '';
-    const tipo = reg ? `<span class="rt_item_tipo">${esc(reg.tipo)}</span>` : '';
-    return `<div class="rt_item ${classe}">
+    const tipo = reg ? `<span class="rt_item_tipo">${esc(reg.tipo)} · ${esc(formatarDataBR(reg.data).slice(0, 5))}</span>` : '';
+    const dica = reg ? ` title="${esc(`${formatarDataBR(reg.data)} — ${reg.tipo}${reg.registrado_por ? ` — ${reg.registrado_por}` : ''}`)}"` : '';
+    return `<div class="rt_item ${classe}"${dica}>
         <div class="rt_item_topo"><span class="rt_item_nome">${esc(item.item)}</span><span class="rt_item_valor">${esc(textoValor(item, reg))}</span></div>
         <div class="rt_item_meta"><span>${esc(parametro)}</span>${tipo}</div>${just}
     </div>`;
@@ -244,7 +256,7 @@ function htmlCard(bateria, setor, ultimo) {
 
     return `<div class="rt_card" data-setor="${setor.id}">
         <header class="rt_card_header">
-            <div class="rt_card_titulo"><h4>${esc(setor.rotulo)}</h4><small>${lancados.length}/${itens.length} lançados</small></div>
+            <div class="rt_card_titulo"><h4>${esc(setor.rotulo)}</h4><small>${lancados.length}/${itens.length} com registro</small></div>
             ${chip}
             <button type="button" class="btn_acao rt_btn_lancar" data-acao="lancar" data-bateria="${bateria}" data-setor="${setor.id}"><svg class="icone" aria-hidden="true"><use href="#i-plus"></use></svg>Lançar</button>
         </header>
@@ -269,7 +281,7 @@ export function renderizarRelatorioTurno() {
     const baterias = filtro === 'Todas' ? BATERIAS : [filtro];
 
     raiz.innerHTML = baterias.map(b => {
-        const ultimo = ultimoPorItem(registrosDoDia(data, b, tipo));
+        const ultimo = ultimoPorItem(registrosDaBateria(data, b, tipo));
         return `<div class="rt_bateria_bloco" data-bateria="${b}">
             <h3 class="rt_bateria_titulo">Bateria ${b}</h3>
             <div class="rt_cards">${SETORES.map(s => htmlCard(b, s, ultimo)).join('')}</div>
@@ -290,7 +302,7 @@ function htmlItemForm(item, existente, auto) {
     return `<div class="rt_form_item" data-item-id="${id}" data-auto="${auto ?? ''}">
         <div class="rt_form_linha">
             <label class="rt_form_nome" for="${aceitaValor(item) ? `rt_val_${id}` : `rt_st_${id}`}">${esc(item.item)}${origemAuto ? '<span class="rt_tag_auto">auto</span>' : ''}</label>
-            ${aceitaValor(item) ? `<input type="number" step="any" inputmode="decimal" id="rt_val_${id}" class="rt_form_valor" value="${esc(valorTxt)}">` : ''}
+            ${aceitaValor(item) ? `<input type="text" inputmode="decimal" autocomplete="off" id="rt_val_${id}" class="rt_form_valor" placeholder="Valor" value="${esc(valorTxt)}">` : ''}
             ${aceitaValor(item) && item.unidade ? `<span class="rt_form_un">${esc(item.unidade)}</span>` : ''}
             ${statusManual(item) ? `<select id="rt_st_${id}" class="rt_form_status"><option value="">Status</option><option value="OK"${selecionado('OK')}>OK</option><option value="NOK"${selecionado('NOK')}>NOK</option></select>` : ''}
         </div>
@@ -332,12 +344,14 @@ function lerItemForm(div) {
     const campoValor = div.querySelector('.rt_form_valor');
     const campoStatus = div.querySelector('.rt_form_status');
     const valor = campoValor ? lerNumero(campoValor.value) : null;
+    const valorInvalido = !!campoValor && campoValor.value.trim() !== '' && valor === null;
     let status;
     if (statusManual(item)) status = campoStatus.value || null;
     else status = avaliarMeta(valor, item);
     return {
         item,
         valor,
+        valorInvalido,
         status,
         justificativa: div.querySelector('.rt_form_just').value.trim().toUpperCase(),
         observacao: div.querySelector('.rt_form_obs').value.trim().toUpperCase(),
@@ -389,6 +403,19 @@ async function salvarLancamento() {
 
     if (!data) { alert('Informe a data do lançamento.'); return; }
     if (!tipo) { alert('Informe se o lançamento é ADM ou TURNO.'); el('rt_tipo').focus(); return; }
+
+    const invalidos = [];
+    el('rt_itens_form').querySelectorAll('.rt_form_item').forEach(div => {
+        const d = lerItemForm(div);
+        const campo = div.querySelector('.rt_form_valor');
+        campo?.classList.toggle('invalido', d.valorInvalido);
+        if (d.valorInvalido) invalidos.push(d.item.item);
+    });
+    if (invalidos.length > 0) {
+        el('rt_itens_form').querySelector('.rt_form_valor.invalido')?.focus();
+        alert(`Valor inválido (use só números, ex.: 12,5):\n- ${invalidos.join('\n- ')}`);
+        return;
+    }
 
     const lote = uuid();
     const registradoPor = nomeExibicaoAtual();

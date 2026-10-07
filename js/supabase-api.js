@@ -104,6 +104,15 @@ export async function listarRelatorioTurnoSupabase({ inicio, fim } = {}) {
     return todos;
 }
 
+// Último registro de cada item (por bateria e tipo) até a data informada — função
+// relatorio_turno_ultimos no banco (sql-relatorio-turno-atualizacao-1.sql).
+export async function listarUltimosRelatorioTurnoSupabase(ate) {
+    return requisicaoSupabase('rpc/relatorio_turno_ultimos', '', {
+        method: 'POST',
+        body: JSON.stringify({ ate })
+    });
+}
+
 // Upsert: um item só tem uma linha por data/bateria/tipo; relançar atualiza a existente.
 export async function gravarRelatorioTurnoSupabase(linhas) {
     return requisicaoSupabase(config.SUPABASE_TABLE_RELATORIO_TURNO, '?on_conflict=data,bateria,tipo,item_id', {
