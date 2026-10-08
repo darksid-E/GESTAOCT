@@ -122,6 +122,18 @@ export async function gravarRelatorioTurnoSupabase(linhas) {
     });
 }
 
+// Editor de metas (RLS: só isDev). Devolve as linhas alteradas; vazio = sem permissão.
+export async function atualizarRelatorioItensSupabase(ids, dados) {
+    const lista = ids.map(Number).filter(Number.isFinite).join(',');
+    const resposta = await requisicaoSupabase(config.SUPABASE_TABLE_RELATORIO_ITENS, `?id=in.(${lista})`, {
+        method: 'PATCH',
+        headers: { Prefer: 'return=representation' },
+        body: JSON.stringify(dados)
+    });
+    if (!Array.isArray(resposta) || resposta.length === 0) throw new Error('Nenhum item foi alterado (apenas desenvolvedores podem editar metas).');
+    return resposta;
+}
+
 export async function atualizarRelatorioTurnoSupabase(id, dados) {
     const resposta = await requisicaoSupabase(config.SUPABASE_TABLE_RELATORIO_TURNO, `?id=eq.${encodeURIComponent(id)}`, {
         method: 'PATCH',

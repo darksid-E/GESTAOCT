@@ -5,12 +5,14 @@
 // + lançamentos (tabela relatorio_turno, uma linha por item). A página só
 // serve de sinaleiro: cada card (Controle Térmico, Caldeiras, Máquinas,
 // FGDs) mostra o ÚLTIMO registro de cada item até a data escolhida (padrão:
-// hoje), com a data do registro, parâmetro/meta e cor (verde = na meta,
-// vermelho = fora). Os dados são editados na "Tabela de Dados".
-import { state, isAdminAtual, nomeExibicaoAtual } from './state.js';
+// hoje): valor atual, meta, turno, justificativa e anotação, com cor (verde =
+// na meta, vermelho = fora). Itens de máquina vêm direto da página Máquinas.
+// Os dados são editados na "Tabela de Dados"; as metas, por devs ("Editar Metas").
+import { state, isAdminAtual, isDevAtual, nomeExibicaoAtual } from './state.js';
 import {
     listarRelatorioItensSupabase, listarRelatorioTurnoSupabase, listarUltimosRelatorioTurnoSupabase,
-    gravarRelatorioTurnoSupabase, atualizarRelatorioTurnoSupabase, excluirRelatorioTurnoSupabase
+    gravarRelatorioTurnoSupabase, atualizarRelatorioTurnoSupabase, excluirRelatorioTurnoSupabase,
+    atualizarRelatorioItensSupabase
 } from './supabase-api.js';
 import { formatarDataBR, debounce } from './utils.js';
 import { mostrarToast } from './toast.js';
@@ -26,7 +28,7 @@ const PREFIXO_EQUIPAMENTO = { MAQUINAS: 'Máquina', CALDEIRAS: 'Caldeira' };
 // Como o nome do segmento aparece na planilha original (usado no Excel exportado)
 const SEGMENTO_EXCEL = { CONTROLE_TERMICO: 'CONTROLE TÉRMICO', CALDEIRAS: 'CALDEIRA', MAQUINAS: 'MÁQUINAS MÓVEIS', FGDS: 'FGD' };
 
-let modalLancamento, modalEdicao, modalTabela, tbodyTabela;
+let modalLancamento, modalEdicao, modalTabela, modalMetas, tbodyTabela;
 let registrosTabela = [];
 let erroCarga = '';
 
@@ -135,18 +137,42 @@ function rotuloEquipamento(setor, equipamento) {
     return `${PREFIXO_EQUIPAMENTO[setor] || ''} ${equipamento}`.trim();
 }
 
-// Itens de máquina preenchidos a partir dos lançamentos da página Máquinas
-// (média do dia da máquina). Sem lançamento no dia -> null (fica manual).
-function valorAutomatico(item, data) {
-    if (!item.fonte_auto) return null;
-    const campo = item.fonte_auto === 'MAQUINA_PRESSAO' ? 'pressao_compactacao_bar' : 'desvio';
-    const nums = state.dbMaquinas
-        .filter(m => m.data === data && m.maquina === item.equipamento)
-        .map(m => m[campo])
+// --- Itens automáticos (vêm da página Máquinas) ---
+// Itens com fonte_auto (pressão de compactação e altura de carga) não são
+// lançados à mão: o card lê direto os lançamentos da página Máquinas, do dia
+// mais recente com lançamento daquela máquina até a data da página, e mostra
+// a média desse dia.
+
+function mediaDe(lista, campo) {
+    const nums = lista.map(r => r[campo])
         .filter(v => v !== null && v !== undefined && v !== '' && Number.isFinite(Number(v)))
         .map(Number);
     if (nums.length === 0) return null;
     return Math.round((nums.reduce((acc, v) => acc + v, 0) / nums.length) * 100) / 100;
+}
+
+function resumoMaquina(equipamento, ate) {
+    const regs = state.dbMaquinas.filter(m => m.maquina === equipamento && m.data && m.data <= ate);
+    if (regs.length === 0) return null;
+    const dia = regs.reduce((max, m) => (m.data > max ? m.data : max), regs[0].data);
+    const doDia = regs.filter(m => m.data === dia);
+    return {
+        data: dia,
+        quantidade: doDia.length,
+        programada: mediaDe(doDia, 'altura_programada'),
+        real: mediaDe(doDia, 'altura_media'),
+        desvio: mediaDe(doDia, 'desvio'),
+        pressao: mediaDe(doDia, 'pressao_compactacao_bar'),
+    };
+}
+
+// "Registro" montado na hora para o card, no mesmo formato de um lançamento
+function registroAutomatico(item, ate) {
+    const resumo = resumoMaquina(item.equipamento, ate);
+    if (!resumo) return null;
+    const valor = item.fonte_auto === 'MAQUINA_PRESSAO' ? resumo.pressao : resumo.desvio;
+    if (valor === null) return null;
+    return { automatico: true, data: resumo.data, valor, status: avaliarMeta(valor, item), parametro: item.parametro, resumo };
 }
 
 // --- Carga de dados ---
@@ -203,7 +229,11 @@ async function recarregarRelatorio() {
     if (modalTabela?.classList.contains('active')) await carregarTabela();
 }
 
+
 // --- Página: cards sinaleiro ---
+
+// Filtro da legenda (null = tudo; 'ok' | 'nok' | 'sem'), igual à legenda da aba Reparos
+let filtroLegenda = null;
 
 function registrosDaBateria(ate, bateria, tipo) {
     return state.dbRelatorio.filter(r => r.data <= ate && r.bateria === bateria && (tipo === 'Todos' || r.tipo === tipo));
@@ -220,45 +250,86 @@ function ultimoPorItem(registros) {
     return mapa;
 }
 
+function situacao(reg) {
+    if (!reg || !reg.status) return 'sem';
+    return reg.status === 'NOK' ? 'nok' : 'ok';
+}
+
 function textoValor(item, reg) {
     if (!reg) return '—';
     if (item.entrada === 'STATUS' || reg.valor === null || reg.valor === undefined) return reg.status || '—';
     return `${formatarNumero(reg.valor)}${item.unidade ? ` ${item.unidade}` : ''}`;
 }
 
+function comSinal(v) {
+    const n = Number(v);
+    return `${n > 0 ? '+' : ''}${formatarNumero(n)}`;
+}
+
+function detalhe(rotulo, valorHtml, classe = '') {
+    return `<dt>${rotulo}</dt><dd${classe ? ` class="${classe}"` : ''}>${valorHtml}</dd>`;
+}
+
 function htmlItemCard(item, reg) {
-    const classe = !reg || !reg.status ? 'rt_sem' : (reg.status === 'NOK' ? 'rt_nok' : 'rt_ok');
-    const parametro = reg?.parametro ?? item.parametro ?? '';
-    const just = reg?.status === 'NOK' && reg.justificativa ? `<div class="rt_item_just">${esc(reg.justificativa)}</div>` : '';
-    const tipo = reg ? `<span class="rt_item_tipo">${esc(reg.tipo)} · ${esc(formatarDataBR(reg.data).slice(0, 5))}</span>` : '';
-    const dica = reg ? ` title="${esc(`${formatarDataBR(reg.data)} — ${reg.tipo}${reg.registrado_por ? ` — ${reg.registrado_por}` : ''}`)}"` : '';
+    const classe = `rt_${situacao(reg)}`;
+    const linhas = [];
+
+    if (reg?.automatico && item.fonte_auto === 'MAQUINA_DESVIO') {
+        const mm = (v) => (v === null ? '-' : `${formatarNumero(v)} mm`);
+        linhas.push(detalhe('Programada (média)', mm(reg.resumo.programada)));
+        linhas.push(detalhe('Real (média)', mm(reg.resumo.real)));
+        linhas.push(detalhe('Desvio', `${comSinal(reg.valor)} mm`, 'rt_det_valor'));
+    } else {
+        linhas.push(detalhe('Valor atual', esc(textoValor(item, reg)), 'rt_det_valor'));
+    }
+    linhas.push(detalhe('Meta', esc(reg?.parametro ?? item.parametro ?? '-')));
+
+    if (reg?.automatico) {
+        linhas.push(detalhe('Origem', `Máquinas · ${esc(formatarDataBR(reg.data))} (${reg.resumo.quantidade} lanç.)`));
+    } else {
+        linhas.push(detalhe('Turno', reg ? `${esc(reg.tipo)} · ${esc(formatarDataBR(reg.data))}` : 'Sem lançamento'));
+        if (reg?.justificativa) linhas.push(detalhe('Justificativa', esc(reg.justificativa), 'rt_det_just'));
+        if (reg?.observacao) linhas.push(detalhe('Anotação', esc(reg.observacao)));
+    }
+
+    const dica = reg && !reg.automatico && reg.registrado_por ? ` title="Registrado por ${esc(reg.registrado_por)}"` : '';
     return `<div class="rt_item ${classe}"${dica}>
-        <div class="rt_item_topo"><span class="rt_item_nome">${esc(item.item)}</span><span class="rt_item_valor">${esc(textoValor(item, reg))}</span></div>
-        <div class="rt_item_meta"><span>${esc(parametro)}</span>${tipo}</div>${just}
+        <div class="rt_item_titulo">${esc(item.item)}${item.fonte_auto ? '<span class="rt_tag_auto">auto</span>' : ''}</div>
+        <dl class="rt_item_det">${linhas.join('')}</dl>
     </div>`;
 }
 
-function htmlCard(bateria, setor, ultimo) {
+function htmlCard(bateria, setor, ultimo, ate) {
     const itens = itensDoCard(bateria, setor.id);
     if (itens.length === 0) return '';
 
-    const lancados = itens.filter(i => ultimo.has(Number(i.id)));
-    const fora = lancados.filter(i => ultimo.get(Number(i.id)).status === 'NOK').length;
+    const registro = (i) => (i.fonte_auto ? registroAutomatico(i, ate) : ultimo.get(Number(i.id)));
+    const comRegistro = itens.filter(i => registro(i));
+    const fora = itens.filter(i => situacao(registro(i)) === 'nok').length;
     let chip;
     if (fora > 0) chip = `<span class="rt_chip rt_chip_nok">${fora} fora da meta</span>`;
-    else if (lancados.length > 0) chip = '<span class="rt_chip rt_chip_ok">Na meta</span>';
+    else if (comRegistro.length > 0) chip = '<span class="rt_chip rt_chip_ok">Na meta</span>';
     else chip = '<span class="rt_chip rt_chip_sem">Sem lançamento</span>';
 
     const corpo = agruparPorEquipamento(itens).map(g => {
+        const visiveis = g.itens.filter(i => !filtroLegenda || situacao(registro(i)) === filtroLegenda);
+        if (visiveis.length === 0) return '';
         const titulo = g.equipamento ? `<div class="rt_equip">${esc(rotuloEquipamento(setor.id, g.equipamento))}</div>` : '';
-        return titulo + g.itens.map(i => htmlItemCard(i, ultimo.get(Number(i.id)))).join('');
+        return titulo + visiveis.map(i => htmlItemCard(i, registro(i))).join('');
     }).join('');
+    if (filtroLegenda && !corpo) return '';   // filtro da legenda: card sem itens daquele tipo some
+
+    // O card de Máquinas só tem botão se houver item manual (ex.: tempo de ciclo)
+    const temManual = itens.some(i => !i.fonte_auto);
+    const botao = temManual
+        ? `<button type="button" class="btn_acao rt_btn_lancar" data-acao="lancar" data-bateria="${bateria}" data-setor="${setor.id}"><svg class="icone" aria-hidden="true"><use href="#i-plus"></use></svg>Lançar</button>`
+        : '';
 
     return `<div class="rt_card" data-setor="${setor.id}">
         <header class="rt_card_header">
-            <div class="rt_card_titulo"><h4>${esc(setor.rotulo)}</h4><small>${lancados.length}/${itens.length} com registro</small></div>
+            <div class="rt_card_titulo"><h4>${esc(setor.rotulo)}</h4><small>${comRegistro.length}/${itens.length} com registro</small></div>
             ${chip}
-            <button type="button" class="btn_acao rt_btn_lancar" data-acao="lancar" data-bateria="${bateria}" data-setor="${setor.id}"><svg class="icone" aria-hidden="true"><use href="#i-plus"></use></svg>Lançar</button>
+            ${botao}
         </header>
         <div class="rt_card_corpo">${corpo}</div>
     </div>`;
@@ -268,6 +339,10 @@ export function renderizarRelatorioTurno() {
     const raiz = el('rt_conteudo');
     if (!raiz) return;
 
+    const botaoMetas = el('btn_editar_metas_relatorio');
+    if (botaoMetas) botaoMetas.hidden = !isDevAtual();
+    document.querySelectorAll('.rt_legenda_btn').forEach(b => b.classList.toggle('ativo', b.dataset.filtro === filtroLegenda));
+
     if (state.dbRelatorioItens.length === 0) {
         raiz.innerHTML = erroCarga
             ? `<p class="rt_vazio">Não foi possível carregar o relatório de turno.<br><small>${esc(erroCarga)}</small><br><small>Confira se os scripts SQL do relatório foram rodados no Supabase.</small></p>`
@@ -275,42 +350,69 @@ export function renderizarRelatorioTurno() {
         return;
     }
 
-    const data = el('rt_filtro_data').value || hojeLocal();
+    const ate = el('rt_filtro_data').value || hojeLocal();
     const tipo = el('rt_filtro_tipo').value;
     const filtro = state.filtroBateriaRelatorio || 'Todas';
     const baterias = filtro === 'Todas' ? BATERIAS : [filtro];
 
     raiz.innerHTML = baterias.map(b => {
-        const ultimo = ultimoPorItem(registrosDaBateria(data, b, tipo));
+        const ultimo = ultimoPorItem(registrosDaBateria(ate, b, tipo));
+        const cards = SETORES.map(s => htmlCard(b, s, ultimo, ate)).join('');
         return `<div class="rt_bateria_bloco" data-bateria="${b}">
             <h3 class="rt_bateria_titulo">Bateria ${b}</h3>
-            <div class="rt_cards">${SETORES.map(s => htmlCard(b, s, ultimo)).join('')}</div>
+            ${cards ? `<div class="rt_cards">${cards}</div>` : '<p class="rt_vazio">Nenhum item nesta situação.</p>'}
         </div>`;
     }).join('');
 }
 
 // --- Modal de lançamento (um card por vez) ---
+// Itens automáticos (página Máquinas) não aparecem aqui.
 
-function htmlItemForm(item, existente, auto) {
+function itensDoFormulario(bateria, setor) {
+    return itensDoCard(bateria, setor).filter(i => !i.fonte_auto);
+}
+
+function htmlItemForm(item, existente) {
     const id = item.id;
-    const valorInicial = existente ? existente.valor : auto;
-    const valorTxt = valorInicial === null || valorInicial === undefined ? '' : String(valorInicial);
+    const valorTxt = existente?.valor === null || existente?.valor === undefined ? '' : String(existente.valor);
     const statusIni = existente?.status || '';
     const selecionado = (v) => (statusIni === v ? ' selected' : '');
-    const origemAuto = (existente ? existente.origem === 'AUTO' : auto !== null && auto !== undefined);
 
-    return `<div class="rt_form_item" data-item-id="${id}" data-auto="${auto ?? ''}">
+    return `<div class="rt_form_item" data-item-id="${id}">
         <div class="rt_form_linha">
-            <label class="rt_form_nome" for="${aceitaValor(item) ? `rt_val_${id}` : `rt_st_${id}`}">${esc(item.item)}${origemAuto ? '<span class="rt_tag_auto">auto</span>' : ''}</label>
-            ${aceitaValor(item) ? `<input type="text" inputmode="decimal" autocomplete="off" id="rt_val_${id}" class="rt_form_valor" placeholder="Valor" value="${esc(valorTxt)}">` : ''}
+            <label class="rt_form_nome" for="${aceitaValor(item) ? `rt_val_${id}` : `rt_st_${id}`}">${esc(item.item)}</label>
+            ${aceitaValor(item) ? `<input type="text" inputmode="decimal" autocomplete="off" id="rt_val_${id}" class="rt_form_valor" data-campo="valor" placeholder="Valor" value="${esc(valorTxt)}">` : ''}
             ${aceitaValor(item) && item.unidade ? `<span class="rt_form_un">${esc(item.unidade)}</span>` : ''}
-            ${statusManual(item) ? `<select id="rt_st_${id}" class="rt_form_status"><option value="">Status</option><option value="OK"${selecionado('OK')}>OK</option><option value="NOK"${selecionado('NOK')}>NOK</option></select>` : ''}
+            ${statusManual(item) ? `<select id="rt_st_${id}" class="rt_form_status" data-campo="status"><option value="">Status</option><option value="OK"${selecionado('OK')}>OK</option><option value="NOK"${selecionado('NOK')}>NOK</option></select>` : ''}
         </div>
         <div class="rt_form_extra">
-            <input type="text" id="rt_just_${id}" class="rt_form_just" placeholder="Justificativa (item fora da meta)" value="${esc(existente?.justificativa || '')}" hidden>
-            <input type="text" id="rt_obs_${id}" class="rt_form_obs" placeholder="Anotações (opcional)" value="${esc(existente?.observacao || '')}">
+            <input type="text" id="rt_just_${id}" class="rt_form_just" data-campo="just" placeholder="Justificativa (item fora da meta)" value="${esc(existente?.justificativa || '')}" hidden>
+            <input type="text" id="rt_obs_${id}" class="rt_form_obs" data-campo="obs" placeholder="Anotações (opcional)" value="${esc(existente?.observacao || '')}">
         </div>
     </div>`;
+}
+
+// Guarda o que a pessoa já digitou (campos marcados como editados) para não
+// perder nada quando muda ADM/TURNO ou a data e o formulário é redesenhado.
+function capturarEditados() {
+    const mapa = new Map();
+    el('rt_itens_form').querySelectorAll('.rt_form_item').forEach(div => {
+        const campos = {};
+        div.querySelectorAll('[data-editado="1"]').forEach(c => { campos[c.dataset.campo] = c.value; });
+        if (Object.keys(campos).length > 0) mapa.set(div.dataset.itemId, campos);
+    });
+    return mapa;
+}
+
+function restaurarEditados(mapa) {
+    mapa.forEach((campos, itemId) => {
+        const div = el('rt_itens_form').querySelector(`.rt_form_item[data-item-id="${itemId}"]`);
+        if (!div) return;
+        Object.entries(campos).forEach(([campo, valor]) => {
+            const c = div.querySelector(`[data-campo="${campo}"]`);
+            if (c) { c.value = valor; c.dataset.editado = '1'; }
+        });
+    });
 }
 
 function montarFormularioItens() {
@@ -320,7 +422,10 @@ function montarFormularioItens() {
     const tipo = el('rt_tipo').value;
     el('rt_modal_titulo').textContent = `Lançamento — ${rotuloSetor(setor)} — Bateria ${bateria}`;
 
-    // Se já existe lançamento desse tipo nesse dia, abre preenchido (relançar atualiza)
+    const editados = capturarEditados();
+
+    // Se já existe lançamento desse tipo nesse dia, abre preenchido (relançar atualiza);
+    // o que a pessoa já digitou no modal tem prioridade.
     const existentes = new Map();
     if (data && tipo) {
         state.dbRelatorio
@@ -328,17 +433,20 @@ function montarFormularioItens() {
             .forEach(r => existentes.set(Number(r.item_id), r));
     }
 
-    const itens = itensDoCard(bateria, setor);
+    const itens = itensDoFormulario(bateria, setor);
     const html = agruparPorEquipamento(itens).map(g => {
         const titulo = g.equipamento ? `<p class="label_destaque rt_form_secao">${esc(rotuloEquipamento(setor, g.equipamento))}</p>` : '';
-        return titulo + g.itens.map(i => htmlItemForm(i, existentes.get(Number(i.id)), valorAutomatico(i, data))).join('');
+        return titulo + g.itens.map(i => htmlItemForm(i, existentes.get(Number(i.id)))).join('');
     }).join('');
 
-    el('rt_itens_form').innerHTML = html || '<p class="rt_vazio">Nenhum item cadastrado para este card.</p>';
+    const temAuto = itensDoCard(bateria, setor).some(i => i.fonte_auto);
+    const aviso = temAuto ? '<p class="rt_form_aviso">Pressão de compactação e altura de carga vêm automaticamente da página Máquinas.</p>' : '';
+    el('rt_itens_form').innerHTML = aviso + (html || '<p class="rt_vazio">Nenhum item para lançar neste card.</p>');
+    restaurarEditados(editados);
     el('rt_itens_form').querySelectorAll('.rt_form_item').forEach(atualizarEstadoItemForm);
 }
 
-// Lê um item do formulário: { item, valor, status, justificativa, observacao, auto }
+// Lê um item do formulário: { item, valor, valorInvalido, status, justificativa, observacao }
 function lerItemForm(div) {
     const item = itemPorId(div.dataset.itemId);
     const campoValor = div.querySelector('.rt_form_valor');
@@ -355,7 +463,7 @@ function lerItemForm(div) {
         status,
         justificativa: div.querySelector('.rt_form_just').value.trim().toUpperCase(),
         observacao: div.querySelector('.rt_form_obs').value.trim().toUpperCase(),
-        auto: div.dataset.auto === '' ? null : Number(div.dataset.auto),
+        auto: null,
     };
 }
 
@@ -374,6 +482,7 @@ function abrirModalLancamento({ bateria, setor } = {}) {
     if (!isAdminAtual()) { alert('Apenas usuários administradores podem lançar registros do relatório de turno.'); return; }
     if (state.dbRelatorioItens.length === 0) { alert('O catálogo de itens está vazio. Rode os scripts SQL do relatório de turno no Supabase.'); return; }
 
+    el('rt_itens_form').innerHTML = '';   // lançamento novo: nada do anterior
     el('rt_data').value = el('rt_filtro_data').value || hojeLocal();
     const tipoFiltro = el('rt_filtro_tipo').value;
     el('rt_tipo').value = tipoFiltro !== 'Todos' ? tipoFiltro : '';
@@ -384,7 +493,7 @@ function abrirModalLancamento({ bateria, setor } = {}) {
 }
 
 async function aoMudarDataModal() {
-    // A data do modal acompanha a da página: recarrega o dia pra abrir preenchido se já houver lançamento
+    // A data do modal acompanha a da página: recarrega pra abrir preenchido se já houver lançamento
     const data = el('rt_data').value;
     if (data) {
         el('rt_filtro_data').value = data;
@@ -393,6 +502,13 @@ async function aoMudarDataModal() {
     }
     montarFormularioItens();
 }
+
+// Trocar bateria/card muda a lista de itens: limpa o que era do card anterior
+function aoMudarCardModal() {
+    el('rt_itens_form').innerHTML = '';
+    montarFormularioItens();
+}
+
 
 async function salvarLancamento() {
     if (!isAdminAtual()) { alert('Apenas usuários administradores podem lançar registros do relatório de turno.'); return; }
@@ -701,18 +817,113 @@ async function exportarExcel() {
     XLSX.writeFile(livro, `relatorio_turno_${inicio || 'inicio'}_a_${fim || 'hoje'}.xlsx`);
 }
 
+// --- Editor de metas (só desenvolvedores) ---
+// Edita unidade, texto do parâmetro e limites numéricos do catálogo. A meta
+// nova vale para os próximos lançamentos (os já feitos guardam a meta da época).
+
+function numeroTexto(v) {
+    return v === null || v === undefined ? '' : String(v);
+}
+
+function abrirModalMetas() {
+    if (!isDevAtual()) return;
+    el('rt_metas_bateria').value = BATERIAS.includes(state.filtroBateriaRelatorio) ? state.filtroBateriaRelatorio : 'A';
+    montarTabelaMetas();
+    modalMetas.classList.add('active');
+}
+
+function montarTabelaMetas() {
+    const bateria = el('rt_metas_bateria').value;
+    const setor = el('rt_metas_setor').value;
+    const itens = itensDoCard(bateria, setor);
+    const limite = (i, lado) => {
+        if (i.entrada === 'STATUS') return '<small class="rt_meta_obs">OK/NOK manual</small>';
+        const campo = lado === 'min' ? 'meta_min' : 'meta_max';
+        const inclusivo = lado === 'min' ? i.min_inclusivo !== false : i.max_inclusivo !== false;
+        const ops = lado === 'min'
+            ? `<option value="incl"${inclusivo ? ' selected' : ''}>≥</option><option value="estrito"${inclusivo ? '' : ' selected'}>&gt;</option>`
+            : `<option value="incl"${inclusivo ? ' selected' : ''}>≤</option><option value="estrito"${inclusivo ? '' : ' selected'}>&lt;</option>`;
+        return `<div class="rt_meta_limite"><select data-campo="${lado}_op">${ops}</select><input type="text" inputmode="decimal" data-campo="${campo}" value="${esc(numeroTexto(i[campo]))}" placeholder="sem limite"></div>`;
+    };
+    el('tbody_metas_relatorio').innerHTML = itens.map(i => `<tr data-id="${i.id}">
+        <td><strong>${esc(i.item)}</strong>${i.equipamento ? `<br><small>${esc(rotuloEquipamento(setor, i.equipamento))}</small>` : ''}${i.fonte_auto ? '<br><small class="rt_meta_obs">automático (Máquinas)</small>' : ''}</td>
+        <td><input type="text" data-campo="parametro" value="${esc(i.parametro || '')}"></td>
+        <td><input type="text" data-campo="unidade" value="${esc(i.unidade || '')}" class="rt_meta_unidade"></td>
+        <td>${limite(i, 'min')}</td>
+        <td>${limite(i, 'max')}</td>
+    </tr>`).join('') || '<tr><td colspan="5" class="rt_tab_msg">Nenhum item neste card.</td></tr>';
+}
+
+async function salvarMetas() {
+    if (!isDevAtual()) { alert('Apenas desenvolvedores podem editar metas.'); return; }
+    const todasBaterias = el('rt_metas_todas').checked;
+    const alteracoes = [];
+    const erros = [];
+
+    el('tbody_metas_relatorio').querySelectorAll('tr[data-id]').forEach(tr => {
+        const item = itemPorId(tr.dataset.id);
+        const campo = (nome) => tr.querySelector(`[data-campo="${nome}"]`);
+        const dados = {
+            parametro: campo('parametro').value.trim().toUpperCase() || null,
+            unidade: campo('unidade').value.trim() || null,
+        };
+        if (campo('meta_min')) {
+            const minTxt = campo('meta_min').value.trim();
+            const maxTxt = campo('meta_max').value.trim();
+            const min = minTxt === '' ? null : lerNumero(minTxt);
+            const max = maxTxt === '' ? null : lerNumero(maxTxt);
+            if ((minTxt !== '' && min === null) || (maxTxt !== '' && max === null)) { erros.push(`${item.item}: número inválido`); return; }
+            if (min !== null && max !== null && min > max) { erros.push(`${item.item}: mínimo maior que o máximo`); return; }
+            Object.assign(dados, {
+                meta_min: min, min_inclusivo: campo('min_op').value === 'incl',
+                meta_max: max, max_inclusivo: campo('max_op').value === 'incl',
+            });
+        }
+        const mudou = Object.entries(dados).some(([k, v]) => (item[k] ?? null) !== v && !(k.endsWith('_inclusivo') && (item[k] ?? true) === v));
+        if (!mudou) return;
+        // Mesmo item nas 3 baterias = mesmo card e mesma posição no catálogo
+        const ids = todasBaterias
+            ? state.dbRelatorioItens.filter(o => o.setor === item.setor && o.ordem === item.ordem).map(o => o.id)
+            : [item.id];
+        alteracoes.push({ ids, dados });
+    });
+
+    if (erros.length > 0) { alert(`Corrija antes de salvar:\n- ${erros.join('\n- ')}`); return; }
+    if (alteracoes.length === 0) { alert('Nenhuma meta foi alterada.'); return; }
+
+    const botao = el('btn_salvar_metas_relatorio');
+    botao.disabled = true;
+    botao.innerText = 'Salvando...';
+    try {
+        for (const a of alteracoes) await atualizarRelatorioItensSupabase(a.ids, a.dados);
+        state.dbRelatorioItens = await listarRelatorioItensSupabase();
+        modalMetas.classList.remove('active');
+        renderizarRelatorioTurno();
+        avisar(`Metas atualizadas (${alteracoes.reduce((n, a) => n + a.ids.length, 0)} itens).`, 'sucesso');
+    } catch (erro) {
+        console.error('Erro ao salvar metas:', erro);
+        alert(`Não foi possível salvar as metas.\n${erro.message}`);
+    } finally {
+        botao.disabled = false;
+        botao.innerText = 'Salvar Metas';
+    }
+}
+
 // --- Inicialização ---
 
 export function initRelatorioTurno() {
     modalLancamento = el('modal_relatorio');
     modalEdicao = el('modal_relatorio_edicao');
     modalTabela = el('modal_tabela_relatorio');
+    modalMetas = el('modal_metas_relatorio');
     tbodyTabela = el('tbody_banco_relatorio');
     if (!modalLancamento) return;
 
     // Selects fixos
-    el('rt_setor').innerHTML = SETORES.map(s => `<option value="${s.id}">${s.rotulo}</option>`).join('');
-    el('ftabr_setor').innerHTML = '<option value="Todos">Todos</option>' + SETORES.map(s => `<option value="${s.id}">${s.rotulo}</option>`).join('');
+    const opcoesSetor = SETORES.map(s => `<option value="${s.id}">${s.rotulo}</option>`).join('');
+    el('rt_setor').innerHTML = opcoesSetor;
+    el('rt_metas_setor').innerHTML = opcoesSetor;
+    el('ftabr_setor').innerHTML = '<option value="Todos">Todos</option>' + opcoesSetor;
 
     // Datas padrão
     const hoje = hojeLocal();
@@ -726,11 +937,14 @@ export function initRelatorioTurno() {
         renderizarRelatorioTurno();
     });
     el('rt_filtro_tipo').addEventListener('change', renderizarRelatorioTurno);
+    document.querySelectorAll('.rt_legenda_btn').forEach(b => b.addEventListener('click', () => {
+        filtroLegenda = filtroLegenda === b.dataset.filtro ? null : b.dataset.filtro;
+        renderizarRelatorioTurno();
+    }));
     el('rt_conteudo').addEventListener('click', (e) => {
         const botao = e.target.closest('[data-acao="lancar"]');
         if (botao) abrirModalLancamento({ bateria: botao.dataset.bateria, setor: botao.dataset.setor });
     });
-    el('btn_abrir_lancamento_relatorio').addEventListener('click', () => abrirModalLancamento());
     el('btn_baixar_excel_relatorio').addEventListener('click', exportarExcel);
     el('btn_abrir_tabela_relatorio').addEventListener('click', async () => {
         modalTabela.classList.add('active');
@@ -742,9 +956,15 @@ export function initRelatorioTurno() {
     el('btn_cancelar_relatorio').addEventListener('click', () => modalLancamento.classList.remove('active'));
     modalLancamento.addEventListener('click', (e) => { if (e.target === modalLancamento) modalLancamento.classList.remove('active'); });
     el('rt_data').addEventListener('change', aoMudarDataModal);
-    ['rt_tipo', 'rt_bateria', 'rt_setor'].forEach(id => el(id).addEventListener('change', montarFormularioItens));
-    el('rt_itens_form').addEventListener('input', (e) => { const d = e.target.closest('.rt_form_item'); if (d) atualizarEstadoItemForm(d); });
-    el('rt_itens_form').addEventListener('change', (e) => { const d = e.target.closest('.rt_form_item'); if (d) atualizarEstadoItemForm(d); });
+    el('rt_tipo').addEventListener('change', montarFormularioItens);          // mantém o que já foi digitado
+    ['rt_bateria', 'rt_setor'].forEach(id => el(id).addEventListener('change', aoMudarCardModal));
+    const aoEditarCampo = (e) => {
+        if (e.target.dataset?.campo) e.target.dataset.editado = '1';
+        const d = e.target.closest('.rt_form_item');
+        if (d) atualizarEstadoItemForm(d);
+    };
+    el('rt_itens_form').addEventListener('input', aoEditarCampo);
+    el('rt_itens_form').addEventListener('change', aoEditarCampo);
     el('btn_salvar_relatorio').addEventListener('click', salvarLancamento);
 
     // Modal de edição de uma linha
@@ -757,11 +977,14 @@ export function initRelatorioTurno() {
     // Tabela de dados
     el('fechar_modal_tabela_relatorio').addEventListener('click', () => modalTabela.classList.remove('active'));
     el('btn_limpar_filtros_tabela_relatorio').addEventListener('click', limparFiltrosTabela);
-    el('btn_novo_tabela_relatorio').addEventListener('click', () => {
-        modalTabela.classList.remove('active');
-        abrirModalLancamento();
-    });
     [el('rt_tab_inicio'), el('rt_tab_fim')].forEach(c => c.addEventListener('change', carregarTabela));
     ['ftabr_bateria', 'ftabr_setor', 'ftabr_tipo', 'ftabr_status'].forEach(id => el(id).addEventListener('change', renderizarTabela));
     ['ftabr_data', 'ftabr_item', 'ftabr_registrado_por'].forEach(id => el(id).addEventListener('input', debounce(renderizarTabela)));
+
+    // Editor de metas (só devs)
+    el('btn_editar_metas_relatorio').addEventListener('click', abrirModalMetas);
+    el('fechar_modal_metas_relatorio').addEventListener('click', () => modalMetas.classList.remove('active'));
+    el('btn_cancelar_metas_relatorio').addEventListener('click', () => modalMetas.classList.remove('active'));
+    ['rt_metas_bateria', 'rt_metas_setor'].forEach(id => el(id).addEventListener('change', montarTabelaMetas));
+    el('btn_salvar_metas_relatorio').addEventListener('click', salvarMetas);
 }

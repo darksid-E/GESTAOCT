@@ -256,12 +256,11 @@
                 <div class="header_reparos">
                     <h2>Relatório de Passagem de Turno</h2>
                     <div class="botoes_acao">
+                        <button id="btn_editar_metas_relatorio" class="btn_acao btn_secundario" hidden>Editar Metas</button>
                         <button id="btn_baixar_excel_relatorio" class="btn_acao">Baixar Banco</button>
                         <button id="btn_abrir_tabela_relatorio" class="btn_acao btn_secundario">Tabela de Dados</button>
                     </div>
                 </div>
-
-                <button id="btn_abrir_lancamento_relatorio" class="btn_acao btn_bloco_grande">Novo Lançamento</button>
 
                 <div class="dash_filters">
                     <label>Últimos registros até:</label>
@@ -272,7 +271,11 @@
                         <option value="ADM">ADM</option>
                         <option value="TURNO">Turno</option>
                     </select>
-                    <span class="rt_legenda"><i class="rt_ponto rt_ponto_ok"></i>Na meta <i class="rt_ponto rt_ponto_nok"></i>Fora da meta <i class="rt_ponto rt_ponto_sem"></i>Sem lançamento</span>
+                    <span class="rt_legenda" title="Clique para filtrar; clique de novo para mostrar tudo">
+                        <button type="button" class="rt_legenda_btn" data-filtro="ok"><i class="rt_ponto rt_ponto_ok"></i>Na meta</button>
+                        <button type="button" class="rt_legenda_btn" data-filtro="nok"><i class="rt_ponto rt_ponto_nok"></i>Fora da meta</button>
+                        <button type="button" class="rt_legenda_btn" data-filtro="sem"><i class="rt_ponto rt_ponto_sem"></i>Sem lançamento</button>
+                    </span>
                 </div>
 
                 <div id="rt_conteudo" class="rt_conteudo"></div>
@@ -888,6 +891,38 @@
         </div>
     </div>
 
+    <div id="modal_metas_relatorio" class="modal_overlay">
+        <div class="modal_content modal_large" style="width: 95%; max-width: 1100px; max-height: 90vh; display: flex; flex-direction: column;">
+            <header class="modal_header">
+                <h3>Editar Metas — Relatório de Turno</h3>
+                <button id="fechar_modal_metas_relatorio" class="close_btn" aria-label="Fechar"><svg class="icone" aria-hidden="true"><use href="#i-x"></use></svg></button>
+            </header>
+            <div class="modal_body" style="padding: 20px; overflow-y: auto;">
+                <div class="form_group row_group">
+                    <div class="half_width">
+                        <label for="rt_metas_bateria">Bateria</label>
+                        <select id="rt_metas_bateria"><option value="A">A</option><option value="B">B</option><option value="C">C</option></select>
+                    </div>
+                    <div class="half_width"><label for="rt_metas_setor">Card</label><select id="rt_metas_setor"></select></div>
+                </div>
+                <label class="rt_metas_todas"><input type="checkbox" id="rt_metas_todas" checked> Aplicar a mesma meta nas 3 baterias</label>
+                <p class="rt_form_aviso">A meta nova vale para os próximos lançamentos; os já feitos mantêm a meta da época em que foram lançados.</p>
+
+                <div style="overflow-x: auto;">
+                    <table class="data_table rt_metas_tabela">
+                        <thead><tr><th>Item</th><th>Parâmetro / meta (texto do card)</th><th>Unidade</th><th>Limite inferior</th><th>Limite superior</th></tr></thead>
+                        <tbody id="tbody_metas_relatorio"></tbody>
+                    </table>
+                </div>
+
+                <div class="botoes_form">
+                    <button id="btn_salvar_metas_relatorio" class="btn_salvar">Salvar Metas</button>
+                    <button id="btn_cancelar_metas_relatorio" class="btn_cancelar_edicao">Cancelar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div id="modal_tabela_relatorio" class="modal_overlay">
         <div class="modal_content modal_large" style="width: 95%; max-width: 2000px; height: 85vh; display: flex; flex-direction: column;">
             <header class="modal_header">
@@ -901,9 +936,6 @@
                     <label class="rt_tab_periodo">Período:
                         <input type="date" id="rt_tab_inicio"> até <input type="date" id="rt_tab_fim">
                     </label>
-                </div>
-                <div class="tabela_filtros_grupo">
-                    <button id="btn_novo_tabela_relatorio" class="btn_acao btn_sucesso"><svg class="icone" aria-hidden="true"><use href="#i-plus"></use></svg>Adicionar Novo</button>
                 </div>
             </div>
 
