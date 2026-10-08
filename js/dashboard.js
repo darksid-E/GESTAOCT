@@ -7,6 +7,7 @@ import { processarDadosGlobais } from './mapa2d.js';
 import { renderizarTabela } from './tabela.js';
 import { formatarStatus, formatarDataBR, calcularSituacaoPrazo } from './utils.js';
 
+import { mostrarToast } from './toast.js';
 export function renderizarDashboard() {
     const batFilter = document.getElementById('dash_filtro_bat').value;
     let baseReparos = batFilter === 'Todas' ? state.dbReparos : state.dbReparos.filter(r => r.bateria === batFilter);
@@ -55,10 +56,10 @@ export function renderizarDashboard() {
 // como células "VER FOTO" com hiperlink para o endereço original.
 function exportarExcelReparos() {
     if (typeof XLSX === 'undefined') {
-        alert('A biblioteca de exportação (SheetJS) não carregou. Verifique sua conexão e tente de novo.');
+        mostrarToast('A biblioteca de exportação (SheetJS) não carregou. Verifique sua conexão e tente de novo.', 'erro', 8000);
         return;
     }
-    if (state.dbReparos.length === 0) return alert('Banco vazio!');
+    if (state.dbReparos.length === 0) return mostrarToast('Banco vazio!', 'info', 6000);
 
     const maiusculo = (v) => (v === null || v === undefined || v === '') ? '' : String(v).toUpperCase();
     const dataBR = (v) => v ? formatarDataBR(v) : '';
@@ -112,7 +113,7 @@ export function initDashboard() {
     document.getElementById("btn_baixar_excel_reparos").addEventListener("click", exportarExcelReparos);
     document.getElementById("btn_trigger_import")?.addEventListener("click", () => document.getElementById("btn_importar_json").click());
     document.getElementById("btn_importar_json").addEventListener("change", (e) => {
-        if (!isAdminAtual()) { alert('Apenas usuários administradores podem carregar um banco de dados.'); e.target.value = ''; return; }
+        if (!isAdminAtual()) { mostrarToast('Apenas usuários administradores podem carregar um banco de dados.', 'info', 6000); e.target.value = ''; return; }
         const file = e.target.files[0]; if (!file) return; const reader = new FileReader();
         reader.onload = async (evt) => {
             try {
@@ -128,10 +129,10 @@ export function initDashboard() {
                 salvarCacheLocal();
                 processarDadosGlobais();
                 renderizarTabela();
-                alert(`${state.dbReparos.length} registro(s) carregado(s)!`);
+                mostrarToast(`${state.dbReparos.length} registro(s) carregado(s)!`, 'sucesso', 5000);
             } catch (err) {
                 console.error('Erro ao importar JSON:', err);
-                alert(`Erro no JSON ou no Supabase.\n${err.message}`);
+                mostrarToast(`Erro no JSON ou no Supabase.\n${err.message}`, 'erro', 8000);
             } finally {
                 e.target.value = '';
             }

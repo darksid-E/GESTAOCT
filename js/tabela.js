@@ -5,6 +5,7 @@ import { state, isAdminAtual } from './state.js';
 import { formatarStatus, formatarDataBR, definirValorSelect, calcularSituacaoPrazo, debounce } from './utils.js';
 import { init3D } from './twin3d.js';
 
+import { mostrarToast } from './toast.js';
 let modalTabela, tbodyBanco;
 let fData, fOcorrencia, fRanking, fAvalCT, fAvaliadorCT, fId, fStatus, fBateria, fBloco, fForno, fLado, fProblema, fObservacao, fPrazo, fFim, fSituacao, fCriadoPor;
 
@@ -133,7 +134,7 @@ export function initTabela() {
     [fData, fOcorrencia, fAvaliadorCT, fId, fProblema, fObservacao, fPrazo, fFim, fCriadoPor].forEach(el => el.addEventListener('input', debounce(renderizarTabela)));
 
     window.abrirEdicaoPelaTabela = function (idReparo) {
-        if (!isAdminAtual()) { alert('Apenas usuários administradores podem editar reparos.'); return; }
+        if (!isAdminAtual()) { mostrarToast('Apenas usuários administradores podem editar reparos.', 'info', 6000); return; }
         modalTabela.classList.remove('active');
         const reg = state.dbReparos.find(r => r.id_reparo == idReparo);
         if (reg) {

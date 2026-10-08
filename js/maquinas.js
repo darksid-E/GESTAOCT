@@ -5,6 +5,7 @@ import { state, isAdminAtual, nomeExibicaoAtual, salvarCacheLocalMaquinas } from
 import { criarMaquinaSupabase, atualizarMaquinaSupabase, excluirMaquinaSupabase } from './supabase-api.js';
 import { formatarDataBR, debounce } from './utils.js';
 
+import { mostrarToast } from './toast.js';
 // Os 8 pontos de medição da bandeja, na ordem em que aparecem no
 // modal — usados tanto pra montar/ler o formulário quanto pra tirar a
 // média em cada célula do diagrama.
@@ -64,7 +65,7 @@ function limparFormularioMaquina() {
 }
 
 function abrirModalNovaMaquina() {
-    if (!isAdminAtual()) { alert('Apenas usuários administradores podem lançar novos registros de máquina.'); return; }
+    if (!isAdminAtual()) { mostrarToast('Apenas usuários administradores podem lançar novos registros de máquina.', 'info', 6000); return; }
     limparFormularioMaquina();
     modalMaquina.classList.add('active');
 }
@@ -140,7 +141,7 @@ function validarFormularioMaquina(dados) {
 }
 
 window.editarRegistroMaquina = function (id) {
-    if (!isAdminAtual()) { alert('Apenas usuários administradores podem editar registros de máquina.'); return; }
+    if (!isAdminAtual()) { mostrarToast('Apenas usuários administradores podem editar registros de máquina.', 'info', 6000); return; }
     const reg = state.dbMaquinas.find(m => String(m.id) === String(id));
     if (!reg) return;
 
@@ -169,7 +170,7 @@ window.editarRegistroMaquina = function (id) {
 };
 
 window.deletarRegistroMaquina = async function (id) {
-    if (!isAdminAtual()) { alert('Apenas usuários administradores podem excluir registros de máquina.'); return; }
+    if (!isAdminAtual()) { mostrarToast('Apenas usuários administradores podem excluir registros de máquina.', 'info', 6000); return; }
     if (!confirm('Deseja excluir este registro?')) return;
 
     try {
@@ -180,7 +181,7 @@ window.deletarRegistroMaquina = async function (id) {
         renderizarTabelaMaquinas();
     } catch (erro) {
         console.error('Erro ao excluir registro de máquina:', erro);
-        alert(`Não foi possível excluir no Supabase.\n${erro.message}`);
+        mostrarToast(`Não foi possível excluir no Supabase.\n${erro.message}`, 'erro', 8000);
     }
 };
 
@@ -321,13 +322,13 @@ function limparFiltrosTabelaMaquinas() {
 
 function exportarExcelMaquinas() {
     if (typeof XLSX === 'undefined') {
-        alert('A biblioteca de exportação (SheetJS) não carregou. Verifique sua conexão e tente de novo.');
+        mostrarToast('A biblioteca de exportação (SheetJS) não carregou. Verifique sua conexão e tente de novo.', 'erro', 8000);
         return;
     }
 
     const registros = obterRegistrosNoPeriodo();
     if (registros.length === 0) {
-        alert('Nenhum registro encontrado no período selecionado.');
+        mostrarToast('Nenhum registro encontrado no período selecionado.', 'info', 6000);
         return;
     }
 
@@ -433,7 +434,7 @@ export function initMaquinas() {
     [fDataM, fRegistradoPorM, fObservacaoM].forEach(el => el.addEventListener('input', debounce(renderizarTabelaMaquinas)));
 
     document.getElementById('btn_salvar_maquina').addEventListener('click', async () => {
-        if (!isAdminAtual()) { alert('Apenas usuários administradores podem lançar ou editar registros de máquina.'); return; }
+        if (!isAdminAtual()) { mostrarToast('Apenas usuários administradores podem lançar ou editar registros de máquina.', 'info', 6000); return; }
         const botaoSalvar = document.getElementById('btn_salvar_maquina');
         const idEdit = document.getElementById('maquina_id_edit').value;
 
@@ -461,10 +462,10 @@ export function initMaquinas() {
             justificativa: document.getElementById('maquina_justificativa').value.trim().toUpperCase(),
         };
 
-        if (!dadosForm.data) { alert('Informe a data do lançamento.'); return; }
+        if (!dadosForm.data) { mostrarToast('Informe a data do lançamento.', 'info', 6000); return; }
 
         const erroValidacao = validarFormularioMaquina(dadosForm);
-        if (erroValidacao) { alert(erroValidacao); return; }
+        if (erroValidacao) { mostrarToast(erroValidacao, 'info', 6000); return; }
 
         // Com desvio, a justificativa é obrigatória. Sem nenhuma medição de
         // carga preenchida não existe desvio, então o envio é liberado.
@@ -472,7 +473,7 @@ export function initMaquinas() {
             const campoJust = document.getElementById('maquina_justificativa');
             campoJust.classList.add('invalido');
             campoJust.focus();
-            alert('Este lançamento tem desvio. Preencha a justificativa para enviar.');
+            mostrarToast('Este lançamento tem desvio. Preencha a justificativa para enviar.', 'info', 6000);
             return;
         }
 
@@ -514,7 +515,7 @@ export function initMaquinas() {
             renderizarTabelaMaquinas();
         } catch (erro) {
             console.error('Erro ao salvar registro de máquina:', erro);
-            alert(`Não foi possível salvar no Supabase.\n${erro.message}`);
+            mostrarToast(`Não foi possível salvar no Supabase.\n${erro.message}`, 'erro', 8000);
             botaoSalvar.innerText = idEdit ? 'Atualizar Registro' : 'Adicionar Registro';
         } finally {
             botaoSalvar.disabled = false;

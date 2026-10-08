@@ -6,6 +6,7 @@ import { formatarStatus, formatarDataBR, calcularSituacaoPrazo } from './utils.j
 import { getObterRegistrosDoAlvo, getTituloFornoModalTexto } from './modal-reparo.js';
 import { obterRegistrosFiltradosTabela } from './tabela.js';
 
+import { mostrarToast } from './toast.js';
 const CSS_IMPRESSAO = `
     * { box-sizing: border-box; }
     body { font-family: Arial, Helvetica, sans-serif; color: #1a1a1a; margin: 0; padding: 24px 32px; }
@@ -164,7 +165,7 @@ function gerarHtmlMapaColorido() {
 
 function imprimirHtml(html) {
     const janela = window.open('', '_blank', 'width=900,height=700');
-    if (!janela) { alert('Não foi possível abrir a janela de impressão. Verifique se o navegador bloqueou o pop-up.'); return; }
+    if (!janela) { mostrarToast('Não foi possível abrir a janela de impressão. Verifique se o navegador bloqueou o pop-up.', 'erro', 8000); return; }
     janela.document.open();
     janela.document.write(html);
     janela.document.close();

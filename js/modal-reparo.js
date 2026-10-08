@@ -9,6 +9,7 @@ import { processarDadosGlobais } from './mapa2d.js';
 import { renderizarTabela } from './tabela.js';
 import { aplicarPermissoes } from './auth.js';
 
+import { mostrarToast } from './toast.js';
 let modal, tituloFornoModal, listaHistorico, selectElements, selTipoPrincipal, selLadoPrincipal;
 let lightboxFoto, lightboxImg;
 
@@ -98,7 +99,7 @@ function limparFormulario() {
 }
 
 window.editarRegistro = function (idReparo) {
-    if (!isAdminAtual()) { alert('Apenas usuários administradores podem editar reparos.'); return; }
+    if (!isAdminAtual()) { mostrarToast('Apenas usuários administradores podem editar reparos.', 'info', 6000); return; }
     const reg = state.dbReparos.find(r => r.id_reparo == idReparo);
     if (reg) {
         document.getElementById('sel_bat').value = reg.bateria; document.getElementById('sel_bloco').value = reg.bloco;
@@ -252,7 +253,7 @@ export function initModalReparo() {
     selectElements.forEach(select => select.addEventListener('change', atualizarAlvoVisual));
 
     document.getElementById("btn_abrir_manual").addEventListener('click', () => {
-        if (!isAdminAtual()) { alert('Apenas usuários administradores podem lançar novos reparos.'); return; }
+        if (!isAdminAtual()) { mostrarToast('Apenas usuários administradores podem lançar novos reparos.', 'info', 6000); return; }
         document.getElementById('sel_bat').value = 'A'; document.getElementById('sel_bloco').value = '1';
         document.getElementById('sel_forno').value = '01'; document.getElementById('sel_lado').value = 'LC'; document.getElementById('sel_tipo').value = 'Forno';
 
@@ -270,13 +271,13 @@ export function initModalReparo() {
     modal.addEventListener("click", (e) => { if (e.target === modal) modal.classList.remove("active"); });
 
     document.getElementById("btn_salvar").addEventListener("click", async () => {
-        if (!isAdminAtual()) { alert('Apenas usuários administradores podem lançar ou editar reparos.'); return; }
+        if (!isAdminAtual()) { mostrarToast('Apenas usuários administradores podem lançar ou editar reparos.', 'info', 6000); return; }
         const botaoSalvar = document.getElementById("btn_salvar");
         const idEdit = document.getElementById("id_reparo_edit").value;
 
         const dataOcorrencia = document.getElementById("data_ocorrencia").value;
         if (dataOcorrencia && dataOcorrencia > dataHojeISO()) {
-            alert('A data da ocorrência não pode ser futura.');
+            mostrarToast('A data da ocorrência não pode ser futura.', 'info', 6000);
             document.getElementById("data_ocorrencia").focus();
             return;
         }
@@ -353,7 +354,7 @@ export function initModalReparo() {
             }
         } catch (erro) {
             console.error('Erro ao salvar reparo:', erro);
-            alert(`Não foi possível salvar no Supabase.\n${erro.message}`);
+            mostrarToast(`Não foi possível salvar no Supabase.\n${erro.message}`, 'erro', 8000);
             // Deu erro: o registro NÃO foi salvo, então mantém o modo em que
             // o usuário estava (edição ou novo registro) pra ele poder tentar de novo.
             botaoSalvar.innerText = idEdit ? 'Atualizar Registro' : 'Adicionar Registro';
@@ -363,7 +364,7 @@ export function initModalReparo() {
     });
 
     window.deletarRegistro = async function (idReparo) {
-        if (!isAdminAtual()) { alert('Apenas usuários administradores podem excluir reparos.'); return; }
+        if (!isAdminAtual()) { mostrarToast('Apenas usuários administradores podem excluir reparos.', 'info', 6000); return; }
         if (!confirm("Deseja excluir este registro?")) return;
 
         try {
@@ -381,7 +382,7 @@ export function initModalReparo() {
             renderizarTabela();
         } catch (erro) {
             console.error('Erro ao excluir reparo:', erro);
-            alert(`Não foi possível excluir no Supabase.\n${erro.message}`);
+            mostrarToast(`Não foi possível excluir no Supabase.\n${erro.message}`, 'erro', 8000);
         }
     };
 

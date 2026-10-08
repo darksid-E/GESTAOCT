@@ -479,8 +479,8 @@ function atualizarEstadoItemForm(div) {
 }
 
 function abrirModalLancamento({ bateria, setor } = {}) {
-    if (!isAdminAtual()) { alert('Apenas usuários administradores podem lançar registros do relatório de turno.'); return; }
-    if (state.dbRelatorioItens.length === 0) { alert('O catálogo de itens está vazio. Rode os scripts SQL do relatório de turno no Supabase.'); return; }
+    if (!isAdminAtual()) { avisar('Apenas usuários administradores podem lançar registros do relatório de turno.', 'info', 6000); return; }
+    if (state.dbRelatorioItens.length === 0) { avisar('O catálogo de itens está vazio. Rode os scripts SQL do relatório de turno no Supabase.', 'info', 6000); return; }
 
     el('rt_itens_form').innerHTML = '';   // lançamento novo: nada do anterior
     el('rt_data').value = el('rt_filtro_data').value || hojeLocal();
@@ -511,14 +511,14 @@ function aoMudarCardModal() {
 
 
 async function salvarLancamento() {
-    if (!isAdminAtual()) { alert('Apenas usuários administradores podem lançar registros do relatório de turno.'); return; }
+    if (!isAdminAtual()) { avisar('Apenas usuários administradores podem lançar registros do relatório de turno.', 'info', 6000); return; }
     const data = el('rt_data').value;
     const tipo = el('rt_tipo').value;
     const bateria = el('rt_bateria').value;
     const setor = el('rt_setor').value;
 
-    if (!data) { alert('Informe a data do lançamento.'); return; }
-    if (!tipo) { alert('Informe se o lançamento é ADM ou TURNO.'); el('rt_tipo').focus(); return; }
+    if (!data) { avisar('Informe a data do lançamento.', 'info', 6000); return; }
+    if (!tipo) { avisar('Informe se o lançamento é ADM ou TURNO.', 'info', 6000); el('rt_tipo').focus(); return; }
 
     const invalidos = [];
     el('rt_itens_form').querySelectorAll('.rt_form_item').forEach(div => {
@@ -529,7 +529,7 @@ async function salvarLancamento() {
     });
     if (invalidos.length > 0) {
         el('rt_itens_form').querySelector('.rt_form_valor.invalido')?.focus();
-        alert(`Valor inválido (use só números, ex.: 12,5):\n- ${invalidos.join('\n- ')}`);
+        avisar(`Valor inválido (use só números, ex.: 12,5):\n- ${invalidos.join('\n- ')}`, 'info', 8000);
         return;
     }
 
@@ -564,10 +564,10 @@ async function salvarLancamento() {
         });
     });
 
-    if (linhas.length === 0) { alert('Preencha pelo menos um item.'); return; }
+    if (linhas.length === 0) { avisar('Preencha pelo menos um item.', 'info', 6000); return; }
     if (semJustificativa.length > 0) {
         el('rt_itens_form').querySelector('.rt_form_just.invalido')?.focus();
-        alert(`Preencha a justificativa dos itens fora da meta:\n- ${semJustificativa.join('\n- ')}`);
+        avisar(`Preencha a justificativa dos itens fora da meta:\n- ${semJustificativa.join('\n- ')}`, 'info', 8000);
         return;
     }
 
@@ -582,7 +582,7 @@ async function salvarLancamento() {
         avisar(`Lançamento salvo (${linhas.length} itens${fora ? `, ${fora} fora da meta` : ''}).`, fora ? 'info' : 'sucesso');
     } catch (erro) {
         console.error('Erro ao salvar relatório de turno:', erro);
-        alert(`Não foi possível salvar no Supabase.\n${erro.message}`);
+        avisar(`Não foi possível salvar no Supabase.\n${erro.message}`, 'erro', 8000);
     } finally {
         botao.disabled = false;
         botao.innerText = 'Salvar Lançamento';
@@ -701,7 +701,7 @@ function atualizarStatusEdicao() {
 }
 
 window.editarRelatorioTurno = function (id) {
-    if (!isAdminAtual()) { alert('Apenas usuários administradores podem editar registros do relatório de turno.'); return; }
+    if (!isAdminAtual()) { avisar('Apenas usuários administradores podem editar registros do relatório de turno.', 'info', 6000); return; }
     const reg = registroPorId(id);
     if (!reg) return;
     const item = itemPorId(reg.item_id);
@@ -722,13 +722,13 @@ window.editarRelatorioTurno = function (id) {
 };
 
 async function salvarEdicao() {
-    if (!isAdminAtual()) { alert('Apenas usuários administradores podem editar registros do relatório de turno.'); return; }
+    if (!isAdminAtual()) { avisar('Apenas usuários administradores podem editar registros do relatório de turno.', 'info', 6000); return; }
     const reg = registroPorId(el('rt_ed_id').value);
     if (!reg) return;
     const item = itemPorId(reg.item_id);
 
     const data = el('rt_ed_data').value;
-    if (!data) { alert('Informe a data.'); return; }
+    if (!data) { avisar('Informe a data.', 'info', 6000); return; }
     const valor = item && !aceitaValor(item) ? null : lerNumero(el('rt_ed_valor').value);
     const status = temMetaNumerica(reg) ? avaliarMeta(valor, reg) : (el('rt_ed_status').value || null);
     const justificativa = el('rt_ed_just').value.trim().toUpperCase();
@@ -736,7 +736,7 @@ async function salvarEdicao() {
     if (status === 'NOK' && !justificativa) {
         el('rt_ed_just').classList.add('invalido');
         el('rt_ed_just').focus();
-        alert('Este item está fora da meta. Preencha a justificativa para salvar.');
+        avisar('Este item está fora da meta. Preencha a justificativa para salvar.', 'info', 6000);
         return;
     }
 
@@ -759,7 +759,7 @@ async function salvarEdicao() {
         avisar('Registro atualizado.', 'sucesso');
     } catch (erro) {
         console.error('Erro ao atualizar registro do relatório de turno:', erro);
-        alert(`Não foi possível salvar no Supabase.\n${erro.message}`);
+        avisar(`Não foi possível salvar no Supabase.\n${erro.message}`, 'erro', 8000);
     } finally {
         botao.disabled = false;
         botao.innerText = 'Atualizar Registro';
@@ -767,14 +767,14 @@ async function salvarEdicao() {
 }
 
 window.deletarRelatorioTurno = async function (id) {
-    if (!isAdminAtual()) { alert('Apenas usuários administradores podem excluir registros do relatório de turno.'); return; }
+    if (!isAdminAtual()) { avisar('Apenas usuários administradores podem excluir registros do relatório de turno.', 'info', 6000); return; }
     if (!confirm('Deseja excluir este registro?')) return;
     try {
         await excluirRelatorioTurnoSupabase(id);
         await recarregarRelatorio();
     } catch (erro) {
         console.error('Erro ao excluir registro do relatório de turno:', erro);
-        alert(`Não foi possível excluir no Supabase.\n${erro.message}`);
+        avisar(`Não foi possível excluir no Supabase.\n${erro.message}`, 'erro', 8000);
     }
 };
 
@@ -787,10 +787,10 @@ async function exportarExcel() {
     try {
         registros = await listarRelatorioTurnoSupabase({ inicio, fim });
     } catch (erro) {
-        alert(`Não foi possível buscar os dados no Supabase.\n${erro.message}`);
+        avisar(`Não foi possível buscar os dados no Supabase.\n${erro.message}`, 'erro', 8000);
         return;
     }
-    if (registros.length === 0) { alert('Nenhum registro no período selecionado (ajuste as datas na Tabela de Dados).'); return; }
+    if (registros.length === 0) { avisar('Nenhum registro no período selecionado (ajuste as datas na Tabela de Dados).', 'info', 6000); return; }
 
     const linhas = registros.map(r => {
         const item = itemPorId(r.item_id);
@@ -855,7 +855,7 @@ function montarTabelaMetas() {
 }
 
 async function salvarMetas() {
-    if (!isDevAtual()) { alert('Apenas desenvolvedores podem editar metas.'); return; }
+    if (!isDevAtual()) { avisar('Apenas desenvolvedores podem editar metas.', 'info', 6000); return; }
     const todasBaterias = el('rt_metas_todas').checked;
     const alteracoes = [];
     const erros = [];
@@ -888,8 +888,8 @@ async function salvarMetas() {
         alteracoes.push({ ids, dados });
     });
 
-    if (erros.length > 0) { alert(`Corrija antes de salvar:\n- ${erros.join('\n- ')}`); return; }
-    if (alteracoes.length === 0) { alert('Nenhuma meta foi alterada.'); return; }
+    if (erros.length > 0) { avisar(`Corrija antes de salvar:\n- ${erros.join('\n- ')}`, 'info', 8000); return; }
+    if (alteracoes.length === 0) { avisar('Nenhuma meta foi alterada.', 'info', 6000); return; }
 
     const botao = el('btn_salvar_metas_relatorio');
     botao.disabled = true;
@@ -902,7 +902,7 @@ async function salvarMetas() {
         avisar(`Metas atualizadas (${alteracoes.reduce((n, a) => n + a.ids.length, 0)} itens).`, 'sucesso');
     } catch (erro) {
         console.error('Erro ao salvar metas:', erro);
-        alert(`Não foi possível salvar as metas.\n${erro.message}`);
+        avisar(`Não foi possível salvar as metas.\n${erro.message}`, 'erro', 8000);
     } finally {
         botao.disabled = false;
         botao.innerText = 'Salvar Metas';
