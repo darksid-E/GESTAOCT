@@ -134,6 +134,17 @@ export async function atualizarRelatorioItensSupabase(ids, dados) {
     return resposta;
 }
 
+// Cadastro de metas novas (RLS: só isDev). Devolve as linhas criadas.
+export async function criarRelatorioItensSupabase(linhas) {
+    const resposta = await requisicaoSupabase(config.SUPABASE_TABLE_RELATORIO_ITENS, '', {
+        method: 'POST',
+        headers: { Prefer: 'return=representation' },
+        body: JSON.stringify(linhas)
+    });
+    if (!Array.isArray(resposta) || resposta.length === 0) throw new Error('Nenhuma meta foi cadastrada (apenas desenvolvedores podem cadastrar metas).');
+    return resposta;
+}
+
 export async function atualizarRelatorioTurnoSupabase(id, dados) {
     const resposta = await requisicaoSupabase(config.SUPABASE_TABLE_RELATORIO_TURNO, `?id=eq.${encodeURIComponent(id)}`, {
         method: 'PATCH',

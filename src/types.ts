@@ -58,6 +58,7 @@ export interface Maquina {
     centro_2_dir_esq: number;
     traseira_dir: number;
     traseira_esq: number;
+    tempo_ciclo_min?: number | null;
     tempo_compactacao_min: number;
     pressao_compactacao_bar: number;
     nivel_oleo_pct: number;
@@ -117,7 +118,7 @@ export interface RelatorioItem {
     meta_max: number | null;
     max_inclusivo: boolean;
     bateria: string | null;         // null = vale pras 3 baterias
-    fonte_auto: 'MAQUINA_PRESSAO' | 'MAQUINA_DESVIO' | null;
+    fonte_auto: 'MAQUINA_PRESSAO' | 'MAQUINA_DESVIO' | 'MAQUINA_CICLO' | 'MAQUINA_COMPACTACAO' | null;
     ordem: number;
     ativo: boolean;
 }

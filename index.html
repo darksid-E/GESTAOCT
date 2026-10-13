@@ -719,11 +719,14 @@
 
                 <p class="label_destaque maquinas_form_secao">Compactação e Níveis</p>
                 <div class="form_group row_group">
+                    <div class="half_width"><label>Tempo de Ciclo (min)</label><input type="number" step="0.1" min="0" id="maquina_tempo_ciclo"></div>
                     <div class="half_width"><label>Tempo de Compactação (min)</label><input type="number" step="0.1" min="0" id="maquina_tempo_compactacao"></div>
-                    <div class="half_width"><label>Pressão de Compactação (bar)</label><input type="number" step="0.1" min="0" id="maquina_pressao_compactacao"></div>
                 </div>
                 <div class="form_group row_group">
+                    <div class="half_width"><label>Pressão de Compactação (bar)</label><input type="number" step="0.1" min="0" id="maquina_pressao_compactacao"></div>
                     <div class="half_width"><label>Nível do Óleo (%)</label><input type="number" min="0" max="100" id="maquina_nivel_oleo"></div>
+                </div>
+                <div class="form_group row_group">
                     <div class="half_width"><label>Nível da Bacia (%)</label><input type="number" min="0" max="100" id="maquina_nivel_bacia"></div>
                 </div>
 
@@ -914,6 +917,26 @@
                         <tbody id="tbody_metas_relatorio"></tbody>
                     </table>
                 </div>
+
+                <section class="rt_nova_meta" aria-label="Cadastrar nova meta">
+                    <h4 class="rt_nova_meta_titulo">Nova meta</h4>
+                    <div class="rt_nova_meta_grid">
+                        <div class="rt_nm_campo rt_nm_c6"><label for="rt_nm_item">Item</label><input type="text" id="rt_nm_item" autocomplete="off"></div>
+                        <div class="rt_nm_campo rt_nm_c3"><label for="rt_nm_equip">Equipamento</label><select id="rt_nm_equip"></select></div>
+                        <div class="rt_nm_campo rt_nm_c3"><label for="rt_nm_entrada">Tipo</label>
+                            <select id="rt_nm_entrada"><option value="NUMERO">Número</option><option value="STATUS">OK / NOK</option></select>
+                        </div>
+                        <div class="rt_nm_campo rt_nm_c2"><label for="rt_nm_unidade">Unidade</label><input type="text" id="rt_nm_unidade" autocomplete="off"></div>
+                        <div class="rt_nm_campo rt_nm_c4"><label for="rt_nm_parametro">Parâmetro / meta (texto do card)</label><input type="text" id="rt_nm_parametro" autocomplete="off"></div>
+                        <div class="rt_nm_campo rt_nm_c3"><label>Limite inferior</label>
+                            <div class="rt_meta_limite"><select id="rt_nm_min_op"><option value="incl">≥</option><option value="estrito">&gt;</option></select><input type="text" inputmode="decimal" id="rt_nm_min" placeholder="sem limite"></div>
+                        </div>
+                        <div class="rt_nm_campo rt_nm_c3"><label>Limite superior</label>
+                            <div class="rt_meta_limite"><select id="rt_nm_max_op"><option value="incl">≤</option><option value="estrito">&lt;</option></select><input type="text" inputmode="decimal" id="rt_nm_max" placeholder="sem limite"></div>
+                        </div>
+                    </div>
+                    <button type="button" id="btn_adicionar_meta_relatorio" class="btn_acao"><svg class="icone" aria-hidden="true"><use href="#i-plus"></use></svg>Adicionar meta</button>
+                </section>
 
                 <div class="botoes_form">
                     <button id="btn_salvar_metas_relatorio" class="btn_salvar">Salvar Metas</button>

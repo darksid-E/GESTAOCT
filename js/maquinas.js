@@ -53,6 +53,7 @@ function limparFormularioMaquina() {
     document.getElementById('maquina_altura_programada').value = '900';
     document.getElementById('maquina_perfil_carga').value = 'normal 1';
     CAMPOS_BANDEJA.forEach(c => { document.getElementById(`maquina_${c}`).value = ''; });
+    document.getElementById('maquina_tempo_ciclo').value = '';
     document.getElementById('maquina_tempo_compactacao').value = '';
     document.getElementById('maquina_pressao_compactacao').value = '';
     document.getElementById('maquina_nivel_oleo').value = '';
@@ -131,6 +132,9 @@ function validarFormularioMaquina(dados) {
     if (dados.nivel_bacia_pct !== null && (dados.nivel_bacia_pct < 0 || dados.nivel_bacia_pct > 100)) {
         return 'O nível da bacia precisa estar entre 0 e 100%.';
     }
+    if (dados.tempo_ciclo_min !== null && dados.tempo_ciclo_min < 0) {
+        return 'O tempo de ciclo não pode ser negativo.';
+    }
     if (dados.tempo_compactacao_min !== null && dados.tempo_compactacao_min < 0) {
         return 'O tempo de compactação não pode ser negativo.';
     }
@@ -155,6 +159,7 @@ window.editarRegistroMaquina = function (id) {
     document.getElementById('maquina_altura_programada').value = String(reg.altura_programada);
     document.getElementById('maquina_perfil_carga').value = reg.perfil_carga;
     CAMPOS_BANDEJA.forEach(c => { document.getElementById(`maquina_${c}`).value = reg[c] ?? ''; });
+    document.getElementById('maquina_tempo_ciclo').value = reg.tempo_ciclo_min ?? '';
     document.getElementById('maquina_tempo_compactacao').value = reg.tempo_compactacao_min ?? '';
     document.getElementById('maquina_pressao_compactacao').value = reg.pressao_compactacao_bar ?? '';
     document.getElementById('maquina_nivel_oleo').value = reg.nivel_oleo_pct ?? '';
@@ -351,6 +356,7 @@ function exportarExcelMaquinas() {
         'Altura Média': r.altura_media,
         Desvio: r.desvio,
         Gatilho: r.gatilho,
+        'Tempo Ciclo (min)': r.tempo_ciclo_min,
         'Tempo Compactação (min)': r.tempo_compactacao_min,
         'Pressão Compactação (bar)': r.pressao_compactacao_bar,
         'Nível Óleo (%)': r.nivel_oleo_pct,
@@ -454,6 +460,7 @@ export function initMaquinas() {
             centro_2_dir_esq: lerNumeroOpcional('maquina_centro_2_dir_esq'),
             traseira_dir: lerNumeroOpcional('maquina_traseira_dir'),
             traseira_esq: lerNumeroOpcional('maquina_traseira_esq'),
+            tempo_ciclo_min: lerNumeroOpcional('maquina_tempo_ciclo'),
             tempo_compactacao_min: lerNumeroOpcional('maquina_tempo_compactacao'),
             pressao_compactacao_bar: lerNumeroOpcional('maquina_pressao_compactacao'),
             nivel_oleo_pct: lerNumeroOpcional('maquina_nivel_oleo'),

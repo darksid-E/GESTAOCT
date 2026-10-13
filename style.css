@@ -1350,3 +1350,23 @@ body {
 .rt_meta_limite { display: flex; gap: 6px; align-items: center; }
 .rt_meta_limite input { width: 100px; }
 .rt_meta_obs { color: var(--texto-suave); }
+
+/* Cadastro de meta nova (modal Editar Metas) */
+.rt_nova_meta { margin-top: 22px; padding: 16px; border: 1px solid var(--borda); border-radius: var(--raio-md); background: var(--bg-sutil); }
+.rt_nova_meta_titulo { margin: 0 0 12px; font-size: 0.95rem; color: var(--cor-secundaria-escura); }
+.rt_nova_meta_grid { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: 12px; margin-bottom: 14px; }
+.rt_nm_campo { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
+.rt_nm_campo label { font-weight: 600; color: var(--cor-secundaria); font-size: 0.83rem; }
+.rt_nm_campo input, .rt_nm_campo select { width: 100%; height: 38px; padding: 0 10px; border: 1px solid #c7c7d1; border-radius: var(--raio-sm); background: white; font-size: 0.9rem; }
+.rt_nm_campo input:disabled, .rt_nm_campo select:disabled { background: #eee; cursor: not-allowed; }
+.rt_nm_campo input.invalido { border-color: var(--cor-status-nao-reparado); box-shadow: 0 0 0 3px rgba(255, 76, 76, 0.12); }
+.rt_nm_c2 { grid-column: span 2; } .rt_nm_c3 { grid-column: span 3; } .rt_nm_c4 { grid-column: span 4; } .rt_nm_c6 { grid-column: span 6; }
+@media (max-width: 768px) {
+    .rt_nova_meta_grid { grid-template-columns: 1fr 1fr; }
+    .rt_nm_c2, .rt_nm_c3 { grid-column: auto; }
+    .rt_nm_c4, .rt_nm_c6 { grid-column: span 2; }
+}
+@media (max-width: 480px) {
+    .rt_nova_meta_grid { grid-template-columns: 1fr; }
+    .rt_nm_c2, .rt_nm_c3, .rt_nm_c4, .rt_nm_c6 { grid-column: auto; }
+}
