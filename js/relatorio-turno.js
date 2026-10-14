@@ -1096,10 +1096,27 @@ async function salvarFormularioMeta() {
         else await gravarNovaMeta(lido);
     } catch (erro) {
         console.error('Erro ao salvar meta:', erro);
-        avisar(`Não foi possível salvar a meta.\n${erro.message}`, 'erro', 8000);
+        avisar(`Não foi possível salvar a meta.\n${mensagemErroMeta(erro)}`, 'erro', 8000);
     } finally {
         botao.disabled = false;
     }
+}
+
+// Erro do banco em texto que a pessoa entende (23505 = nome já usado no card)
+function mensagemErroMeta(erro) {
+    const texto = String(erro?.message || erro);
+    if (texto.includes('23505')) return 'Já existe uma meta com esse nome neste card (pode ser uma meta excluída). Use outro nome.';
+    return texto;
+}
+
+// Meta excluída (ativo = false) com o mesmo card, bateria, equipamento e nome.
+// Ela continua no banco por causa do histórico e ocupa o nome: em vez de
+// criar outra (o banco recusaria), a meta antiga é reativada com os dados novos.
+function metaExcluidaIgual(setor, bateria, equipamento, nome) {
+    return state.dbRelatorioItens.find(i => i.ativo === false && i.setor === setor
+        && (i.bateria || null) === (bateria || null)
+        && (i.equipamento || null) === (equipamento || null)
+        && normalizar(i.item) === normalizar(nome));
 }
 
 async function gravarNovaMeta({ setor, equipamento, dados }) {
@@ -1108,20 +1125,37 @@ async function gravarNovaMeta({ setor, equipamento, dados }) {
     const baterias = el('rt_metas_todas').checked && !equipamento ? BATERIAS : [bateriaSel];
     if (nomeRepetido(setor, baterias, equipamento, dados.item)) { avisar('Já existe um item com esse nome neste card.', 'info', 6000); return; }
 
-    // Mesma posição nas baterias criadas; sempre depois dos itens do card
-    const ordem = Math.max(0, ...state.dbRelatorioItens.filter(i => i.setor === setor).map(i => Number(i.ordem) || 0)) + 1;
+    const reativar = baterias.map(b => metaExcluidaIgual(setor, b, equipamento, dados.item)).filter(Boolean);
+    const baterias_novas = baterias.filter(b => !reativar.some(i => i.bateria === b));
+
+    // Mesma posição nas baterias: reaproveita a da meta reativada; senão, depois dos itens do card
+    const ordem = reativar.length > 0
+        ? Number(reativar[0].ordem)
+        : Math.max(0, ...state.dbRelatorioItens.filter(i => i.setor === setor).map(i => Number(i.ordem) || 0)) + 1;
+
+    if (reativar.length > 0) {
+        await atualizarRelatorioItensSupabase(reativar.map(i => Number(i.id)), { ...dados, equipamento, ativo: true });
+    }
+    if (baterias_novas.length === 0) {
+        await recarregarCatalogo();
+        cancelarEdicaoMeta();
+        renderizarRelatorioTurno();
+        avisar(`Meta reativada (${reativar.length === 1 ? `Bateria ${reativar[0].bateria}` : `${reativar.length} baterias`}).`, 'sucesso');
+        return;
+    }
     // Parte de um item do mesmo card para herdar colunas que esta tela não conhece
     const molde = state.dbRelatorioItens.find(i => i.setor === setor && i.bateria === bateriaSel)
         || state.dbRelatorioItens.find(i => i.setor === setor) || {};
     const base = { ...molde };
     ['id', 'created_at', 'updated_at', 'criado_em', 'atualizado_em'].forEach(k => delete base[k]);
 
-    const linhas = baterias.map(b => ({ ...base, ...dados, setor, bateria: b, equipamento, ordem, ativo: true }));
+    const linhas = baterias_novas.map(b => ({ ...base, ...dados, setor, bateria: b, equipamento, ordem, ativo: true }));
     const criados = await criarRelatorioItensSupabase(linhas);
     await recarregarCatalogo();
     cancelarEdicaoMeta();
     renderizarRelatorioTurno();
-    avisar(`Meta cadastrada (${criados.length === 1 ? `Bateria ${criados[0].bateria}` : 'baterias A, B e C'}).`, 'sucesso');
+    const total = criados.length + reativar.length;
+    avisar(`Meta cadastrada (${total === 1 ? `Bateria ${baterias[0]}` : 'baterias A, B e C'}).`, 'sucesso');
 }
 
 async function gravarEdicaoMeta({ equipamento, dados }) {
