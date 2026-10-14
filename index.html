@@ -146,6 +146,7 @@
                                     <span>Aderência: <strong data-indicador="aderencia">-</strong></span>
                                     <span>Nível Óleo: <strong data-indicador="nivel_oleo_pct">-</strong></span>
                                     <span>Pressão Compact.: <strong data-indicador="pressao_compactacao_bar">-</strong></span>
+                                    <span>Tempo Ciclo: <strong data-indicador="tempo_ciclo_min">-</strong></span>
                                     <span>Tempo Compact.: <strong data-indicador="tempo_compactacao_min">-</strong></span>
                                 </div>
                                 <table class="maquinas_bandeja_tabela">
@@ -162,6 +163,7 @@
                                     <span>Aderência: <strong data-indicador="aderencia">-</strong></span>
                                     <span>Nível Óleo: <strong data-indicador="nivel_oleo_pct">-</strong></span>
                                     <span>Pressão Compact.: <strong data-indicador="pressao_compactacao_bar">-</strong></span>
+                                    <span>Tempo Ciclo: <strong data-indicador="tempo_ciclo_min">-</strong></span>
                                     <span>Tempo Compact.: <strong data-indicador="tempo_compactacao_min">-</strong></span>
                                 </div>
                                 <table class="maquinas_bandeja_tabela">
@@ -184,6 +186,7 @@
                                     <span>Aderência: <strong data-indicador="aderencia">-</strong></span>
                                     <span>Nível Óleo: <strong data-indicador="nivel_oleo_pct">-</strong></span>
                                     <span>Pressão Compact.: <strong data-indicador="pressao_compactacao_bar">-</strong></span>
+                                    <span>Tempo Ciclo: <strong data-indicador="tempo_ciclo_min">-</strong></span>
                                     <span>Tempo Compact.: <strong data-indicador="tempo_compactacao_min">-</strong></span>
                                 </div>
                                 <table class="maquinas_bandeja_tabela">
@@ -200,6 +203,7 @@
                                     <span>Aderência: <strong data-indicador="aderencia">-</strong></span>
                                     <span>Nível Óleo: <strong data-indicador="nivel_oleo_pct">-</strong></span>
                                     <span>Pressão Compact.: <strong data-indicador="pressao_compactacao_bar">-</strong></span>
+                                    <span>Tempo Ciclo: <strong data-indicador="tempo_ciclo_min">-</strong></span>
                                     <span>Tempo Compact.: <strong data-indicador="tempo_compactacao_min">-</strong></span>
                                 </div>
                                 <table class="maquinas_bandeja_tabela">
@@ -222,6 +226,7 @@
                                     <span>Aderência: <strong data-indicador="aderencia">-</strong></span>
                                     <span>Nível Óleo: <strong data-indicador="nivel_oleo_pct">-</strong></span>
                                     <span>Pressão Compact.: <strong data-indicador="pressao_compactacao_bar">-</strong></span>
+                                    <span>Tempo Ciclo: <strong data-indicador="tempo_ciclo_min">-</strong></span>
                                     <span>Tempo Compact.: <strong data-indicador="tempo_compactacao_min">-</strong></span>
                                 </div>
                                 <table class="maquinas_bandeja_tabela">
@@ -238,6 +243,7 @@
                                     <span>Aderência: <strong data-indicador="aderencia">-</strong></span>
                                     <span>Nível Óleo: <strong data-indicador="nivel_oleo_pct">-</strong></span>
                                     <span>Pressão Compact.: <strong data-indicador="pressao_compactacao_bar">-</strong></span>
+                                    <span>Tempo Ciclo: <strong data-indicador="tempo_ciclo_min">-</strong></span>
                                     <span>Tempo Compact.: <strong data-indicador="tempo_compactacao_min">-</strong></span>
                                 </div>
                                 <table class="maquinas_bandeja_tabela">
@@ -771,6 +777,7 @@
                         <tr>
                             <th>Data</th><th>Bat.</th><th>Bloco</th><th>Forno</th><th>Máquina</th>
                             <th>Alt. Prog.</th><th>Perfil</th><th>Alt. Média</th><th>Desvio</th><th>Gatilho</th>
+                            <th>T. Ciclo (min)</th><th>T. Compact. (min)</th><th>Pressão (bar)</th><th>Nív. Óleo (%)</th>
                             <th>Registrado por</th><th>Observação</th><th>Justificativa</th><th style="width: 80px;">Ações</th>
                         </tr>
                         <tr class="linha_filtros_tabela">
@@ -795,18 +802,22 @@
                                     <option value="31C">31C</option><option value="32C">32C</option>
                                 </select>
                             </th>
-                            <th></th>
-                            <th></th>
-                            <th></th>
-                            <th></th>
+                            <th><input type="text" class="input_filtro_col" data-filtro-campo="altura_programada"></th>
+                            <th><input type="text" class="input_filtro_col" data-filtro-campo="perfil_carga"></th>
+                            <th><input type="text" class="input_filtro_col" data-filtro-campo="altura_media"></th>
+                            <th><input type="text" class="input_filtro_col" data-filtro-campo="desvio"></th>
                             <th>
                                 <select id="ftabm_gatilho" class="input_filtro_col">
                                     <option value="Todos">Todos</option><option value="OK">OK</option><option value="DESVIO">DESVIO</option>
                                 </select>
                             </th>
+                            <th><input type="text" class="input_filtro_col" data-filtro-campo="tempo_ciclo_min"></th>
+                            <th><input type="text" class="input_filtro_col" data-filtro-campo="tempo_compactacao_min"></th>
+                            <th><input type="text" class="input_filtro_col" data-filtro-campo="pressao_compactacao_bar"></th>
+                            <th><input type="text" class="input_filtro_col" data-filtro-campo="nivel_oleo_pct"></th>
                             <th><input type="text" id="ftabm_registrado_por" class="input_filtro_col"></th>
                             <th><input type="text" id="ftabm_observacao" class="input_filtro_col"></th>
-                            <th></th>
+                            <th><input type="text" class="input_filtro_col" data-filtro-campo="justificativa"></th>
                             <th></th>
                         </tr>
                     </thead>
@@ -913,18 +924,27 @@
 
                 <div style="overflow-x: auto;">
                     <table class="data_table rt_metas_tabela">
-                        <thead><tr><th>Item</th><th>Parâmetro / meta (texto do card)</th><th>Unidade</th><th>Limite inferior</th><th>Limite superior</th></tr></thead>
+                        <thead><tr><th>Item</th><th>Parâmetro / meta (texto do card)</th><th>Unidade</th><th>Limite inferior</th><th>Limite superior</th><th style="width: 80px;">Ações</th></tr></thead>
                         <tbody id="tbody_metas_relatorio"></tbody>
                     </table>
                 </div>
 
-                <section class="rt_nova_meta" aria-label="Cadastrar nova meta">
-                    <h4 class="rt_nova_meta_titulo">Nova meta</h4>
+                <section class="rt_nova_meta" id="rt_form_meta" aria-label="Cadastrar ou editar meta">
+                    <h4 class="rt_nova_meta_titulo" id="rt_nm_titulo">Nova meta</h4>
                     <div class="rt_nova_meta_grid">
-                        <div class="rt_nm_campo rt_nm_c6"><label for="rt_nm_item">Item</label><input type="text" id="rt_nm_item" autocomplete="off"></div>
-                        <div class="rt_nm_campo rt_nm_c3"><label for="rt_nm_equip">Equipamento</label><select id="rt_nm_equip"></select></div>
+                        <div class="rt_nm_campo rt_nm_c4" id="rt_nm_item_campo"><label for="rt_nm_item">Item</label><input type="text" id="rt_nm_item" autocomplete="off"></div>
+                        <div class="rt_nm_campo rt_nm_c2"><label for="rt_nm_equip">Equipamento</label><select id="rt_nm_equip"></select></div>
                         <div class="rt_nm_campo rt_nm_c3"><label for="rt_nm_entrada">Tipo</label>
                             <select id="rt_nm_entrada"><option value="NUMERO">Número</option><option value="STATUS">OK / NOK</option></select>
+                        </div>
+                        <div class="rt_nm_campo rt_nm_c3" id="rt_nm_auto_campo"><label for="rt_nm_auto">Origem automática</label>
+                            <select id="rt_nm_auto">
+                                <option value="">Nenhuma (lançamento manual)</option>
+                                <option value="MAQUINA_PRESSAO">Pressão de compactação</option>
+                                <option value="MAQUINA_DESVIO">Altura de carga (desvio)</option>
+                                <option value="MAQUINA_CICLO">Tempo de ciclo (editável)</option>
+                                <option value="MAQUINA_COMPACTACAO">Tempo de compactação (editável)</option>
+                            </select>
                         </div>
                         <div class="rt_nm_campo rt_nm_c2"><label for="rt_nm_unidade">Unidade</label><input type="text" id="rt_nm_unidade" autocomplete="off"></div>
                         <div class="rt_nm_campo rt_nm_c4"><label for="rt_nm_parametro">Parâmetro / meta (texto do card)</label><input type="text" id="rt_nm_parametro" autocomplete="off"></div>
@@ -935,12 +955,14 @@
                             <div class="rt_meta_limite"><select id="rt_nm_max_op"><option value="incl">≤</option><option value="estrito">&lt;</option></select><input type="text" inputmode="decimal" id="rt_nm_max" placeholder="sem limite"></div>
                         </div>
                     </div>
-                    <button type="button" id="btn_adicionar_meta_relatorio" class="btn_acao"><svg class="icone" aria-hidden="true"><use href="#i-plus"></use></svg>Adicionar meta</button>
+                    <div class="rt_nm_botoes">
+                        <button type="button" id="btn_adicionar_meta_relatorio" class="btn_acao"><svg class="icone" aria-hidden="true"><use href="#i-plus"></use></svg><span id="rt_nm_botao_texto">Adicionar meta</span></button>
+                        <button type="button" id="btn_cancelar_edicao_meta" class="btn_acao btn_secundario" hidden>Cancelar edição</button>
+                    </div>
                 </section>
 
                 <div class="botoes_form">
-                    <button id="btn_salvar_metas_relatorio" class="btn_salvar">Salvar Metas</button>
-                    <button id="btn_cancelar_metas_relatorio" class="btn_cancelar_edicao">Cancelar</button>
+                    <button id="btn_cancelar_metas_relatorio" class="btn_cancelar_edicao">Fechar</button>
                 </div>
             </div>
         </div>

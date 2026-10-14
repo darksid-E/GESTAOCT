@@ -241,6 +241,7 @@ export function renderizarPaginaMaquinas() {
         const indicadoresExtras = [
             ['nivel_oleo_pct', '%'],
             ['pressao_compactacao_bar', ' bar'],
+            ['tempo_ciclo_min', ' min'],
             ['tempo_compactacao_min', ' min'],
         ];
         indicadoresExtras.forEach(([campo, unidade]) => {
@@ -272,7 +273,15 @@ function obterRegistrosFiltradosTabelaMaquinas() {
     if (fMaquinaM.value !== 'Todas') filtrados = filtrados.filter(r => r.maquina === fMaquinaM.value);
     if (fGatilhoM.value !== 'Todos') filtrados = filtrados.filter(r => r.gatilho === fGatilhoM.value);
 
-    filtrados = filtrados.filter(r => textoContem(r.data, fDataM.value));
+    filtrados = filtrados.filter(r => textoContem(r.data, fDataM.value) || textoContem(formatarDataBR(r.data), fDataM.value));
+    // Demais colunas: filtro de texto genérico (data-filtro-campo = coluna do registro)
+    document.querySelectorAll('#tabela_banco_maquinas [data-filtro-campo]').forEach(campo => {
+        const termo = campo.value.trim();
+        if (!termo) return;
+        const coluna = campo.dataset.filtroCampo;
+        filtrados = filtrados.filter(r => textoContem(r[coluna] === null || r[coluna] === undefined ? '' : String(r[coluna]), termo)
+            || textoContem(String(r[coluna] ?? '').replace('.', ','), termo));
+    });
     filtrados = filtrados.filter(r => textoContem(r.registrado_por, fRegistradoPorM.value));
     filtrados = filtrados.filter(r => textoContem(r.observacao, fObservacaoM.value));
 
@@ -285,7 +294,7 @@ export function renderizarTabelaMaquinas() {
     const filtrados = obterRegistrosFiltradosTabelaMaquinas();
 
     if (filtrados.length === 0) {
-        tbodyBancoMaquinas.innerHTML = '<tr><td colspan="14" style="text-align:center; color:#888; padding:24px;">Nenhum registro encontrado com os filtros atuais.</td></tr>';
+        tbodyBancoMaquinas.innerHTML = '<tr><td colspan="18" style="text-align:center; color:#888; padding:24px;">Nenhum registro encontrado com os filtros atuais.</td></tr>';
         return;
     }
 
@@ -302,6 +311,10 @@ export function renderizarTabelaMaquinas() {
             <td>${reg.altura_media ?? '-'}</td>
             <td>${reg.desvio ?? '-'}</td>
             <td><span class="badge_prazo ${reg.gatilho === 'DESVIO' ? 'prazo_atrasado' : 'prazo_ok'}">${reg.gatilho || '-'}</span></td>
+            <td>${reg.tempo_ciclo_min ?? '-'}</td>
+            <td>${reg.tempo_compactacao_min ?? '-'}</td>
+            <td>${reg.pressao_compactacao_bar ?? '-'}</td>
+            <td>${reg.nivel_oleo_pct ?? '-'}</td>
             <td>${reg.registrado_por || '-'}</td>
             <td>${reg.observacao || '-'}</td>
             <td>${reg.justificativa || '-'}</td>
@@ -320,6 +333,7 @@ function limparFiltrosTabelaMaquinas() {
     fDataM.value = ''; fRegistradoPorM.value = ''; fObservacaoM.value = '';
     fBateriaM.value = 'Todas'; fBlocoM.value = 'Todos'; fFornoM.value = 'Todos';
     fMaquinaM.value = 'Todas'; fGatilhoM.value = 'Todos';
+    document.querySelectorAll('#tabela_banco_maquinas [data-filtro-campo]').forEach(c => { c.value = ''; });
     renderizarTabelaMaquinas();
 }
 
@@ -391,7 +405,6 @@ export function initMaquinas() {
     fGatilhoM = document.getElementById('ftabm_gatilho');
     fRegistradoPorM = document.getElementById('ftabm_registrado_por');
     fObservacaoM = document.getElementById('ftabm_observacao');
-    fObservacaoM = document.getElementById('ftabm_observacao');
 
     // Selects de forno (modal e filtro da tabela), padrão "01".."18" do resto do app
     const selForno = document.getElementById('maquina_forno');
@@ -437,7 +450,8 @@ export function initMaquinas() {
     document.getElementById('btn_limpar_filtros_tabela_maquinas').addEventListener('click', limparFiltrosTabelaMaquinas);
 
     [fBateriaM, fBlocoM, fFornoM, fMaquinaM, fGatilhoM].forEach(el => el.addEventListener('change', renderizarTabelaMaquinas));
-    [fDataM, fRegistradoPorM, fObservacaoM].forEach(el => el.addEventListener('input', debounce(renderizarTabelaMaquinas)));
+    [fDataM, fRegistradoPorM, fObservacaoM, ...document.querySelectorAll('#tabela_banco_maquinas [data-filtro-campo]')]
+        .forEach(el => el.addEventListener('input', debounce(renderizarTabelaMaquinas)));
 
     document.getElementById('btn_salvar_maquina').addEventListener('click', async () => {
         if (!isAdminAtual()) { mostrarToast('Apenas usuários administradores podem lançar ou editar registros de máquina.', 'info', 6000); return; }

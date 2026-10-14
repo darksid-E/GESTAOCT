@@ -22,8 +22,8 @@ import { mostrarToast } from './toast.js';
 
 const SETORES = [
     { id: 'CONTROLE_TERMICO', rotulo: 'Controle Térmico' },
-    { id: 'CALDEIRAS', rotulo: 'Caldeiras' },
     { id: 'MAQUINAS', rotulo: 'Máquinas' },
+    { id: 'CALDEIRAS', rotulo: 'Caldeiras' },
     { id: 'FGDS', rotulo: 'FGDs' },
 ];
 const BATERIAS = ['A', 'B', 'C'];
@@ -122,6 +122,25 @@ const statusManual = (item) => item.entrada === 'STATUS' || item.entrada === 'NU
 
 // --- Catálogo ---
 
+// Itens do card de Máquinas chamados "Tempo de ciclo" / "Tempo de compactação"
+// sem fonte_auto no banco são tratados como automáticos (editáveis) mesmo
+// assim — evita que o item fique "manual" só porque o catálogo não foi ajustado.
+function inferirFonteAuto(item) {
+    if (item.fonte_auto || item.setor !== 'MAQUINAS') return item.fonte_auto || null;
+    const nome = String(item.item || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+    if (/tempo\s*(de\s*)?ciclo/.test(nome)) return 'MAQUINA_CICLO';
+    if (/tempo\s*(de\s*)?compacta/.test(nome)) return 'MAQUINA_COMPACTACAO';
+    return null;
+}
+
+function prepararCatalogo(lista) {
+    return (lista || []).map(i => ({ ...i, fonte_auto: inferirFonteAuto(i) }));
+}
+
+async function recarregarCatalogo() {
+    state.dbRelatorioItens = prepararCatalogo(await listarRelatorioItensSupabase());
+}
+
 function itensDoCard(bateria, setor) {
     return state.dbRelatorioItens
         .filter(i => i.ativo !== false && i.setor === setor && (!i.bateria || i.bateria === bateria))
@@ -170,8 +189,10 @@ function mediaDe(lista, campo) {
 
 // colunaObrigatoria: só considera lançamentos em que aquela coluna foi
 // preenchida (campos opcionais da página Máquinas)
-function resumoMaquina(equipamento, ate, colunaObrigatoria) {
-    const regs = state.dbMaquinas.filter(m => m.maquina === equipamento && m.data && m.data <= ate
+// Sem equipamento no item (item do card inteiro): média das máquinas da bateria
+function resumoMaquina(equipamento, ate, colunaObrigatoria, bateria) {
+    const daOrigem = (m) => (equipamento ? m.maquina === equipamento : (!!bateria && m.bateria === bateria));
+    const regs = state.dbMaquinas.filter(m => daOrigem(m) && m.data && m.data <= ate
         && (!colunaObrigatoria || (m[colunaObrigatoria] !== null && m[colunaObrigatoria] !== undefined && m[colunaObrigatoria] !== '')));
     if (regs.length === 0) return null;
     const dia = regs.reduce((max, m) => (m.data > max ? m.data : max), regs[0].data);
@@ -191,10 +212,10 @@ function resumoMaquina(equipamento, ate, colunaObrigatoria) {
 const CAMPO_RESUMO = { MAQUINA_PRESSAO: 'pressao', MAQUINA_DESVIO: 'desvio', MAQUINA_CICLO: 'ciclo', MAQUINA_COMPACTACAO: 'compactacao' };
 
 // "Registro" montado na hora para o card, no mesmo formato de um lançamento
-function registroAutomatico(item, ate) {
+function registroAutomatico(item, ate, bateria) {
     const campo = CAMPO_RESUMO[item.fonte_auto];
     if (!campo) return null;
-    const resumo = resumoMaquina(item.equipamento, ate, AUTO_EDITAVEL.includes(item.fonte_auto) ? COLUNA_MAQUINA[item.fonte_auto] : undefined);
+    const resumo = resumoMaquina(item.equipamento, ate, AUTO_EDITAVEL.includes(item.fonte_auto) ? COLUNA_MAQUINA[item.fonte_auto] : undefined, item.bateria || bateria);
     if (!resumo) return null;
     const valor = resumo[campo];
     if (valor === null || valor === undefined) return null;
@@ -204,8 +225,8 @@ function registroAutomatico(item, ate) {
 // Item automático editável: vale o lançamento manual se existir e não for
 // mais antigo que o dado da página Máquinas; senão o valor automático. Um
 // lançamento de origem AUTO é só uma cópia do automático e não substitui nada.
-function registroAutoEditavel(item, ate, ultimoRegistro) {
-    const auto = registroAutomatico(item, ate);
+function registroAutoEditavel(item, ate, ultimoRegistro, bateria) {
+    const auto = registroAutomatico(item, ate, bateria);
     const manual = ultimoRegistro && ultimoRegistro.origem !== 'AUTO' ? ultimoRegistro : null;
     if (manual && (!auto || manual.data >= auto.data)) return manual;
     return auto || ultimoRegistro || null;
@@ -224,10 +245,10 @@ function desatualizado(reg, ate) {
 }
 
 // Registro "como veio" (antes da regra dos 2 dias) de um item no card
-function registroBruto(item, ate, ultimo) {
+function registroBruto(item, ate, ultimo, bateria) {
     if (!item.fonte_auto) return ultimo.get(Number(item.id)) || null;
-    if (AUTO_EDITAVEL.includes(item.fonte_auto)) return registroAutoEditavel(item, ate, ultimo.get(Number(item.id)));
-    return registroAutomatico(item, ate);
+    if (AUTO_EDITAVEL.includes(item.fonte_auto)) return registroAutoEditavel(item, ate, ultimo.get(Number(item.id)), bateria);
+    return registroAutomatico(item, ate, bateria);
 }
 
 // --- Carga de dados ---
@@ -262,7 +283,7 @@ export async function carregarRelatorioTurno() {
         return;
     }
     try {
-        state.dbRelatorioItens = await listarRelatorioItensSupabase();
+        state.dbRelatorioItens = prepararCatalogo(await listarRelatorioItensSupabase());
     } catch (erro) {
         console.warn('Não foi possível carregar o catálogo do relatório de turno:', erro);
         state.dbRelatorioItens = [];
@@ -359,7 +380,7 @@ function htmlCard(bateria, setor, ultimo, ate) {
     if (itens.length === 0) return '';
 
     // Registro com mais de 2 dias (até a data da página) conta como sem dado e sai em branco
-    const bruto = (i) => registroBruto(i, ate, ultimo);
+    const bruto = (i) => registroBruto(i, ate, ultimo, bateria);
     const vencido = (i) => desatualizado(bruto(i), ate);
     const registro = (i) => (vencido(i) ? null : bruto(i));
     const comRegistro = itens.filter(i => registro(i));
@@ -500,7 +521,7 @@ function montarFormularioItens() {
     const html = agruparPorEquipamento(itens).map(g => {
         const titulo = g.equipamento ? `<p class="label_destaque rt_form_secao">${esc(rotuloEquipamento(setor, g.equipamento))}</p>` : '';
         return titulo + g.itens.map(i => {
-            const auto = i.fonte_auto ? (registroAutomatico(i, data || hojeLocal())?.valor ?? null) : null;
+            const auto = i.fonte_auto ? (registroAutomatico(i, data || hojeLocal(), bateria)?.valor ?? null) : null;
             return htmlItemForm(i, existentes.get(Number(i.id)), auto);
         }).join('');
     }).join('');
@@ -884,115 +905,78 @@ async function exportarExcel() {
 }
 
 // --- Editor de metas (só desenvolvedores) ---
-// Edita unidade, texto do parâmetro e limites numéricos do catálogo e cadastra
-// metas novas (itens novos no card). A meta nova vale para os próximos
-// lançamentos (os já feitos guardam a meta da época).
+// Tabela com os itens do card (lápis = editar tudo, inclusive o nome;
+// lixeira = excluir) e um formulário único para cadastrar ou editar.
+// "Aplicar a mesma meta nas 3 baterias" vale para criar, editar e excluir.
+// A meta nova vale para os próximos lançamentos; os já feitos guardam a meta
+// da época. Excluir só tira o item do relatório (ativo = false): o histórico
+// de lançamentos continua no banco.
 
-function numeroTexto(v) {
-    return v === null || v === undefined ? '' : String(v);
-}
+const ROTULO_AUTO = {
+    MAQUINA_PRESSAO: 'Pressão de compactação', MAQUINA_DESVIO: 'Altura de carga',
+    MAQUINA_CICLO: 'Tempo de ciclo', MAQUINA_COMPACTACAO: 'Tempo de compactação',
+};
+let metaEmEdicao = null;   // item do catálogo sendo editado (null = cadastrando)
+
+const normalizar = (t) => String(t ?? '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/\s+/g, ' ').trim();
 
 function abrirModalMetas() {
     if (!isDevAtual()) return;
     el('rt_metas_bateria').value = BATERIAS.includes(state.filtroBateriaRelatorio) ? state.filtroBateriaRelatorio : 'A';
+    cancelarEdicaoMeta();
     montarTabelaMetas();
-    popularEquipamentosNovaMeta();
     modalMetas.classList.add('active');
+}
+
+function textoLimite(i, lado) {
+    if (i.entrada === 'STATUS') return '<small class="rt_meta_obs">OK/NOK manual</small>';
+    const valor = lado === 'min' ? i.meta_min : i.meta_max;
+    if (valor === null || valor === undefined) return '—';
+    const inclusivo = lado === 'min' ? i.min_inclusivo !== false : i.max_inclusivo !== false;
+    const op = lado === 'min' ? (inclusivo ? '≥' : '>') : (inclusivo ? '≤' : '<');
+    return `${op} ${esc(formatarNumero(valor))}`;
 }
 
 function montarTabelaMetas() {
     const bateria = el('rt_metas_bateria').value;
     const setor = el('rt_metas_setor').value;
     const itens = itensDoCard(bateria, setor);
-    const limite = (i, lado) => {
-        if (i.entrada === 'STATUS') return '<small class="rt_meta_obs">OK/NOK manual</small>';
-        const campo = lado === 'min' ? 'meta_min' : 'meta_max';
-        const inclusivo = lado === 'min' ? i.min_inclusivo !== false : i.max_inclusivo !== false;
-        const ops = lado === 'min'
-            ? `<option value="incl"${inclusivo ? ' selected' : ''}>≥</option><option value="estrito"${inclusivo ? '' : ' selected'}>&gt;</option>`
-            : `<option value="incl"${inclusivo ? ' selected' : ''}>≤</option><option value="estrito"${inclusivo ? '' : ' selected'}>&lt;</option>`;
-        return `<div class="rt_meta_limite"><select data-campo="${lado}_op">${ops}</select><input type="text" inputmode="decimal" data-campo="${campo}" value="${esc(numeroTexto(i[campo]))}" placeholder="sem limite"></div>`;
-    };
-    el('tbody_metas_relatorio').innerHTML = itens.map(i => `<tr data-id="${i.id}">
-        <td><strong>${esc(i.item)}</strong>${i.equipamento ? `<br><small>${esc(rotuloEquipamento(setor, i.equipamento))}</small>` : ''}${i.fonte_auto ? '<br><small class="rt_meta_obs">automático (Máquinas)</small>' : ''}</td>
-        <td><input type="text" data-campo="parametro" value="${esc(i.parametro || '')}"></td>
-        <td><input type="text" data-campo="unidade" value="${esc(i.unidade || '')}" class="rt_meta_unidade"></td>
-        <td>${limite(i, 'min')}</td>
-        <td>${limite(i, 'max')}</td>
-    </tr>`).join('') || '<tr><td colspan="5" class="rt_tab_msg">Nenhum item neste card.</td></tr>';
+    el('tbody_metas_relatorio').innerHTML = itens.map(i => `<tr data-id="${i.id}"${metaEmEdicao && Number(metaEmEdicao.id) === Number(i.id) ? ' class="rt_meta_em_edicao"' : ''}>
+        <td><strong>${esc(i.item)}</strong>${i.equipamento ? `<br><small>${esc(rotuloEquipamento(setor, i.equipamento))}</small>` : ''}${i.fonte_auto ? `<br><small class="rt_meta_obs">automático: ${esc(ROTULO_AUTO[i.fonte_auto] || i.fonte_auto)}</small>` : ''}</td>
+        <td>${esc(i.parametro || '—')}</td>
+        <td>${esc(i.unidade || '—')}</td>
+        <td>${textoLimite(i, 'min')}</td>
+        <td>${textoLimite(i, 'max')}</td>
+        <td><div class="acoes_linha">
+            <button type="button" class="btn_icone icone_editar" data-acao="editar-meta" data-id="${i.id}" aria-label="Editar meta"><svg class="icone" aria-hidden="true"><use href="#i-pencil"></use></svg></button>
+            <button type="button" class="btn_icone icone_excluir" data-acao="excluir-meta" data-id="${i.id}" aria-label="Excluir meta"><svg class="icone" aria-hidden="true"><use href="#i-trash"></use></svg></button>
+        </div></td>
+    </tr>`).join('') || '<tr><td colspan="6" class="rt_tab_msg">Nenhum item neste card.</td></tr>';
 }
-
-async function salvarMetas() {
-    if (!isDevAtual()) { avisar('Apenas desenvolvedores podem editar metas.', 'info', 6000); return; }
-    const todasBaterias = el('rt_metas_todas').checked;
-    const alteracoes = [];
-    const erros = [];
-
-    el('tbody_metas_relatorio').querySelectorAll('tr[data-id]').forEach(tr => {
-        const item = itemPorId(tr.dataset.id);
-        const campo = (nome) => tr.querySelector(`[data-campo="${nome}"]`);
-        const dados = {
-            parametro: campo('parametro').value.trim().toUpperCase() || null,
-            unidade: campo('unidade').value.trim() || null,
-        };
-        if (campo('meta_min')) {
-            const minTxt = campo('meta_min').value.trim();
-            const maxTxt = campo('meta_max').value.trim();
-            const min = minTxt === '' ? null : lerNumero(minTxt);
-            const max = maxTxt === '' ? null : lerNumero(maxTxt);
-            if ((minTxt !== '' && min === null) || (maxTxt !== '' && max === null)) { erros.push(`${item.item}: número inválido`); return; }
-            if (min !== null && max !== null && min > max) { erros.push(`${item.item}: mínimo maior que o máximo`); return; }
-            Object.assign(dados, {
-                meta_min: min, min_inclusivo: campo('min_op').value === 'incl',
-                meta_max: max, max_inclusivo: campo('max_op').value === 'incl',
-            });
-        }
-        const mudou = Object.entries(dados).some(([k, v]) => (item[k] ?? null) !== v && !(k.endsWith('_inclusivo') && (item[k] ?? true) === v));
-        if (!mudou) return;
-        // Mesmo item nas 3 baterias = mesmo card e mesma posição no catálogo
-        const ids = todasBaterias
-            ? state.dbRelatorioItens.filter(o => o.setor === item.setor && o.ordem === item.ordem).map(o => o.id)
-            : [item.id];
-        alteracoes.push({ ids, dados });
-    });
-
-    if (erros.length > 0) { avisar(`Corrija antes de salvar:\n- ${erros.join('\n- ')}`, 'info', 8000); return; }
-    if (alteracoes.length === 0) { avisar('Nenhuma meta foi alterada.', 'info', 6000); return; }
-
-    const botao = el('btn_salvar_metas_relatorio');
-    botao.disabled = true;
-    botao.innerText = 'Salvando...';
-    try {
-        for (const a of alteracoes) await atualizarRelatorioItensSupabase(a.ids, a.dados);
-        state.dbRelatorioItens = await listarRelatorioItensSupabase();
-        modalMetas.classList.remove('active');
-        renderizarRelatorioTurno();
-        avisar(`Metas atualizadas (${alteracoes.reduce((n, a) => n + a.ids.length, 0)} itens).`, 'sucesso');
-    } catch (erro) {
-        console.error('Erro ao salvar metas:', erro);
-        avisar(`Não foi possível salvar as metas.\n${erro.message}`, 'erro', 8000);
-    } finally {
-        botao.disabled = false;
-        botao.innerText = 'Salvar Metas';
-    }
-}
-
-// --- Cadastro de meta nova (só desenvolvedores) ---
-
-const normalizar = (t) => String(t ?? '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/\s+/g, ' ').trim();
 
 // Equipamentos que já existem no card/bateria escolhidos (evita erro de digitação)
-function popularEquipamentosNovaMeta() {
+function popularEquipamentosNovaMeta(valorAtual = '') {
     const bateria = el('rt_metas_bateria').value;
     const setor = el('rt_metas_setor').value;
     const equipamentos = [...new Set(itensDoCard(bateria, setor).map(i => i.equipamento).filter(Boolean))];
+    if (valorAtual && !equipamentos.includes(valorAtual)) equipamentos.push(valorAtual);
     el('rt_nm_equip').innerHTML = '<option value="">—</option>'
         + equipamentos.map(e => `<option value="${esc(e)}">${esc(rotuloEquipamento(setor, e))}</option>`).join('');
+    el('rt_nm_equip').value = valorAtual || '';
     atualizarCamposNovaMeta();
 }
 
-// Item OK/NOK não tem unidade nem limites numéricos
+// OK/NOK não tem unidade nem limites; origem automática só existe no card de Máquinas
 function atualizarCamposNovaMeta() {
+    const maquinas = el('rt_metas_setor').value === 'MAQUINAS';
+    el('rt_nm_auto_campo').hidden = !maquinas;
+    if (!maquinas) el('rt_nm_auto').value = '';
+    const campoItem = el('rt_nm_item_campo');
+    campoItem.classList.toggle('rt_nm_c4', maquinas);
+    campoItem.classList.toggle('rt_nm_c7', !maquinas);
+
+    if (el('rt_nm_auto').value) el('rt_nm_entrada').value = 'NUMERO';
+    el('rt_nm_entrada').disabled = !!el('rt_nm_auto').value;
     const status = el('rt_nm_entrada').value === 'STATUS';
     ['rt_nm_unidade', 'rt_nm_min_op', 'rt_nm_min', 'rt_nm_max_op', 'rt_nm_max'].forEach(id => { el(id).disabled = status; });
 }
@@ -1009,85 +993,174 @@ function gerarTextoMeta({ min, minEstrito, max, maxEstrito, unidade }) {
     return '';
 }
 
-function limparNovaMeta() {
-    ['rt_nm_item', 'rt_nm_unidade', 'rt_nm_parametro', 'rt_nm_min', 'rt_nm_max'].forEach(id => { el(id).value = ''; });
+function limparFormularioMeta() {
+    ['rt_nm_item', 'rt_nm_unidade', 'rt_nm_parametro', 'rt_nm_min', 'rt_nm_max'].forEach(id => { el(id).value = ''; el(id).classList.remove('invalido'); });
     el('rt_nm_entrada').value = 'NUMERO';
+    el('rt_nm_auto').value = '';
     el('rt_nm_min_op').value = 'incl';
     el('rt_nm_max_op').value = 'incl';
-    atualizarCamposNovaMeta();
 }
 
-async function adicionarMeta() {
-    if (!isDevAtual()) { avisar('Apenas desenvolvedores podem cadastrar metas.', 'info', 6000); return; }
+function cancelarEdicaoMeta() {
+    metaEmEdicao = null;
+    limparFormularioMeta();
+    el('rt_nm_titulo').textContent = 'Nova meta';
+    el('rt_nm_botao_texto').textContent = 'Adicionar meta';
+    el('btn_cancelar_edicao_meta').hidden = true;
+    el('rt_form_meta').classList.remove('rt_editando');
+    popularEquipamentosNovaMeta();
+    montarTabelaMetas();
+}
 
-    const setor = el('rt_metas_setor').value;
-    const bateriaSel = el('rt_metas_bateria').value;
+function iniciarEdicaoMeta(id) {
+    const item = itemPorId(id);
+    if (!item) return;
+    metaEmEdicao = item;
+    limparFormularioMeta();
+    el('rt_nm_item').value = item.item || '';
+    el('rt_nm_entrada').value = item.entrada === 'STATUS' ? 'STATUS' : 'NUMERO';
+    el('rt_nm_auto').value = item.fonte_auto || '';
+    el('rt_nm_unidade').value = item.unidade || '';
+    el('rt_nm_parametro').value = item.parametro || '';
+    el('rt_nm_min').value = item.meta_min ?? '';
+    el('rt_nm_max').value = item.meta_max ?? '';
+    el('rt_nm_min_op').value = item.min_inclusivo === false ? 'estrito' : 'incl';
+    el('rt_nm_max_op').value = item.max_inclusivo === false ? 'estrito' : 'incl';
+    popularEquipamentosNovaMeta(item.equipamento || '');
+    el('rt_nm_titulo').textContent = `Editar meta — ${item.item}`;
+    el('rt_nm_botao_texto').textContent = 'Salvar alterações';
+    el('btn_cancelar_edicao_meta').hidden = false;
+    el('rt_form_meta').classList.add('rt_editando');
+    montarTabelaMetas();
+    el('rt_form_meta').scrollIntoView({ behavior: 'smooth', block: 'center' });
+    el('rt_nm_item').focus({ preventScroll: true });
+}
+
+// Mesmo item nas 3 baterias = mesmo card e mesma posição (ordem) no catálogo
+function irmaosDoItem(item, todas) {
+    if (!todas || !item.bateria) return [item];
+    return state.dbRelatorioItens.filter(o => o.ativo !== false && o.setor === item.setor && Number(o.ordem) === Number(item.ordem));
+}
+
+// Lê e valida o formulário; devolve null (e avisa) se algo estiver errado
+function lerFormularioMeta() {
     const nome = el('rt_nm_item').value.trim();
-    const equipamento = el('rt_nm_equip').value || null;
-    const entrada = el('rt_nm_entrada').value;
-    const unidade = el('rt_nm_unidade').value.trim() || null;
-
-    if (!nome) { el('rt_nm_item').classList.add('invalido'); el('rt_nm_item').focus(); avisar('Informe o nome do item.', 'info', 6000); return; }
+    if (!nome) { el('rt_nm_item').classList.add('invalido'); el('rt_nm_item').focus(); avisar('Informe o nome do item.', 'info', 6000); return null; }
     el('rt_nm_item').classList.remove('invalido');
 
+    const setor = el('rt_metas_setor').value;
+    const fonteAuto = setor === 'MAQUINAS' ? (el('rt_nm_auto').value || null) : null;
+    const entrada = fonteAuto ? 'NUMERO' : el('rt_nm_entrada').value;
+    const unidade = entrada === 'NUMERO' ? (el('rt_nm_unidade').value.trim() || null) : null;
     let min = null, max = null;
     if (entrada === 'NUMERO') {
         const minTxt = el('rt_nm_min').value.trim();
         const maxTxt = el('rt_nm_max').value.trim();
         min = minTxt === '' ? null : lerNumero(minTxt);
         max = maxTxt === '' ? null : lerNumero(maxTxt);
-        if ((minTxt !== '' && min === null) || (maxTxt !== '' && max === null)) { avisar('Limite inválido (use só números, ex.: 27 ou 12,5).', 'info', 6000); return; }
-        if (min === null && max === null) { avisar('Informe pelo menos um limite (inferior ou superior).', 'info', 6000); return; }
-        if (min !== null && max !== null && min > max) { avisar('O limite inferior não pode ser maior que o superior.', 'info', 6000); return; }
+        if ((minTxt !== '' && min === null) || (maxTxt !== '' && max === null)) { avisar('Limite inválido (use só números, ex.: 27 ou 12,5).', 'info', 6000); return null; }
+        if (min === null && max === null) { avisar('Informe pelo menos um limite (inferior ou superior).', 'info', 6000); return null; }
+        if (min !== null && max !== null && min > max) { avisar('O limite inferior não pode ser maior que o superior.', 'info', 6000); return null; }
     }
     const minEstrito = el('rt_nm_min_op').value === 'estrito';
     const maxEstrito = el('rt_nm_max_op').value === 'estrito';
+    const parametro = (el('rt_nm_parametro').value.trim()
+        || (entrada === 'NUMERO' ? gerarTextoMeta({ min, minEstrito, max, maxEstrito, unidade }) : '')).toUpperCase() || null;
+    return {
+        setor,
+        equipamento: el('rt_nm_equip').value || null,
+        dados: {
+            item: nome, parametro, unidade, entrada,
+            meta_min: min, min_inclusivo: !minEstrito, meta_max: max, max_inclusivo: !maxEstrito,
+            fonte_auto: fonteAuto,
+        },
+    };
+}
 
-    // Item de equipamento (ex.: máquina 31A) pertence a uma bateria só
-    const todas = el('rt_metas_todas').checked && !equipamento;
-    const baterias = todas ? BATERIAS : [bateriaSel];
-
-    const repetido = state.dbRelatorioItens.some(i => i.setor === setor
+function nomeRepetido(setor, baterias, equipamento, nome, ignorarIds = []) {
+    return state.dbRelatorioItens.some(i => i.ativo !== false && i.setor === setor
+        && !ignorarIds.includes(Number(i.id))
         && (!i.bateria || baterias.includes(i.bateria))
         && (i.equipamento || null) === equipamento
         && normalizar(i.item) === normalizar(nome));
-    if (repetido) { avisar('Já existe um item com esse nome neste card.', 'info', 6000); return; }
+}
 
-    const parametro = (el('rt_nm_parametro').value.trim()
-        || (entrada === 'NUMERO' ? gerarTextoMeta({ min, minEstrito, max, maxEstrito, unidade }) : '')).toUpperCase() || null;
+async function salvarFormularioMeta() {
+    if (!isDevAtual()) { avisar('Apenas desenvolvedores podem cadastrar ou editar metas.', 'info', 6000); return; }
+    const lido = lerFormularioMeta();
+    if (!lido) return;
+    const botao = el('btn_adicionar_meta_relatorio');
+    botao.disabled = true;
+    try {
+        if (metaEmEdicao) await gravarEdicaoMeta(lido);
+        else await gravarNovaMeta(lido);
+    } catch (erro) {
+        console.error('Erro ao salvar meta:', erro);
+        avisar(`Não foi possível salvar a meta.\n${erro.message}`, 'erro', 8000);
+    } finally {
+        botao.disabled = false;
+    }
+}
+
+async function gravarNovaMeta({ setor, equipamento, dados }) {
+    const bateriaSel = el('rt_metas_bateria').value;
+    // Item de equipamento (ex.: máquina 31A) pertence a uma bateria só
+    const baterias = el('rt_metas_todas').checked && !equipamento ? BATERIAS : [bateriaSel];
+    if (nomeRepetido(setor, baterias, equipamento, dados.item)) { avisar('Já existe um item com esse nome neste card.', 'info', 6000); return; }
 
     // Mesma posição nas baterias criadas; sempre depois dos itens do card
     const ordem = Math.max(0, ...state.dbRelatorioItens.filter(i => i.setor === setor).map(i => Number(i.ordem) || 0)) + 1;
-
     // Parte de um item do mesmo card para herdar colunas que esta tela não conhece
     const molde = state.dbRelatorioItens.find(i => i.setor === setor && i.bateria === bateriaSel)
         || state.dbRelatorioItens.find(i => i.setor === setor) || {};
     const base = { ...molde };
     ['id', 'created_at', 'updated_at', 'criado_em', 'atualizado_em'].forEach(k => delete base[k]);
 
-    const linhas = baterias.map(b => ({
-        ...base,
-        setor, bateria: b, equipamento, item: nome, parametro, unidade: entrada === 'NUMERO' ? unidade : null,
-        entrada,
-        meta_min: min, min_inclusivo: !minEstrito, meta_max: max, max_inclusivo: !maxEstrito,
-        ordem, ativo: true, fonte_auto: null,
-    }));
+    const linhas = baterias.map(b => ({ ...base, ...dados, setor, bateria: b, equipamento, ordem, ativo: true }));
+    const criados = await criarRelatorioItensSupabase(linhas);
+    await recarregarCatalogo();
+    cancelarEdicaoMeta();
+    renderizarRelatorioTurno();
+    avisar(`Meta cadastrada (${criados.length === 1 ? `Bateria ${criados[0].bateria}` : 'baterias A, B e C'}).`, 'sucesso');
+}
 
-    const botao = el('btn_adicionar_meta_relatorio');
-    botao.disabled = true;
+async function gravarEdicaoMeta({ equipamento, dados }) {
+    const item = metaEmEdicao;
+    const todas = el('rt_metas_todas').checked;
+    const grupo = irmaosDoItem(item, todas);
+    const ids = grupo.map(i => Number(i.id));
+    const baterias = grupo.map(i => i.bateria).filter(Boolean);
+    if (nomeRepetido(item.setor, baterias.length ? baterias : BATERIAS, equipamento, dados.item, ids)) {
+        avisar('Já existe outro item com esse nome neste card.', 'info', 6000); return;
+    }
+    // O equipamento só muda no item editado (nas outras baterias a máquina é outra)
+    await atualizarRelatorioItensSupabase([Number(item.id)], { ...dados, equipamento });
+    const outros = ids.filter(id => id !== Number(item.id));
+    if (outros.length > 0) await atualizarRelatorioItensSupabase(outros, dados);
+    await recarregarCatalogo();
+    cancelarEdicaoMeta();
+    renderizarRelatorioTurno();
+    avisar(`Meta atualizada${ids.length > 1 ? ` nas ${ids.length} baterias` : ''}.`, 'sucesso');
+}
+
+async function excluirMeta(id) {
+    if (!isDevAtual()) { avisar('Apenas desenvolvedores podem excluir metas.', 'info', 6000); return; }
+    const item = itemPorId(id);
+    if (!item) return;
+    const grupo = irmaosDoItem(item, el('rt_metas_todas').checked);
+    const onde = grupo.length > 1 ? ` nas ${grupo.length} baterias` : ` da bateria ${item.bateria || el('rt_metas_bateria').value}`;
+    if (!confirm(`Excluir a meta "${item.item}"${onde}?\nOs lançamentos já feitos continuam no histórico.`)) return;
     try {
-        const criados = await criarRelatorioItensSupabase(linhas);
-        state.dbRelatorioItens = await listarRelatorioItensSupabase();
-        montarTabelaMetas();
-        popularEquipamentosNovaMeta();
+        await atualizarRelatorioItensSupabase(grupo.map(i => Number(i.id)), { ativo: false });
+        await recarregarCatalogo();
+        if (metaEmEdicao && grupo.some(i => Number(i.id) === Number(metaEmEdicao.id))) cancelarEdicaoMeta();
+        else montarTabelaMetas();
+        popularEquipamentosNovaMeta(el('rt_nm_equip').value);
         renderizarRelatorioTurno();
-        limparNovaMeta();
-        avisar(`Meta cadastrada (${criados.length === 1 ? `Bateria ${criados[0].bateria}` : 'baterias A, B e C'}).`, 'sucesso');
+        avisar('Meta excluída.', 'sucesso');
     } catch (erro) {
-        console.error('Erro ao cadastrar meta:', erro);
-        avisar(`Não foi possível cadastrar a meta.\n${erro.message}`, 'erro', 8000);
-    } finally {
-        botao.disabled = false;
+        console.error('Erro ao excluir meta:', erro);
+        avisar(`Não foi possível excluir a meta.\n${erro.message}`, 'erro', 8000);
     }
 }
 
@@ -1167,12 +1240,18 @@ export function initRelatorioTurno() {
     el('btn_editar_metas_relatorio').addEventListener('click', abrirModalMetas);
     el('fechar_modal_metas_relatorio').addEventListener('click', () => modalMetas.classList.remove('active'));
     el('btn_cancelar_metas_relatorio').addEventListener('click', () => modalMetas.classList.remove('active'));
-    ['rt_metas_bateria', 'rt_metas_setor'].forEach(id => el(id).addEventListener('change', () => { montarTabelaMetas(); popularEquipamentosNovaMeta(); }));
-    el('rt_nm_entrada').addEventListener('change', atualizarCamposNovaMeta);
-    el('btn_adicionar_meta_relatorio').addEventListener('click', adicionarMeta);
+    ['rt_metas_bateria', 'rt_metas_setor'].forEach(id => el(id).addEventListener('change', cancelarEdicaoMeta));
+    ['rt_nm_entrada', 'rt_nm_auto'].forEach(id => el(id).addEventListener('change', atualizarCamposNovaMeta));
+    el('btn_adicionar_meta_relatorio').addEventListener('click', salvarFormularioMeta);
+    el('btn_cancelar_edicao_meta').addEventListener('click', cancelarEdicaoMeta);
     el('rt_nm_item').addEventListener('input', (e) => e.target.classList.remove('invalido'));
-    modalMetas.querySelector('.rt_nova_meta').addEventListener('keydown', (e) => {
-        if (e.key === 'Enter' && e.target.tagName === 'INPUT') { e.preventDefault(); adicionarMeta(); }
+    el('rt_form_meta').addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' && e.target.tagName === 'INPUT') { e.preventDefault(); salvarFormularioMeta(); }
     });
-    el('btn_salvar_metas_relatorio').addEventListener('click', salvarMetas);
+    el('tbody_metas_relatorio').addEventListener('click', (e) => {
+        const botao = e.target.closest('button[data-acao]');
+        if (!botao) return;
+        if (botao.dataset.acao === 'editar-meta') iniciarEdicaoMeta(botao.dataset.id);
+        if (botao.dataset.acao === 'excluir-meta') excluirMeta(botao.dataset.id);
+    });
 }

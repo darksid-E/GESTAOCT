@@ -1370,3 +1370,9 @@ body {
     .rt_nova_meta_grid { grid-template-columns: 1fr; }
     .rt_nm_c2, .rt_nm_c3, .rt_nm_c4, .rt_nm_c6 { grid-column: auto; }
 }
+.rt_nm_c7 { grid-column: span 7; }
+.rt_nm_botoes { display: flex; gap: 10px; flex-wrap: wrap; }
+.rt_nova_meta.rt_editando { border-color: var(--cor-destaque); background: #fffaf0; }
+.rt_metas_tabela tr.rt_meta_em_edicao td { background: #fff4dc; }
+@media (max-width: 768px) { .rt_nm_c7 { grid-column: span 2; } }
+@media (max-width: 480px) { .rt_nm_c7 { grid-column: auto; } }
