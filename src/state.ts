@@ -63,6 +63,7 @@ interface EstadoApp {
     filtroBateriaReparos: string;
     filtroBateriaMaquinas: string;
     filtroBateriaRelatorio: string;
+    filtroBateriaItensControle: string;
 }
 
 export const state: EstadoApp = {
@@ -100,6 +101,7 @@ export const state: EstadoApp = {
     filtroBateriaReparos: 'Todas',
     filtroBateriaMaquinas: 'Todas',
     filtroBateriaRelatorio: 'Todas',
+    filtroBateriaItensControle: 'Todas',
 };
 
 export const config = {

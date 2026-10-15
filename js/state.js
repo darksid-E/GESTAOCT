@@ -62,6 +62,7 @@ export const state = {
     filtroBateriaReparos: 'Todas',
     filtroBateriaMaquinas: 'Todas',
     filtroBateriaRelatorio: 'Todas',
+    filtroBateriaItensControle: 'Todas',
 };
 export const config = {
     SUPABASE_URL,

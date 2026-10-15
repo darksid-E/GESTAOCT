@@ -195,10 +195,14 @@ async function carregarControle(id, forcar = false) {
 const dadosAtuais = () => (cache[controleAtual]?.dados || []).slice()
     .sort((a, b) => String(b.data).localeCompare(String(a.data)) || (Number(b.id) || 0) - (Number(a.id) || 0));
 
+// Bateria escolhida no menu lateral (Todas, A, B ou C)
+const bateriaFiltro = () => (BATERIAS.includes(state.filtroBateriaItensControle) ? state.filtroBateriaItensControle : null);
+
 function dadosDoPeriodo() {
     const inicio = $('ic_inicio').value;
     const fim = $('ic_fim').value;
-    return dadosAtuais().filter(r => (!inicio || r.data >= inicio) && (!fim || r.data <= fim));
+    const bateria = bateriaFiltro();
+    return dadosAtuais().filter(r => (!inicio || r.data >= inicio) && (!fim || r.data <= fim) && (!bateria || r.bateria === bateria));
 }
 
 // --- Página ---
@@ -213,7 +217,9 @@ export async function renderizarItensControle() {
     });
     $('ic_conteudo').hidden = !temControle;
     $('ic_botoes').hidden = !temControle;
-    $('ic_titulo').textContent = temControle ? `Itens de Controle · ${CONTROLES[controleAtual].titulo}` : 'Itens de Controle';
+    const bateria = bateriaFiltro();
+    $('ic_titulo').textContent = ['Itens de Controle', temControle ? CONTROLES[controleAtual].titulo : null, bateria ? `Bateria ${bateria}` : null]
+        .filter(Boolean).join(' · ');
     if (!temControle) return;
 
     $('ic_btn_novo').hidden = !isAdminAtual();
@@ -277,6 +283,9 @@ function abrirBanco() {
         + `<tr class="linha_filtros_tabela">${cols.map(c => `<th>${htmlFiltro(c)}</th>`).join('')}<th></th></tr>`;
     $('ic_banco_inicio').value = '';
     $('ic_banco_fim').value = '';
+    // Já abre filtrado na bateria escolhida no menu (dá para trocar no filtro da coluna)
+    const filtroBateria = $('ic_banco_tabela').querySelector('select[data-filtro="bateria"]');
+    if (filtroBateria) filtroBateria.value = bateriaFiltro() || '';
     renderizarBanco();
     $('modal_ic_banco').classList.add('active');
 }
@@ -347,7 +356,8 @@ function baixarBanco() {
     const livro = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(livro, planilha, cfg.titulo.slice(0, 31));
     const nomeArquivo = cfg.titulo.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, '_').toUpperCase();
-    XLSX.writeFile(livro, `${nomeArquivo}_${$('ic_inicio').value || 'INICIO'}_a_${$('ic_fim').value || hojeISO()}.xlsx`);
+    const sufixoBateria = bateriaFiltro() ? `_BATERIA_${bateriaFiltro()}` : '';
+    XLSX.writeFile(livro, `${nomeArquivo}${sufixoBateria}_${$('ic_inicio').value || 'INICIO'}_a_${$('ic_fim').value || hojeISO()}.xlsx`);
 }
 
 // --- Formulário (modal de lançamento) ---
@@ -475,7 +485,7 @@ function abrirFormulario(registro = null) {
     $('ic_form_salvar').textContent = registro ? 'Atualizar Registro' : 'Adicionar Registro';
 
     $('ic_f_data').value = registro?.data || hojeISO();
-    $('ic_f_bateria').value = registro?.bateria || 'A';
+    $('ic_f_bateria').value = registro?.bateria || bateriaFiltro() || 'A';
     atualizarFormulario();
     if (registro) {
         cfg.campos.forEach(c => { if (!['data', 'bateria'].includes(c.id) && c.tipo !== 'derivado') definirValorCampo(c, registro[c.id]); });

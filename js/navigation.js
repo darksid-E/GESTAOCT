@@ -90,12 +90,16 @@ export function initNavigation() {
 
     window.irParaAba = irParaAba;
 
+    // No celular o menu fecha ao escolher a página — exceto nas páginas com
+    // escolha de bateria (submenu logo abaixo do botão): aí ele só fecha
+    // depois que a bateria for escolhida.
     navButtons.forEach(button => {
         button.addEventListener("click", () => {
             const targetId = button.getAttribute("data-target");
             if (!podeNavegarPara(targetId)) return;
             irParaAba(targetId);
-            if (window.innerWidth <= 768) fecharSidebar();
+            const temSubmenuBateria = button.nextElementSibling?.classList.contains('nav_submenu');
+            if (window.innerWidth <= 768 && !temSubmenuBateria) fecharSidebar();
         });
     });
 
@@ -120,6 +124,8 @@ export function initNavigation() {
                 aplicarFiltroBateriaMaquinas();
             } else if (pagina === 'relatorio_turno') {
                 state.filtroBateriaRelatorio = botao.dataset.bateria;
+            } else if (pagina === 'itens_controle') {
+                state.filtroBateriaItensControle = botao.dataset.bateria;
             }
 
             irParaAba(pagina);
