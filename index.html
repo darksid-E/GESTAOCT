@@ -27,6 +27,10 @@
         <symbol id="i-camera" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></symbol>
         <symbol id="i-maximize" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3"/><path d="M21 8V5a2 2 0 0 0-2-2h-3"/><path d="M3 16v3a2 2 0 0 0 2 2h3"/><path d="M16 21h3a2 2 0 0 0 2-2v-3"/></symbol>
         <symbol id="i-minimize" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3v3a2 2 0 0 1-2 2H3"/><path d="M21 8h-3a2 2 0 0 1-2-2V3"/><path d="M3 16h3a2 2 0 0 1 2 2v3"/><path d="M16 21v-3a2 2 0 0 1 2-2h3"/></symbol>
+    <symbol id="i-porta" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 20V6a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v14"/><path d="M2 20h20"/><path d="M14 12v.01"/></symbol>
+    <symbol id="i-regua" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.3 15.3a2.4 2.4 0 0 1 0 3.4l-2.6 2.6a2.4 2.4 0 0 1-3.4 0L2.7 8.7a2.41 2.41 0 0 1 0-3.4l2.6-2.6a2.41 2.41 0 0 1 3.4 0Z"/><path d="m14.5 12.5 2-2"/><path d="m11.5 9.5 2-2"/><path d="m8.5 6.5 2-2"/><path d="m17.5 15.5 2-2"/></symbol>
+    <symbol id="i-truck" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 18V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v11a1 1 0 0 0 1 1h2"/><path d="M15 18H9"/><path d="M19 18h2a1 1 0 0 0 1-1v-3.65a1 1 0 0 0-.22-.624l-3.48-4.35A1 1 0 0 0 17.52 8H14"/><circle cx="17" cy="18" r="2"/><circle cx="7" cy="18" r="2"/></symbol>
+    <symbol id="i-queda" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 17V3"/><path d="m6 11 6 6 6-6"/><path d="M19 21H5"/></symbol>
         <symbol id="i-eye" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></symbol>
         <symbol id="i-eye-off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"/><path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"/><path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"/><line x1="2" x2="22" y1="2" y2="22"/></symbol>
         <symbol id="i-lock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></symbol>
@@ -64,6 +68,8 @@
                     <button class="nav_sub_btn" data-pagina="relatorio_turno" data-bateria="B">Bateria B</button>
                     <button class="nav_sub_btn" data-pagina="relatorio_turno" data-bateria="C">Bateria C</button>
                 </div>
+
+                <button class="nav_btn" data-target="itens_controle">Itens de Controle</button>
 
                 <!-- <button class="nav_btn" data-target="tltb">TL=TB</button> -->
                 <!-- <button class="nav_btn" data-target="descarbonizacao">Descarbonização</button> -->
@@ -501,6 +507,37 @@
                 </div>
             </section>
 
+                        <section id="itens_controle" class="page_section">
+                <div class="header_reparos">
+                    <h2 id="ic_titulo">Itens de Controle</h2>
+                    <div class="botoes_acao" id="ic_botoes" hidden>
+                        <button id="ic_btn_baixar" class="btn_acao">Baixar Banco</button>
+                        <button id="ic_btn_abrir_banco" class="btn_acao btn_secundario">Abrir Banco</button>
+                    </div>
+                </div>
+
+                <div class="ic_seletor" id="ic_seletor" role="tablist" aria-label="Item de controle">
+                    <button type="button" class="ic_opcao" data-controle="comporta" role="tab" aria-selected="false"><span class="ic_opcao_icone"><svg class="icone" aria-hidden="true"><use href="#i-porta"></use></svg></span><span class="ic_opcao_nome">Comporta</span></button>
+                    <button type="button" class="ic_opcao" data-controle="sapata" role="tab" aria-selected="false"><span class="ic_opcao_icone"><svg class="icone" aria-hidden="true"><use href="#i-regua"></use></svg></span><span class="ic_opcao_nome">Sapata</span></button>
+                    <button type="button" class="ic_opcao" data-controle="truck" role="tab" aria-selected="false"><span class="ic_opcao_icone"><svg class="icone" aria-hidden="true"><use href="#i-truck"></use></svg></span><span class="ic_opcao_nome">Truck</span></button>
+                    <button type="button" class="ic_opcao" data-controle="queda" role="tab" aria-selected="false"><span class="ic_opcao_icone"><svg class="icone" aria-hidden="true"><use href="#i-queda"></use></svg></span><span class="ic_opcao_nome">Queda de Material</span></button>
+                </div>
+
+                <div id="ic_conteudo" hidden>
+                    <button id="ic_btn_novo" class="btn_acao btn_bloco_grande">Novo Lançamento</button>
+                    <div class="dash_filters">
+                        <label>Período:</label>
+                        <input type="date" id="ic_inicio">
+                        <span class="maquinas_periodo_separador">até</span>
+                        <input type="date" id="ic_fim">
+                    </div>
+                    <div id="ic_resumo" class="resumo_cards"></div>
+                    <div class="ic_tabela_wrap">
+                        <table class="data_table" id="ic_tabela"><thead></thead><tbody></tbody></table>
+                    </div>
+                </div>
+            </section>
+
             <section id="permissoes" class="page_section">
                 <div class="header_reparos">
                     <h2>Permissões</h2>
@@ -778,6 +815,43 @@
                     <button id="btn_salvar_maquina" class="btn_salvar">Adicionar Registro</button>
                     <button id="btn_cancelar_edicao_maquina" class="btn_cancelar_edicao" style="display: none;">Cancelar</button>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="modal_ic_form" class="modal_overlay">
+        <div class="modal_content modal_large" style="width: 95%; max-width: 640px; max-height: 90vh; display: flex; flex-direction: column;">
+            <header class="modal_header">
+                <h3 id="ic_form_titulo">Lançamento</h3>
+                <button id="ic_form_fechar" class="close_btn" aria-label="Fechar"><svg class="icone" aria-hidden="true"><use href="#i-x"></use></svg></button>
+            </header>
+            <div class="modal_body" style="padding: 20px; overflow-y: auto;">
+                <div id="ic_form_campos"></div>
+                <div class="botoes_form">
+                    <button id="ic_form_salvar" class="btn_salvar">Adicionar Registro</button>
+                    <button id="ic_form_cancelar" class="btn_cancelar_edicao">Cancelar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="modal_ic_banco" class="modal_overlay">
+        <div class="modal_content modal_large" style="width: 95%; max-width: 2000px; height: 85vh; display: flex; flex-direction: column;">
+            <header class="modal_header">
+                <h3 id="ic_banco_titulo">Banco de Dados</h3>
+                <button id="ic_banco_fechar" class="close_btn" aria-label="Fechar"><svg class="icone" aria-hidden="true"><use href="#i-x"></use></svg></button>
+            </header>
+            <div class="tabela_filtros">
+                <div class="tabela_filtros_grupo">
+                    <button id="ic_banco_limpar" class="btn_acao btn_secundario"><svg class="icone" aria-hidden="true"><use href="#i-x"></use></svg>Limpar Filtros</button>
+                    <label class="ic_banco_periodo">Período: <input type="date" id="ic_banco_inicio"> até <input type="date" id="ic_banco_fim"></label>
+                </div>
+                <div class="tabela_filtros_grupo">
+                    <button id="ic_banco_novo" class="btn_acao btn_sucesso"><svg class="icone" aria-hidden="true"><use href="#i-plus"></use></svg>Adicionar Novo</button>
+                </div>
+            </div>
+            <div class="modal_body" style="overflow: auto; padding: 0;">
+                <table class="data_table" id="ic_banco_tabela"><thead></thead><tbody></tbody></table>
             </div>
         </div>
     </div>

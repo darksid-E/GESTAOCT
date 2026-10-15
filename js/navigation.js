@@ -7,6 +7,7 @@ import { renderizarDashboard } from './dashboard.js';
 import { renderizarPaginaMaquinas, aplicarFiltroBateriaMaquinas } from './maquinas.js';
 import { aplicarFiltroBateriaMapa, processarDadosGlobais } from './mapa2d.js';
 import { renderizarPermissoes } from './permissoes.js';
+import { renderizarItensControle } from './itens-controle.js';
 import { renderizarRelatorioTurno } from './relatorio-turno.js';
 
 let menuButton, sideBar, navButtons, subBotoesBateria, pageSections, sidebarBackdrop;
@@ -32,6 +33,7 @@ export function irParaAba(targetId) {
     if (targetId === 'maquinas') { renderizarPaginaMaquinas(); }
     if (targetId === 'relatorio_turno') { renderizarRelatorioTurno(); }
     if (targetId === 'permissoes') { renderizarPermissoes(); }
+    if (targetId === 'itens_controle') { renderizarItensControle(); }
 }
 
 // Regra única de "esta aba existe para a pessoa atual?" — usada pelo menu

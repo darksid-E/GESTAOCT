@@ -13,6 +13,7 @@ import { initTabela } from './tabela.js';
 import { initDashboard } from './dashboard.js';
 import { initMaquinas } from './maquinas.js';
 import { initPermissoes } from './permissoes.js';
+import { initItensControle } from './itens-controle.js';
 import { initRelatorioTurno } from './relatorio-turno.js';
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -35,5 +36,6 @@ document.addEventListener('DOMContentLoaded', () => {
     initMaquinas();
     initRelatorioTurno();
     initPermissoes();
+    initItensControle();
     initDashboard();
 });

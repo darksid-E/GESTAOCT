@@ -102,6 +102,7 @@ export const PAGINAS_PERMISSAO = [
     { id: 'reparos', rotulo: 'Reparos', editavelNoApp: true },
     { id: 'maquinas', rotulo: 'Máquinas', editavelNoApp: true },
     { id: 'relatorio_turno', rotulo: 'Relatório de Turno', editavelNoApp: true },
+    { id: 'itens_controle', rotulo: 'Itens de Controle', editavelNoApp: true },
     { id: 'permissoes', rotulo: 'Permissões', editavelNoApp: false },
 ];
 // Visibilidade de página depende SÓ das colunas ver_<pagina> (isAdmin

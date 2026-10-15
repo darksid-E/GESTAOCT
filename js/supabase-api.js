@@ -208,3 +208,31 @@ export async function atualizarPerfilSupabase(id, dados) {
     if (!resposta || resposta.length === 0) throw new Error('Nenhum perfil foi atualizado (sem permissão ou usuário inexistente).');
     return resposta[0];
 }
+
+// --- Itens de Controle (Comporta, Sapata, Truck, Queda de Material) ---
+
+export async function listarControleSupabase(tabela) {
+    return requisicaoSupabase(tabela, '?select=*&order=data.desc,id.desc');
+}
+
+export async function criarControleSupabase(tabela, dados) {
+    const resposta = await requisicaoSupabase(tabela, '', {
+        method: 'POST', headers: { Prefer: 'return=representation' }, body: JSON.stringify(dados)
+    });
+    return Array.isArray(resposta) ? resposta[0] : null;
+}
+
+export async function atualizarControleSupabase(tabela, id, dados) {
+    const resposta = await requisicaoSupabase(tabela, `?id=eq.${encodeURIComponent(id)}`, {
+        method: 'PATCH', headers: { Prefer: 'return=representation' }, body: JSON.stringify(dados)
+    });
+    if (!Array.isArray(resposta) || resposta.length === 0) throw new Error('Nenhum registro foi atualizado (sem permissão ou registro inexistente).');
+    return resposta[0];
+}
+
+export async function excluirControleSupabase(tabela, id) {
+    const resposta = await requisicaoSupabase(tabela, `?id=eq.${encodeURIComponent(id)}`, {
+        method: 'DELETE', headers: { Prefer: 'return=representation' }
+    });
+    if (!Array.isArray(resposta) || resposta.length === 0) throw new Error('Nenhum registro foi excluído (sem permissão ou registro inexistente).');
+}
