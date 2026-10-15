@@ -156,6 +156,13 @@
                                     <tr><td class="cel_esq">Traseira Esq.<br><span data-campo="traseira_esq">-</span></td><td class="cel_dir">Traseira Dir.<br><span data-campo="traseira_dir">-</span></td></tr>
                                 </table>
                             </div>
+                            <div class="maquinas_card maquinas_card_simples" data-maquina="33A">
+                                <h4 class="maquinas_card_titulo">Máquina 33A</h4>
+                                <div class="maquinas_card_indicadores">
+                                    <span>Nível Óleo: <strong data-indicador="nivel_oleo_pct">-</strong></span>
+                                    <span>Tempo Ciclo: <strong data-indicador="tempo_ciclo_min">-</strong></span>
+                                </div>
+                            </div>
                             <div class="maquinas_card" data-maquina="32A">
                                 <h4 class="maquinas_card_titulo">Máquina 32A</h4>
                                 <div class="maquinas_card_indicadores">
@@ -196,6 +203,13 @@
                                     <tr><td class="cel_esq">Traseira Esq.<br><span data-campo="traseira_esq">-</span></td><td class="cel_dir">Traseira Dir.<br><span data-campo="traseira_dir">-</span></td></tr>
                                 </table>
                             </div>
+                            <div class="maquinas_card maquinas_card_simples" data-maquina="33B">
+                                <h4 class="maquinas_card_titulo">Máquina 33B</h4>
+                                <div class="maquinas_card_indicadores">
+                                    <span>Nível Óleo: <strong data-indicador="nivel_oleo_pct">-</strong></span>
+                                    <span>Tempo Ciclo: <strong data-indicador="tempo_ciclo_min">-</strong></span>
+                                </div>
+                            </div>
                             <div class="maquinas_card" data-maquina="32B">
                                 <h4 class="maquinas_card_titulo">Máquina 32B</h4>
                                 <div class="maquinas_card_indicadores">
@@ -235,6 +249,13 @@
                                     <tr><td class="cel_esq">Centro 2 Dir.Esq.<br><span data-campo="centro_2_dir_esq">-</span></td><td class="cel_dir">Centro 1 Dir.Esq.<br><span data-campo="centro_1_dir_esq">-</span></td></tr>
                                     <tr><td class="cel_esq">Traseira Esq.<br><span data-campo="traseira_esq">-</span></td><td class="cel_dir">Traseira Dir.<br><span data-campo="traseira_dir">-</span></td></tr>
                                 </table>
+                            </div>
+                            <div class="maquinas_card maquinas_card_simples" data-maquina="33C">
+                                <h4 class="maquinas_card_titulo">Máquina 33C</h4>
+                                <div class="maquinas_card_indicadores">
+                                    <span>Nível Óleo: <strong data-indicador="nivel_oleo_pct">-</strong></span>
+                                    <span>Tempo Ciclo: <strong data-indicador="tempo_ciclo_min">-</strong></span>
+                                </div>
                             </div>
                             <div class="maquinas_card" data-maquina="32C">
                                 <h4 class="maquinas_card_titulo">Máquina 32C</h4>
@@ -682,7 +703,7 @@
                     <select id="maquina_maquina"></select>
                 </div>
 
-                <div class="form_group row_group">
+                <div class="form_group row_group" data-so-carga>
                     <div class="half_width">
                         <label>Altura Programada</label>
                         <select id="maquina_altura_programada">
@@ -697,14 +718,15 @@
                         <label>Perfil de Carga</label>
                         <select id="maquina_perfil_carga">
                             <option value="2 camadas">2 Camadas</option>
+                            <option value="reduzida">Reduzida</option>
                             <option value="carga baixa">Carga Baixa</option>
                             <option value="normal 1">Normal 1</option>
                             <option value="normal 2">Normal 2</option>
-                            <option value="reduzida">Reduzida</option>
                         </select>
                     </div>
                 </div>
 
+                <div data-so-carga>
                 <p class="label_destaque maquinas_form_secao">Medições da Bandeja</p>
                 <div class="form_group row_group">
                     <div class="half_width"><label>Frontal Dir.</label><input type="number" id="maquina_frontal_dir" min="10" max="60"></div>
@@ -722,22 +744,27 @@
                     <div class="half_width"><label>Traseira Dir.</label><input type="number" id="maquina_traseira_dir" min="10" max="60"></div>
                     <div class="half_width"><label>Traseira Esq.</label><input type="number" id="maquina_traseira_esq" min="10" max="60"></div>
                 </div>
+                </div>
 
-                <p class="label_destaque maquinas_form_secao">Compactação e Níveis</p>
+                <p class="label_destaque maquinas_form_secao">Ciclo e Óleo</p>
                 <div class="form_group row_group">
                     <div class="half_width"><label>Tempo de Ciclo (min)</label><input type="number" step="0.1" min="0" id="maquina_tempo_ciclo"></div>
-                    <div class="half_width"><label>Tempo de Compactação (min)</label><input type="number" step="0.1" min="0" id="maquina_tempo_compactacao"></div>
-                </div>
-                <div class="form_group row_group">
-                    <div class="half_width"><label>Pressão de Compactação (bar)</label><input type="number" step="0.1" min="0" id="maquina_pressao_compactacao"></div>
                     <div class="half_width"><label>Nível do Óleo (%)</label><input type="number" min="0" max="100" id="maquina_nivel_oleo"></div>
+                </div>
+
+                <div data-so-carga>
+                <p class="label_destaque maquinas_form_secao">Compactação e Bacia</p>
+                <div class="form_group row_group">
+                    <div class="half_width"><label>Tempo de Compactação (min)</label><input type="number" step="0.1" min="0" id="maquina_tempo_compactacao"></div>
+                    <div class="half_width"><label>Pressão de Compactação (bar)</label><input type="number" step="0.1" min="0" id="maquina_pressao_compactacao"></div>
                 </div>
                 <div class="form_group row_group">
                     <div class="half_width"><label>Nível da Bacia (%)</label><input type="number" min="0" max="100" id="maquina_nivel_bacia"></div>
                 </div>
+                </div>
 
                 <div id="maquina_desvio_previa" class="maquina_desvio_previa" hidden></div>
-                <div class="form_group">
+                <div class="form_group" data-so-carga>
                     <label for="maquina_justificativa">Justificativa <span id="maquina_justificativa_obrig" class="maquina_obrig" hidden>(obrigatória)</span></label>
                     <textarea id="maquina_justificativa" rows="3"></textarea>
                 </div>
@@ -797,9 +824,9 @@
                             <th>
                                 <select id="ftabm_maquina" class="input_filtro_col">
                                     <option value="Todas">Todas</option>
-                                    <option value="31A">31A</option><option value="32A">32A</option>
-                                    <option value="31B">31B</option><option value="32B">32B</option>
-                                    <option value="31C">31C</option><option value="32C">32C</option>
+                                    <option value="31A">31A</option><option value="33A">33A</option><option value="32A">32A</option>
+                                    <option value="31B">31B</option><option value="33B">33B</option><option value="32B">32B</option>
+                                    <option value="31C">31C</option><option value="33C">33C</option><option value="32C">32C</option>
                                 </select>
                             </th>
                             <th><input type="text" class="input_filtro_col" data-filtro-campo="altura_programada"></th>
@@ -944,6 +971,7 @@
                                 <option value="MAQUINA_DESVIO">Altura de carga (desvio)</option>
                                 <option value="MAQUINA_CICLO">Tempo de ciclo (editável)</option>
                                 <option value="MAQUINA_COMPACTACAO">Tempo de compactação (editável)</option>
+                                <option value="MAQUINA_OLEO">Nível de óleo (editável)</option>
                             </select>
                         </div>
                         <div class="rt_nm_campo rt_nm_c2"><label for="rt_nm_unidade">Unidade</label><input type="text" id="rt_nm_unidade" autocomplete="off"></div>

@@ -48,8 +48,8 @@ export interface Maquina {
     bloco: number;
     forno: number;
     maquina: string;            // '31A' | '32A' | '31B' | '32B' | '31C' | '32C'
-    altura_programada: number;
-    perfil_carga: string;
+    altura_programada: number | null;   // nula na máquina 33 (não é de carga)
+    perfil_carga: string | null;
     frontal_dir: number;
     frontal_esq: number;
     centro_dir: number;
@@ -118,7 +118,7 @@ export interface RelatorioItem {
     meta_max: number | null;
     max_inclusivo: boolean;
     bateria: string | null;         // null = vale pras 3 baterias
-    fonte_auto: 'MAQUINA_PRESSAO' | 'MAQUINA_DESVIO' | 'MAQUINA_CICLO' | 'MAQUINA_COMPACTACAO' | null;
+    fonte_auto: 'MAQUINA_PRESSAO' | 'MAQUINA_DESVIO' | 'MAQUINA_CICLO' | 'MAQUINA_COMPACTACAO' | 'MAQUINA_OLEO' | null;
     ordem: number;
     ativo: boolean;
 }

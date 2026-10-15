@@ -16,7 +16,32 @@ const CAMPOS_BANDEJA = [
     'traseira_dir', 'traseira_esq',
 ];
 
-const MAQUINAS_POR_BATERIA = { A: ['31A', '32A'], B: ['31B', '32B'], C: ['31C', '32C'] };
+// A 33 fica entre a 31 e a 32 e não é de carga: não tem altura/perfil,
+// bandeja nem compactação — só tempo de ciclo e nível de óleo.
+const MAQUINAS_POR_BATERIA = { A: ['31A', '33A', '32A'], B: ['31B', '33B', '32B'], C: ['31C', '33C', '32C'] };
+const ehMaquinaDeCarga = (maquina) => !String(maquina || '').startsWith('33');
+
+// Perfil de carga é definido pela altura programada (máquinas 31 e 32)
+const PERFIL_POR_ALTURA = { 810: '2 camadas', 900: 'reduzida', 950: 'carga baixa', 1000: 'normal 1', 1050: 'normal 2' };
+const ALTURA_POR_PERFIL = Object.fromEntries(Object.entries(PERFIL_POR_ALTURA).map(([a, p]) => [p, a]));
+
+function sincronizarPerfilPelaAltura() {
+    const perfil = PERFIL_POR_ALTURA[document.getElementById('maquina_altura_programada').value];
+    if (perfil) document.getElementById('maquina_perfil_carga').value = perfil;
+}
+
+function sincronizarAlturaPeloPerfil() {
+    const altura = ALTURA_POR_PERFIL[document.getElementById('maquina_perfil_carga').value];
+    if (altura) document.getElementById('maquina_altura_programada').value = altura;
+}
+
+// Esconde altura/perfil, bandeja, compactação, bacia e justificativa de desvio na 33
+function aplicarCamposDaMaquina() {
+    const deCarga = ehMaquinaDeCarga(document.getElementById('maquina_maquina').value);
+    document.querySelectorAll('#modal_maquina [data-so-carga]').forEach(el => { el.hidden = !deCarga; });
+    if (!deCarga) document.getElementById('maquina_desvio_previa').hidden = true;
+    else atualizarPreviaDesvio();
+}
 
 let modalMaquina, modalTabelaMaquinas, tbodyBancoMaquinas;
 let fDataM, fBateriaM, fBlocoM, fFornoM, fMaquinaM, fGatilhoM, fRegistradoPorM, fObservacaoM;
@@ -41,6 +66,12 @@ function atualizarOpcoesMaquinaPorBateria() {
     const valorAtual = selectMaquina.value;
     selectMaquina.innerHTML = opcoes.map(m => `<option value="${m}">${m}</option>`).join('');
     if (opcoes.includes(valorAtual)) selectMaquina.value = valorAtual;
+    else if (/^3[123]/.test(valorAtual)) {
+        // Troca de bateria mantendo o tipo de máquina (31A -> 31B)
+        const mesmaPosicao = opcoes.find(o => o.slice(0, 2) === valorAtual.slice(0, 2));
+        if (mesmaPosicao) selectMaquina.value = mesmaPosicao;
+    }
+    aplicarCamposDaMaquina();
 }
 
 function limparFormularioMaquina() {
@@ -50,8 +81,8 @@ function limparFormularioMaquina() {
     atualizarOpcoesMaquinaPorBateria();
     document.getElementById('maquina_bloco').value = '1';
     document.getElementById('maquina_forno').value = '01';
-    document.getElementById('maquina_altura_programada').value = '900';
-    document.getElementById('maquina_perfil_carga').value = 'normal 1';
+    document.getElementById('maquina_altura_programada').value = '1000';
+    sincronizarPerfilPelaAltura();
     CAMPOS_BANDEJA.forEach(c => { document.getElementById(`maquina_${c}`).value = ''; });
     document.getElementById('maquina_tempo_ciclo').value = '';
     document.getElementById('maquina_tempo_compactacao').value = '';
@@ -60,7 +91,7 @@ function limparFormularioMaquina() {
     document.getElementById('maquina_nivel_bacia').value = '';
     document.getElementById('maquina_observacao').value = '';
     document.getElementById('maquina_justificativa').value = '';
-    atualizarPreviaDesvio();
+    aplicarCamposDaMaquina();
     document.getElementById('btn_salvar_maquina').innerText = 'Adicionar Registro';
     document.getElementById('btn_cancelar_edicao_maquina').style.display = 'none';
 }
@@ -77,7 +108,7 @@ function abrirModalNovaMaquina() {
 function calcularIndicadoresLocal(dados) {
     // Usa só as medições preenchidas; sem nenhuma medição não há como calcular.
     const medidas = CAMPOS_BANDEJA.map(c => dados[c]).filter(v => v !== null && v !== undefined && Number.isFinite(v));
-    if (medidas.length === 0) return { altura_media: null, desvio: null, gatilho: null };
+    if (medidas.length === 0 || !Number.isFinite(dados.altura_programada)) return { altura_media: null, desvio: null, gatilho: null };
     const soma = medidas.reduce((acc, v) => acc + v, 0);
     const alturaMedia = Math.round((1300 - (soma / medidas.length) * 10) * 100) / 100;
     const desvio = Math.round((alturaMedia - dados.altura_programada) * 100) / 100;
@@ -156,8 +187,8 @@ window.editarRegistroMaquina = function (id) {
     document.getElementById('maquina_bloco').value = String(reg.bloco);
     document.getElementById('maquina_forno').value = String(reg.forno).padStart(2, '0');
     document.getElementById('maquina_maquina').value = reg.maquina;
-    document.getElementById('maquina_altura_programada').value = String(reg.altura_programada);
-    document.getElementById('maquina_perfil_carga').value = reg.perfil_carga;
+    if (reg.altura_programada !== null && reg.altura_programada !== undefined) document.getElementById('maquina_altura_programada').value = String(reg.altura_programada);
+    if (reg.perfil_carga) document.getElementById('maquina_perfil_carga').value = reg.perfil_carga;
     CAMPOS_BANDEJA.forEach(c => { document.getElementById(`maquina_${c}`).value = reg[c] ?? ''; });
     document.getElementById('maquina_tempo_ciclo').value = reg.tempo_ciclo_min ?? '';
     document.getElementById('maquina_tempo_compactacao').value = reg.tempo_compactacao_min ?? '';
@@ -166,7 +197,7 @@ window.editarRegistroMaquina = function (id) {
     document.getElementById('maquina_nivel_bacia').value = reg.nivel_bacia_pct ?? '';
     document.getElementById('maquina_observacao').value = reg.observacao || '';
     document.getElementById('maquina_justificativa').value = reg.justificativa || '';
-    atualizarPreviaDesvio();
+    aplicarCamposDaMaquina();
     document.getElementById('btn_salvar_maquina').innerText = 'Atualizar Registro';
     document.getElementById('btn_cancelar_edicao_maquina').style.display = '';
 
@@ -306,8 +337,8 @@ export function renderizarTabelaMaquinas() {
             <td>${reg.bloco}</td>
             <td>${String(reg.forno).padStart(2, '0')}</td>
             <td>${reg.maquina}</td>
-            <td>${reg.altura_programada}</td>
-            <td>${reg.perfil_carga}</td>
+            <td>${reg.altura_programada ?? '-'}</td>
+            <td>${reg.perfil_carga || '-'}</td>
             <td>${reg.altura_media ?? '-'}</td>
             <td>${reg.desvio ?? '-'}</td>
             <td><span class="badge_prazo ${reg.gatilho === 'DESVIO' ? 'prazo_atrasado' : 'prazo_ok'}">${reg.gatilho || '-'}</span></td>
@@ -415,6 +446,9 @@ export function initMaquinas() {
     }
 
     document.getElementById('maquina_bateria').addEventListener('change', atualizarOpcoesMaquinaPorBateria);
+    document.getElementById('maquina_maquina').addEventListener('change', aplicarCamposDaMaquina);
+    document.getElementById('maquina_altura_programada').addEventListener('change', sincronizarPerfilPelaAltura);
+    document.getElementById('maquina_perfil_carga').addEventListener('change', () => { sincronizarAlturaPeloPerfil(); atualizarPreviaDesvio(); });
     atualizarOpcoesMaquinaPorBateria();
 
     // Prévia do desvio ao vivo: recalcula a cada mudança nas medições/altura programada
@@ -484,6 +518,16 @@ export function initMaquinas() {
         };
 
         if (!dadosForm.data) { mostrarToast('Informe a data do lançamento.', 'info', 6000); return; }
+
+        if (!ehMaquinaDeCarga(dadosForm.maquina)) {
+            ['altura_programada', 'perfil_carga', ...CAMPOS_BANDEJA, 'tempo_compactacao_min', 'pressao_compactacao_bar', 'nivel_bacia_pct']
+                .forEach(c => { dadosForm[c] = null; });
+            dadosForm.justificativa = '';
+            if (dadosForm.tempo_ciclo_min === null && dadosForm.nivel_oleo_pct === null) {
+                mostrarToast('Informe o tempo de ciclo ou o nível do óleo.', 'info', 6000);
+                return;
+            }
+        }
 
         const erroValidacao = validarFormularioMaquina(dadosForm);
         if (erroValidacao) { mostrarToast(erroValidacao, 'info', 6000); return; }

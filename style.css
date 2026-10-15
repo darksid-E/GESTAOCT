@@ -1376,3 +1376,10 @@ body {
 .rt_metas_tabela tr.rt_meta_em_edicao td { background: #fff4dc; }
 @media (max-width: 768px) { .rt_nm_c7 { grid-column: span 2; } }
 @media (max-width: 480px) { .rt_nm_c7 { grid-column: auto; } }
+
+/* Máquina 33 (sem carga/bandeja): card mais estreito entre a 31 e a 32 */
+.maquinas_card_simples { flex: 0 0 140px; align-self: flex-start; }
+/* com 3 máquinas por bateria o bloco precisa de mais largura (quebra de linha em vez de espremer) */
+.maquinas_bateria_bloco { min-width: 520px; }
+.maquinas_card_simples .maquinas_card_indicadores { grid-template-columns: 1fr; }
+@media (max-width: 768px) { .maquinas_card_simples { flex: 1 1 auto; } }

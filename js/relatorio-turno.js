@@ -29,12 +29,13 @@ const SETORES = [
 const BATERIAS = ['A', 'B', 'C'];
 // Itens automáticos que a pessoa pode sobrescrever no relatório (lançamento
 // manual vale no lugar do valor vindo da página Máquinas)
-const AUTO_EDITAVEL = ['MAQUINA_CICLO', 'MAQUINA_COMPACTACAO'];
+const AUTO_EDITAVEL = ['MAQUINA_CICLO', 'MAQUINA_COMPACTACAO', 'MAQUINA_OLEO'];
 // Coluna da tabela de Máquinas que alimenta cada item automático
 const COLUNA_MAQUINA = {
     MAQUINA_PRESSAO: 'pressao_compactacao_bar',
     MAQUINA_DESVIO: 'desvio',
     MAQUINA_CICLO: 'tempo_ciclo_min',
+    MAQUINA_OLEO: 'nivel_oleo_pct',
     MAQUINA_COMPACTACAO: 'tempo_compactacao_min',
 };
 // Dado mais velho que isto (em dias, até a data da página) aparece em branco
@@ -130,6 +131,7 @@ function inferirFonteAuto(item) {
     const nome = String(item.item || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
     if (/tempo\s*(de\s*)?ciclo/.test(nome)) return 'MAQUINA_CICLO';
     if (/tempo\s*(de\s*)?compacta/.test(nome)) return 'MAQUINA_COMPACTACAO';
+    if (/nivel\s*(do\s*|de\s*)?oleo/.test(nome)) return 'MAQUINA_OLEO';
     return null;
 }
 
@@ -151,7 +153,19 @@ function itemPorId(id) {
     return state.dbRelatorioItens.find(i => Number(i.id) === Number(id));
 }
 
+// No card de Máquinas as máquinas aparecem na ordem física: 31, 33, 32
+const ORDEM_MAQUINA = { '31': 1, '33': 2, '32': 3 };
+
 function agruparPorEquipamento(itens) {
+    const grupos = agruparNaOrdem(itens);
+    if (itens.some(i => i.setor === 'MAQUINAS')) {
+        const peso = (g) => ORDEM_MAQUINA[String(g.equipamento).slice(0, 2)] ?? 99;
+        grupos.sort((a, b) => (a.equipamento ? peso(a) : 0) - (b.equipamento ? peso(b) : 0));
+    }
+    return grupos;
+}
+
+function agruparNaOrdem(itens) {
     const grupos = [];
     const mapa = new Map();
     itens.forEach(i => {
@@ -206,10 +220,11 @@ function resumoMaquina(equipamento, ate, colunaObrigatoria, bateria) {
         pressao: mediaDe(doDia, 'pressao_compactacao_bar'),
         ciclo: mediaDe(doDia, 'tempo_ciclo_min'),
         compactacao: mediaDe(doDia, 'tempo_compactacao_min'),
+        oleo: mediaDe(doDia, 'nivel_oleo_pct'),
     };
 }
 
-const CAMPO_RESUMO = { MAQUINA_PRESSAO: 'pressao', MAQUINA_DESVIO: 'desvio', MAQUINA_CICLO: 'ciclo', MAQUINA_COMPACTACAO: 'compactacao' };
+const CAMPO_RESUMO = { MAQUINA_PRESSAO: 'pressao', MAQUINA_DESVIO: 'desvio', MAQUINA_CICLO: 'ciclo', MAQUINA_COMPACTACAO: 'compactacao', MAQUINA_OLEO: 'oleo' };
 
 // "Registro" montado na hora para o card, no mesmo formato de um lançamento
 function registroAutomatico(item, ate, bateria) {
@@ -914,7 +929,7 @@ async function exportarExcel() {
 
 const ROTULO_AUTO = {
     MAQUINA_PRESSAO: 'Pressão de compactação', MAQUINA_DESVIO: 'Altura de carga',
-    MAQUINA_CICLO: 'Tempo de ciclo', MAQUINA_COMPACTACAO: 'Tempo de compactação',
+    MAQUINA_CICLO: 'Tempo de ciclo', MAQUINA_COMPACTACAO: 'Tempo de compactação', MAQUINA_OLEO: 'Nível de óleo',
 };
 let metaEmEdicao = null;   // item do catálogo sendo editado (null = cadastrando)
 
