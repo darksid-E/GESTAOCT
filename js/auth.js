@@ -46,6 +46,8 @@ function traduzirErroAuth(erro) {
         return 'Sem conexão com o servidor. Verifique sua rede e tente novamente.';
     }
     if (m.includes('invalid login credentials')) return 'Email ou senha incorretos.';
+    // O banco recusa emails fora do domínio (trigger em auth.users) e o Supabase devolve este texto genérico
+    if (m.includes('database error saving new user') || m.includes('email corporativo')) return 'O cadastro é permitido apenas com email corporativo @ternium.com.';
     if (m.includes('email not confirmed')) return 'Email ainda não confirmado. Verifique sua caixa de entrada.';
     if (m.includes('already registered') || m.includes('already been registered')) return 'Este email já está cadastrado.';
     if (m.includes('at least 6 characters')) return 'A senha precisa ter pelo menos 6 caracteres.';
@@ -127,7 +129,8 @@ async function criarPerfilProprio(userId, tokenAcesso, dados) {
     // Se o SQL de permissões ainda não foi rodado, a coluna "email" não
     // existe: cria o perfil sem ela em vez de impedir o primeiro acesso.
     if (!resposta.ok && dados.email !== undefined) {
-        const { email, ...semEmail } = dados;
+        const semEmail = { ...dados };
+        delete semEmail.email;
         resposta = await enviar(semEmail);
     }
     if (!resposta.ok) throw new Error(`Supabase ${resposta.status}: ${await resposta.text()}`);

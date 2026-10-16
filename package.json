@@ -6,7 +6,12 @@
   "scripts": {
     "build": "tsc && node scripts/gerar-config.js",
     "watch": "tsc --watch",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "tipos": "tsc --noEmit",
+    "lint": "eslint .",
+    "test:unit": "node --test \"tests/unit/*.test.mjs\"",
+    "test:e2e": "playwright test",
+    "test:sql": "bash tests/sql/rodar.sh",
+    "test": "npm run tipos && npm run lint && npm run test:unit && npm run test:e2e"
   },
   "repository": {
     "type": "git",
@@ -20,6 +25,13 @@
   },
   "homepage": "https://github.com/darksid-E/GESTAOCT#readme",
   "devDependencies": {
-    "typescript": "^7.0.2"
+    "@eslint/js": "^10.0.1",
+    "@playwright/test": "1.56.0",
+    "chart.js": "^4.5.1",
+    "eslint": "^10.12.0",
+    "globals": "^17.13.0",
+    "three": "^0.128.0",
+    "typescript": "^7.0.2",
+    "xlsx": "^0.18.5"
   }
 }

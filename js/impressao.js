@@ -2,11 +2,16 @@
 // --- IMPRESSÃO (prontuário do forno / registro único / tabela geral) ---
 // =========================================================
 import { state } from './state.js';
-import { formatarStatus, formatarDataBR, calcularSituacaoPrazo } from './utils.js';
+import { formatarStatus, formatarDataBR, calcularSituacaoPrazo, esc } from './utils.js';
 import { getObterRegistrosDoAlvo, getTituloFornoModalTexto } from './modal-reparo.js';
 import { obterRegistrosFiltradosTabela } from './tabela.js';
 
 import { mostrarToast } from './toast.js';
+import { urlsAssinadas } from './fotos.js';
+
+// URLs das fotos que a janela de impressão vai usar (links temporários se o bucket for privado)
+let fotosParaImpressao = new Map();
+const fotoImpressa = (url) => esc(fotosParaImpressao.get(url) || url);
 const CSS_IMPRESSAO = `
     * { box-sizing: border-box; }
     body { font-family: Arial, Helvetica, sans-serif; color: #1a1a1a; margin: 0; padding: 24px 32px; }
@@ -48,26 +53,26 @@ function gerarHtmlProntuario(idReferencia, registros) {
     const linhas = registros.map(reg => `
         <div class="reg_impresso">
             <div class="reg_impresso_cabecalho">
-                <span>${reg.data_registro}</span>
-                <span class="status_impresso ${reg.andamento}">${formatarStatus(reg.andamento)}</span>
+                <span>${esc(reg.data_registro)}</span>
+                <span class="status_impresso ${esc(reg.andamento)}">${formatarStatus(reg.andamento)}</span>
             </div>
             <table class="tabela_impressa">
-                <tr><td>Alvo</td><td>${reg.id_referencia}</td></tr>
-                <tr><td>Problema</td><td>${reg.desc_problema || '-'}</td></tr>
-                <tr><td>Solução</td><td>${reg.desc_solucao || '-'}</td></tr>
+                <tr><td>Alvo</td><td>${esc(reg.id_referencia)}</td></tr>
+                <tr><td>Problema</td><td>${esc(reg.desc_problema || '-')}</td></tr>
+                <tr><td>Solução</td><td>${esc(reg.desc_solucao || '-')}</td></tr>
                 <tr><td>Data da Ocorrência</td><td>${formatarDataBR(reg.data_ocorrencia)}</td></tr>
-                <tr><td>Ranking do Problema</td><td>${reg.ranking_problema || '-'}</td></tr>
-                <tr><td>Avaliação CT</td><td>${reg.avaliacao_ct || '-'}</td></tr>
-                <tr><td>Avaliador CT</td><td>${reg.avaliador_ct || '-'}</td></tr>
-                <tr><td>Observação</td><td>${reg.observacao || '-'}</td></tr>
+                <tr><td>Ranking do Problema</td><td>${esc(reg.ranking_problema || '-')}</td></tr>
+                <tr><td>Avaliação CT</td><td>${esc(reg.avaliacao_ct || '-')}</td></tr>
+                <tr><td>Avaliador CT</td><td>${esc(reg.avaliador_ct || '-')}</td></tr>
+                <tr><td>Observação</td><td>${esc(reg.observacao || '-')}</td></tr>
                 <tr><td>Prazo</td><td>${formatarDataBR(reg.prazo)}</td></tr>
                 <tr><td>Data Fim</td><td>${formatarDataBR(reg.data_fim)}</td></tr>
-                <tr><td>Registrado por</td><td>${reg.criado_por || '-'}</td></tr>
+                <tr><td>Registrado por</td><td>${esc(reg.criado_por || '-')}</td></tr>
             </table>
             ${(reg.foto_antes || reg.foto_depois) ? `
             <div class="fotos_impressas">
-                ${reg.foto_antes ? `<div><span>Antes</span><img src="${reg.foto_antes}"></div>` : ''}
-                ${reg.foto_depois ? `<div><span>Depois</span><img src="${reg.foto_depois}"></div>` : ''}
+                ${reg.foto_antes ? `<div><span>Antes</span><img src="${fotoImpressa(reg.foto_antes)}"></div>` : ''}
+                ${reg.foto_depois ? `<div><span>Depois</span><img src="${fotoImpressa(reg.foto_depois)}"></div>` : ''}
             </div>` : ''}
         </div>
     `).join('<hr class="separador_impresso">');
@@ -89,20 +94,20 @@ function gerarHtmlTabelaGeral(registros) {
         const situacao = calcularSituacaoPrazo(reg);
         return `
         <tr>
-            <td>${reg.data_registro}</td>
+            <td>${esc(reg.data_registro)}</td>
             <td>${formatarDataBR(reg.data_ocorrencia)}</td>
-            <td>${reg.id_referencia}</td>
+            <td>${esc(reg.id_referencia)}</td>
             <td>${formatarStatus(reg.andamento)}</td>
-            <td>${reg.bateria}</td><td>${reg.bloco}</td><td>${reg.forno}</td><td>${reg.lado}</td>
-            <td>${reg.desc_problema || '-'}</td>
-            <td>${reg.ranking_problema || '-'}</td>
-            <td>${reg.avaliacao_ct || '-'}</td>
-            <td>${reg.avaliador_ct || '-'}</td>
-            <td>${reg.observacao || '-'}</td>
+            <td>${esc(reg.bateria)}</td><td>${esc(reg.bloco)}</td><td>${esc(reg.forno)}</td><td>${esc(reg.lado)}</td>
+            <td>${esc(reg.desc_problema || '-')}</td>
+            <td>${esc(reg.ranking_problema || '-')}</td>
+            <td>${esc(reg.avaliacao_ct || '-')}</td>
+            <td>${esc(reg.avaliador_ct || '-')}</td>
+            <td>${esc(reg.observacao || '-')}</td>
             <td>${formatarDataBR(reg.prazo)}</td>
             <td>${formatarDataBR(reg.data_fim)}</td>
             <td><span class="situacao_impressa ${situacao.classe}">${situacao.texto}</span></td>
-            <td>${reg.criado_por || '-'}</td>
+            <td>${esc(reg.criado_por || '-')}</td>
         </tr>
     `;
     }).join('');
@@ -163,9 +168,13 @@ function gerarHtmlMapaColorido() {
     </body></html>`;
 }
 
-function imprimirHtml(html) {
+// A janela abre na hora do clique (senão o navegador bloqueia o pop-up) e o
+// conteúdo entra quando estiver pronto — `html` pode ser texto ou Promise.
+async function imprimirHtml(html) {
     const janela = window.open('', '_blank', 'width=900,height=700');
     if (!janela) { mostrarToast('Não foi possível abrir a janela de impressão. Verifique se o navegador bloqueou o pop-up.', 'erro', 8000); return; }
+    janela.document.write('<p style="font-family:Arial;padding:24px;color:#555">Preparando impressão...</p>');
+    html = await html;
     janela.document.open();
     janela.document.write(html);
     janela.document.close();
@@ -174,19 +183,23 @@ function imprimirHtml(html) {
     setTimeout(dispararImpressao, 400); // reforço para navegadores que não disparam onload aqui
 }
 
+async function comFotos(registros) {
+    fotosParaImpressao = await urlsAssinadas(registros.flatMap(r => [r.foto_antes, r.foto_depois]));
+}
+
 export function initImpressao() {
     const obterRegistrosDoAlvo = getObterRegistrosDoAlvo();
 
     document.getElementById('btn_imprimir_prontuario')?.addEventListener('click', () => {
         const idAtual = getTituloFornoModalTexto();
         const registros = obterRegistrosDoAlvo(idAtual).slice().reverse();
-        imprimirHtml(gerarHtmlProntuario(idAtual, registros));
+        imprimirHtml(comFotos(registros).then(() => gerarHtmlProntuario(idAtual, registros)));
     });
 
     window.imprimirRegistroUnico = function (idReparo) {
         const reg = state.dbReparos.find(r => r.id_reparo == idReparo);
         if (!reg) return;
-        imprimirHtml(gerarHtmlProntuario(reg.id_referencia, [reg]));
+        imprimirHtml(comFotos([reg]).then(() => gerarHtmlProntuario(reg.id_referencia, [reg])));
     };
 
     document.getElementById('btn_imprimir_tabela')?.addEventListener('click', () => {

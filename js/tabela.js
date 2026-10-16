@@ -2,7 +2,7 @@
 // --- 5. TABELA DE DADOS & FILTROS ---
 // =========================================================
 import { state, isAdminAtual } from './state.js';
-import { formatarStatus, formatarDataBR, definirValorSelect, calcularSituacaoPrazo, debounce } from './utils.js';
+import { formatarStatus, formatarDataBR, definirValorSelect, calcularSituacaoPrazo, debounce, esc } from './utils.js';
 import { init3D } from './twin3d.js';
 
 import { mostrarToast } from './toast.js';
@@ -53,27 +53,27 @@ export function renderizarTabela() {
         const situacao = calcularSituacaoPrazo(reg);
 
         tr.innerHTML = `
-            <td><strong>${reg.data_registro}</strong></td>
+            <td><strong>${esc(reg.data_registro)}</strong></td>
             <td>${formatarDataBR(reg.data_ocorrencia)}</td>
-            <td style="color: rgb(225, 51, 0); font-weight: bold;">${reg.id_referencia}</td>
+            <td style="color: rgb(225, 51, 0); font-weight: bold;">${esc(reg.id_referencia)}</td>
             <td>${formatarStatus(reg.andamento)}</td>
-            <td>${reg.bateria}</td>
-            <td>${reg.bloco}</td>
-            <td>${reg.forno}</td>
-            <td>${reg.lado}</td>
-            <td>${reg.desc_problema || '-'}</td>
-            <td>${reg.ranking_problema || '-'}</td>
-            <td>${reg.avaliacao_ct || '-'}</td>
-            <td>${reg.avaliador_ct || '-'}</td>
-            <td>${reg.observacao || '-'}</td>
+            <td>${esc(reg.bateria)}</td>
+            <td>${esc(reg.bloco)}</td>
+            <td>${esc(reg.forno)}</td>
+            <td>${esc(reg.lado)}</td>
+            <td>${esc(reg.desc_problema || '-')}</td>
+            <td>${esc(reg.ranking_problema || '-')}</td>
+            <td>${esc(reg.avaliacao_ct || '-')}</td>
+            <td>${esc(reg.avaliador_ct || '-')}</td>
+            <td>${esc(reg.observacao || '-')}</td>
             <td>${formatarDataBR(reg.prazo)}</td>
             <td>${formatarDataBR(reg.data_fim)}</td>
             <td><span class="badge_prazo ${situacao.classe}">${situacao.texto}</span></td>
-            <td>${reg.criado_por || '-'}</td>
+            <td>${esc(reg.criado_por || '-')}</td>
             <td>
                 ${isAdminAtual() ? `<div class="acoes_linha">
-                    <button class="btn_icone icone_editar" onclick="abrirEdicaoPelaTabela('${reg.id_reparo}')" aria-label="Editar"><svg class="icone" aria-hidden="true"><use href="#i-pencil"></use></svg></button>
-                    <button class="btn_icone icone_excluir" onclick="deletarRegistro('${reg.id_reparo}')" aria-label="Excluir"><svg class="icone" aria-hidden="true"><use href="#i-trash"></use></svg></button>
+                    <button class="btn_icone icone_editar" onclick="abrirEdicaoPelaTabela('${esc(reg.id_reparo)}')" aria-label="Editar"><svg class="icone" aria-hidden="true"><use href="#i-pencil"></use></svg></button>
+                    <button class="btn_icone icone_excluir" onclick="deletarRegistro('${esc(reg.id_reparo)}')" aria-label="Excluir"><svg class="icone" aria-hidden="true"><use href="#i-trash"></use></svg></button>
                 </div>` : ''}
             </td>
         `;

@@ -19,6 +19,7 @@ import {
 } from './supabase-api.js';
 import { formatarDataBR, debounce } from './utils.js';
 import { mostrarToast } from './toast.js';
+import { confirmar } from './dialogo.js';
 
 const SETORES = [
     { id: 'CONTROLE_TERMICO', rotulo: 'Controle Térmico' },
@@ -870,7 +871,7 @@ async function salvarEdicao() {
 
 window.deletarRelatorioTurno = async function (id) {
     if (!isAdminAtual()) { avisar('Apenas usuários administradores podem excluir registros do relatório de turno.', 'info', 6000); return; }
-    if (!confirm('Deseja excluir este registro?')) return;
+    if (!(await confirmar('Deseja excluir este registro?', { titulo: 'Excluir registro', textoConfirmar: 'Excluir' }))) return;
     try {
         await excluirRelatorioTurnoSupabase(id);
         await recarregarRelatorio();
@@ -1198,7 +1199,7 @@ async function excluirMeta(id) {
     if (!item) return;
     const grupo = irmaosDoItem(item, el('rt_metas_todas').checked);
     const onde = grupo.length > 1 ? ` nas ${grupo.length} baterias` : ` da bateria ${item.bateria || el('rt_metas_bateria').value}`;
-    if (!confirm(`Excluir a meta "${item.item}"${onde}?\nOs lançamentos já feitos continuam no histórico.`)) return;
+    if (!(await confirmar(`Excluir a meta "${item.item}"${onde}? Os lançamentos já feitos continuam no histórico.`, { titulo: 'Excluir meta', textoConfirmar: 'Excluir' }))) return;
     try {
         await atualizarRelatorioItensSupabase(grupo.map(i => Number(i.id)), { ativo: false });
         await recarregarCatalogo();

@@ -11,6 +11,7 @@ import { state, isAdminAtual, nomeExibicaoAtual } from './state.js';
 import { listarControleSupabase, criarControleSupabase, atualizarControleSupabase, excluirControleSupabase } from './supabase-api.js';
 import { formatarDataBR, debounce } from './utils.js';
 import { mostrarToast } from './toast.js';
+import { confirmar } from './dialogo.js';
 
 const BATERIAS = ['A', 'B', 'C'];
 const NUMEROS_MAQUINA = ['31', '33', '32'];        // ordem física: a 33 fica entre a 31 e a 32
@@ -558,7 +559,7 @@ async function salvarFormulario() {
 async function excluirRegistro(id) {
     if (!isAdminAtual()) return;
     const cfg = CONTROLES[controleAtual];
-    if (!confirm('Deseja excluir este registro?')) return;
+    if (!(await confirmar('Deseja excluir este registro?', { titulo: 'Excluir registro', textoConfirmar: 'Excluir' }))) return;
     try {
         await excluirControleSupabase(cfg.tabela, id);
         cache[controleAtual].dados = cache[controleAtual].dados.filter(r => String(r.id) !== String(id));

@@ -186,8 +186,20 @@ export function carregarCacheLocal(): Reparo[] {
     }
 }
 
+// O cache local é só um plano B para quando o Supabase cai. Se o navegador
+// recusar (cota de ~5 MB cheia com muitos registros), apenas não guarda —
+// nunca pode derrubar a carga dos dados.
+function gravarCache(chave: string, dados: unknown[]): void {
+    try {
+        localStorage.setItem(chave, JSON.stringify(dados));
+    } catch (erro) {
+        try { localStorage.removeItem(chave); } catch { /* ignora */ }
+        console.warn(`Cache local "${chave}" não foi salvo (limite do navegador):`, erro);
+    }
+}
+
 export function salvarCacheLocal(): void {
-    localStorage.setItem('dbReparosCoke', JSON.stringify(state.dbReparos));
+    gravarCache('dbReparosCoke', state.dbReparos);
 }
 
 export function carregarCacheLocalMaquinas(): Maquina[] {
@@ -200,5 +212,5 @@ export function carregarCacheLocalMaquinas(): Maquina[] {
 }
 
 export function salvarCacheLocalMaquinas(): void {
-    localStorage.setItem('dbMaquinasCoke', JSON.stringify(state.dbMaquinas));
+    gravarCache('dbMaquinasCoke', state.dbMaquinas);
 }

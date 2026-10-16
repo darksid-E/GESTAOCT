@@ -13,6 +13,7 @@
 import { state, isDevAtual, podeVerPagina, paginaLiberadaParaPerfil, PAGINAS_PERMISSAO } from './state.js';
 import { listarPerfisSupabase, atualizarPerfilSupabase } from './supabase-api.js';
 import { mostrarToast } from './toast.js';
+import { confirmar } from './dialogo.js';
 
 let perfis = [];
 let carregando = false;
@@ -218,7 +219,7 @@ async function aoAlterarAdmin(input) {
     const pergunta = novo
         ? `Conceder acesso de administrador (editar dados) a ${nomeCompleto(perfil)}?`
         : `Remover o acesso de administrador de ${nomeCompleto(perfil)}?`;
-    if (!window.confirm(pergunta)) { input.checked = !novo; return; }
+    if (!(await confirmar(pergunta, { titulo: 'Permissão de administrador', textoConfirmar: novo ? 'Conceder' : 'Remover', perigo: !novo }))) { input.checked = !novo; return; }
 
     input.disabled = true;
     await salvarAlteracao(perfil.id, { isAdmin: novo },

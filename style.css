@@ -1444,3 +1444,11 @@ body {
 @media (max-width: 480px) {
     .ic_form_grid { grid-template-columns: 1fr; }
 }
+
+/* Diálogo de confirmação (dialogo.js) */
+.dialogo_overlay { z-index: 6000; }
+.dialogo_conteudo { width: 92%; max-width: 420px; }
+.dialogo_corpo { padding: 18px 20px 20px; }
+.dialogo_corpo p { margin: 0 0 6px; color: var(--texto); line-height: 1.45; white-space: pre-line; }
+.btn_acao.btn_perigo { background-color: var(--cor-status-nao-reparado); }
+.btn_acao.btn_perigo:hover { background-color: #c62828; }

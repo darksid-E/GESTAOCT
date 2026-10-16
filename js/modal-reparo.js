@@ -2,14 +2,16 @@
 // --- 4. LÓGICA DO MODAL (FORMULÁRIO E AÇÕES) ---
 // =========================================================
 import { state, isAdminAtual, nomeExibicaoAtual, salvarCacheLocal } from './state.js';
-import { formatarStatus, formatarDataBR, definirValorSelect } from './utils.js';
+import { formatarStatus, formatarDataBR, definirValorSelect, esc } from './utils.js';
 import { criarReparoSupabase, atualizarReparoSupabase, excluirReparoSupabase, uploadFotoSupabase } from './supabase-api.js';
+import { urlAssinada, resolverFotos, excluirFotos, TAMANHO_MAXIMO_MB } from './fotos.js';
 import { init3D, construirCluster3D, atualizarCores3D, renderizarFrame3D } from './twin3d.js';
 import { processarDadosGlobais } from './mapa2d.js';
 import { renderizarTabela } from './tabela.js';
 import { aplicarPermissoes } from './auth.js';
 
 import { mostrarToast } from './toast.js';
+import { confirmar } from './dialogo.js';
 let modal, tituloFornoModal, listaHistorico, selectElements, selTipoPrincipal, selLadoPrincipal;
 let lightboxFoto, lightboxImg;
 
@@ -22,7 +24,7 @@ export function atualizarAlvoVisual() {
 
     if (forno === 'N/A') { document.getElementById('sel_forno').value = '01'; forno = '01'; }
 
-    let idGerado = "";
+    let idGerado;
     if (tipo === 'Coletor') idGerado = `${forno} - ${bat}${bloco} - Coletor ${lado}`;
     else if (tipo.startsWith('Sole Flue')) idGerado = `${forno} - ${bat}${bloco} - ${lado} - SF${tipo.split(' ')[2]}`;
     else idGerado = `${forno} - ${bat}${bloco} - ${lado}`;
@@ -93,6 +95,9 @@ function limparFormulario() {
     document.getElementById("img_preview_depois").style.display = 'none';
     document.getElementById("img_preview_antes").src = '';
     document.getElementById("img_preview_depois").src = '';
+    // data-foto = URL guardada no registro (a src pode ser um link temporário assinado)
+    document.getElementById("img_preview_antes").dataset.foto = '';
+    document.getElementById("img_preview_depois").dataset.foto = '';
     document.getElementById("foto_antes_texto").innerText = 'Escolher foto...';
     document.getElementById("foto_depois_texto").innerText = 'Escolher foto...';
     document.querySelectorAll('#modal_reparo .file_upload_label').forEach(lbl => lbl.classList.remove('has_file'));
@@ -127,13 +132,17 @@ window.editarRegistro = function (idReparo) {
         if (reg.foto_antes || reg.foto_depois) {
             document.getElementById("preview_fotos").style.display = 'flex';
             if (reg.foto_antes) {
-                document.getElementById("img_preview_antes").src = reg.foto_antes;
+                const previewAntes = document.getElementById("img_preview_antes");
+                previewAntes.dataset.foto = reg.foto_antes;
+                urlAssinada(reg.foto_antes).then(url => { if (previewAntes.dataset.foto === reg.foto_antes) previewAntes.src = url; });
                 document.getElementById("img_preview_antes").style.display = 'block';
                 document.getElementById("foto_antes_texto").innerText = 'Foto atual';
                 document.querySelector('label[for="foto_antes"]')?.classList.add('has_file');
             }
             if (reg.foto_depois) {
-                document.getElementById("img_preview_depois").src = reg.foto_depois;
+                const previewDepois = document.getElementById("img_preview_depois");
+                previewDepois.dataset.foto = reg.foto_depois;
+                urlAssinada(reg.foto_depois).then(url => { if (previewDepois.dataset.foto === reg.foto_depois) previewDepois.src = url; });
                 document.getElementById("img_preview_depois").style.display = 'block';
                 document.getElementById("foto_depois_texto").innerText = 'Foto atual';
                 document.querySelector('label[for="foto_depois"]')?.classList.add('has_file');
@@ -149,6 +158,11 @@ function configurarInputFoto(inputId, textoId, previewId) {
     input?.addEventListener('change', () => {
         const file = input.files[0];
         if (!file) return;
+        if (file.size > TAMANHO_MAXIMO_MB * 1024 * 1024) {
+            mostrarToast(`Foto muito grande (máximo ${TAMANHO_MAXIMO_MB} MB).`, 'info', 6000);
+            input.value = '';
+            return;
+        }
         texto.innerText = file.name;
         label?.classList.add('has_file');
         const reader = new FileReader();
@@ -187,9 +201,9 @@ function carregarHistorico(idBuscado) {
             (reg.andamento === 'concluido' ? (reg.data_fim > reg.prazo ? `<span class="badge_prazo prazo_atrasado">Atraso</span>` : `<span class="badge_prazo prazo_ok">No Prazo</span>`) :
                 (dataAtraso > reg.prazo ? `<span class="badge_prazo prazo_atrasado">Atrasado</span>` : `<span class="badge_prazo prazo_ok">No Prazo</span>`));
 
-        const btnImprimirHist = `<button class="btn_icone" onclick="imprimirRegistroUnico('${reg.id_reparo}')" aria-label="Imprimir"><svg class="icone" aria-hidden="true"><use href="#i-printer"></use></svg></button>`;
+        const btnImprimirHist = `<button class="btn_icone" onclick="imprimirRegistroUnico('${esc(reg.id_reparo)}')" aria-label="Imprimir"><svg class="icone" aria-hidden="true"><use href="#i-printer"></use></svg></button>`;
         const acoesHist = isAdminAtual()
-            ? `<button class="btn_icone icone_editar" onclick="editarRegistro('${reg.id_reparo}')" aria-label="Editar"><svg class="icone" aria-hidden="true"><use href="#i-pencil"></use></svg></button><button class="btn_icone icone_excluir" onclick="deletarRegistro('${reg.id_reparo}')" aria-label="Excluir"><svg class="icone" aria-hidden="true"><use href="#i-trash"></use></svg></button>${btnImprimirHist}`
+            ? `<button class="btn_icone icone_editar" onclick="editarRegistro('${esc(reg.id_reparo)}')" aria-label="Editar"><svg class="icone" aria-hidden="true"><use href="#i-pencil"></use></svg></button><button class="btn_icone icone_excluir" onclick="deletarRegistro('${esc(reg.id_reparo)}')" aria-label="Excluir"><svg class="icone" aria-hidden="true"><use href="#i-trash"></use></svg></button>${btnImprimirHist}`
             : btnImprimirHist;
 
         let fotosHtml = '';
@@ -197,29 +211,30 @@ function carregarHistorico(idBuscado) {
             fotosHtml = `<div class="hist_fotos">
                 ${reg.foto_antes ? `
                 <div class="hist_foto_item">
-                    <img src="${reg.foto_antes}" class="hist_foto_thumb" data-full="${reg.foto_antes}" alt="Foto antes do reparo">
+                    <img data-foto="${esc(reg.foto_antes)}" class="hist_foto_thumb" data-full="" alt="Foto antes do reparo">
                     <span class="hist_foto_label">Antes</span>
                 </div>` : ''}
                 ${reg.foto_depois ? `
                 <div class="hist_foto_item">
-                    <img src="${reg.foto_depois}" class="hist_foto_thumb" data-full="${reg.foto_depois}" alt="Foto depois do reparo">
+                    <img data-foto="${esc(reg.foto_depois)}" class="hist_foto_thumb" data-full="" alt="Foto depois do reparo">
                     <span class="hist_foto_label">Depois</span>
                 </div>` : ''}
             </div>`;
         }
 
-        const card = document.createElement('div'); card.className = `hist_card ${reg.andamento}`;
+        const card = document.createElement('div'); card.className = `hist_card ${esc(reg.andamento)}`;
         card.innerHTML = `
-            <div class="hist_card_header"><div class="hist_data">${reg.data_registro} <br> ${badge}</div>
+            <div class="hist_card_header"><div class="hist_data">${esc(reg.data_registro)} <br> ${badge}</div>
             <div class="acoes_linha">${acoesHist}</div></div>
-            <strong>Alvo:</strong> ${reg.id_referencia}<br><strong>Status:</strong> ${formatarStatus(reg.andamento)}<br>
-            <strong>Ocorrência:</strong> ${formatarDataBR(reg.data_ocorrencia)}${reg.ranking_problema ? ` &nbsp;<strong>Ranking:</strong> ${reg.ranking_problema}` : ''}<br>
-            ${(reg.avaliacao_ct || reg.avaliador_ct) ? `<strong>Avaliação CT:</strong> ${reg.avaliacao_ct || '-'}${reg.avaliador_ct ? ` (${reg.avaliador_ct})` : ''}<br>` : ''}
-            <strong>Problema:</strong> ${reg.desc_problema || '-'}<br> <strong>Observação:</strong> ${reg.observacao || '-'} <br><strong>Prazo:</strong> ${formatarDataBR(reg.prazo)}<br>
-            <strong>Registrado por:</strong> ${reg.criado_por || '-'}
+            <strong>Alvo:</strong> ${esc(reg.id_referencia)}<br><strong>Status:</strong> ${formatarStatus(reg.andamento)}<br>
+            <strong>Ocorrência:</strong> ${formatarDataBR(reg.data_ocorrencia)}${reg.ranking_problema ? ` &nbsp;<strong>Ranking:</strong> ${esc(reg.ranking_problema)}` : ''}<br>
+            ${(reg.avaliacao_ct || reg.avaliador_ct) ? `<strong>Avaliação CT:</strong> ${esc(reg.avaliacao_ct || '-')}${reg.avaliador_ct ? ` (${esc(reg.avaliador_ct)})` : ''}<br>` : ''}
+            <strong>Problema:</strong> ${esc(reg.desc_problema || '-')}<br> <strong>Observação:</strong> ${esc(reg.observacao || '-')} <br><strong>Prazo:</strong> ${formatarDataBR(reg.prazo)}<br>
+            <strong>Registrado por:</strong> ${esc(reg.criado_por || '-')}
             ${fotosHtml}
         `;
         listaHistorico.appendChild(card);
+        if (fotosHtml) resolverFotos(card);
     });
 }
 
@@ -286,14 +301,20 @@ export function initModalReparo() {
         botaoSalvar.innerText = 'Salvando e enviando fotos...';
 
         try {
-            let urlAntes = document.getElementById("img_preview_antes").src || null;
-            let urlDepois = document.getElementById("img_preview_depois").src || null;
+            // URL guardada no registro (não a src, que pode ser um link temporário)
+            const fotoAntigaAntes = document.getElementById("img_preview_antes").dataset.foto || null;
+            const fotoAntigaDepois = document.getElementById("img_preview_depois").dataset.foto || null;
+            let urlAntes = fotoAntigaAntes;
+            let urlDepois = fotoAntigaDepois;
 
             const inputAntes = document.getElementById("foto_antes").files[0];
             const inputDepois = document.getElementById("foto_depois").files[0];
 
-            if (inputAntes) urlAntes = await uploadFotoSupabase(inputAntes, 'antes');
-            if (inputDepois) urlDepois = await uploadFotoSupabase(inputDepois, 'depois');
+            if (inputAntes) urlAntes = await uploadFotoSupabase(inputAntes, 'antes') || fotoAntigaAntes;
+            if (inputDepois) urlDepois = await uploadFotoSupabase(inputDepois, 'depois') || fotoAntigaDepois;
+            // Fotos trocadas: o arquivo antigo é apagado depois que o registro salvar
+            const fotosSubstituidas = [[fotoAntigaAntes, urlAntes], [fotoAntigaDepois, urlDepois]]
+                .filter(([antiga, nova]) => antiga && nova !== antiga).map(([antiga]) => antiga);
 
             const dadosForm = {
                 bateria: document.getElementById('sel_bat').value.toUpperCase(),
@@ -312,8 +333,8 @@ export function initModalReparo() {
                 ranking_problema: document.getElementById("ranking_problema").value ? Number(document.getElementById("ranking_problema").value) : null,
                 data_ocorrencia: document.getElementById("data_ocorrencia").value || null,
                 observacao: document.getElementById("obs_reparo").value.toUpperCase(),
-                foto_antes: urlAntes !== window.location.href ? urlAntes : null,
-                foto_depois: urlDepois !== window.location.href ? urlDepois : null,
+                foto_antes: urlAntes || null,
+                foto_depois: urlDepois || null,
             };
 
             if (state.supabaseAtivo) {
@@ -342,6 +363,7 @@ export function initModalReparo() {
 
             salvarCacheLocal();
             limparFormulario();
+            if (state.supabaseAtivo && fotosSubstituidas.length) excluirFotos(fotosSubstituidas);
 
             try {
                 processarDadosGlobais();
@@ -365,10 +387,14 @@ export function initModalReparo() {
 
     window.deletarRegistro = async function (idReparo) {
         if (!isAdminAtual()) { mostrarToast('Apenas usuários administradores podem excluir reparos.', 'info', 6000); return; }
-        if (!confirm("Deseja excluir este registro?")) return;
+        if (!(await confirmar('Deseja excluir este reparo? As fotos dele também serão apagadas.', { titulo: 'Excluir reparo', textoConfirmar: 'Excluir' }))) return;
 
         try {
-            if (state.supabaseAtivo) await excluirReparoSupabase(idReparo);
+            const excluido = state.dbReparos.find(r => r.id_reparo == idReparo);
+            if (state.supabaseAtivo) {
+                await excluirReparoSupabase(idReparo);
+                if (excluido) excluirFotos([excluido.foto_antes, excluido.foto_depois]);
+            }
             state.dbReparos = state.dbReparos.filter(r => r.id_reparo != idReparo);
             salvarCacheLocal();
             processarDadosGlobais();
@@ -393,7 +419,7 @@ export function initModalReparo() {
     listaHistorico.addEventListener('click', (e) => {
         const thumb = e.target.closest('.hist_foto_thumb');
         if (!thumb || !lightboxFoto || !lightboxImg) return;
-        lightboxImg.src = thumb.dataset.full;
+        lightboxImg.src = thumb.dataset.full || thumb.src;
         lightboxFoto.classList.add('active');
     });
 

@@ -1,34 +1,65 @@
+# Central de Dados Coqueria (GESTAOCT)
 
-## Sobre o Projeto
+App web da Coqueria (Ternium) para registrar e acompanhar dados operacionais: reparos dos fornos,
+máquinas de carregamento, relatório de passagem de turno e itens de controle. Roda no navegador
+(computador e celular), com dados no Supabase e publicação na Vercel.
 
-O objetivo principal desta aplicação é simplificar o registro de dados operacionais. Desenvolvido para ser acessado de qualquer lugar e dispositivo, o sistema garante agilidade na alimentação das informações. Esse acesso rápido aos dados operacionais viabiliza análises precisas, contribuindo para uma tomada de decisão mais rápida e estrategicamente embasada.
+## Páginas
 
-## Principais Funcionalidades
+| Página | O que faz |
+|---|---|
+| **Gestão de Reparos** | Mapa 2D das baterias com a fase de cada reparo, modal com vista 3D, histórico, fotos antes/depois, tabela de dados com filtros, impressão e exportação Excel. |
+| **Máquinas** | Lançamentos das máquinas 31, 33 e 32 de cada bateria. 31/32: altura programada ligada ao perfil de carga, medições da bandeja, desvio com justificativa, compactação. 33: só tempo de ciclo e nível de óleo. |
+| **Relatório de Turno** | Cards por bateria (Controle Térmico, Máquinas, Caldeiras, FGDs) com o último valor de cada item, meta e cor. Itens de Máquinas vêm automáticos. Registro com mais de 2 dias aparece em branco. Metas editáveis por desenvolvedores. |
+| **Itens de Controle** | Comporta, Sapata, Truck e Queda de Material: lançamentos, banco com filtros e Excel. |
+| **Permissões** | Lista de usuários, quem é admin e quais páginas cada um vê, com indicadores de lançamentos. |
 
-### Gestão de Reparos
+## Acesso e permissões
 
-- **Mapa de Gestão:** Interface visual que indica o ponto exato do reparo e sua fase atual (baseado em dados e filtros aplicados). Inclui um dashboard integrado para acompanhamento quantitativo dos status.
-- **Gerenciador de Reparos:** Módulo central de preenchimento. Oferece visualização 3D dos reparos (com esquema de cores intuitivo), geração de backlog e suporte para upload de fotos de "antes e depois".
-- **Tabela Geral:** Relatório em formato de tabela com filtros para visualizar todos os lançamentos. Suporta impressão e edição de registros (restrito a usuários autorizados).
+- Cadastro só com email **@ternium.com(.xx)**, confirmado por código. A regra vale no próprio banco
+  (trigger em `auth.users`), não só na tela.
+- `ver_<pagina>` (perfis) decide quem **vê** cada página (padrão: sim; `ver_permissoes`: não).
+- `isAdmin` decide quem **lança/edita/exclui** dados.
+- `isDev` decide quem altera **permissões e metas**; dev não altera outro dev.
+- Tudo é garantido por RLS no Supabase. A interface só esconde o que a pessoa não pode usar.
 
-### Login e Autenticação Corporativa
+Detalhes em [`docs/ARQUITETURA.md`](docs/ARQUITETURA.md).
 
-- **Acesso Restrito:** O cadastro é exclusivo para colaboradores que possuem e-mail corporativo (Ternium).
-- **Validação:** A leitura dos dados só é liberada após a confirmação do e-mail através de um link de verificação, garantindo a integridade do acesso.
+## Rodar localmente
 
-## Stack Tecnológico
+```bash
+npm install
+cp supabase-config.example.js supabase-config.js   # preencha URL e chave publishable
+npx serve .                                        # ou qualquer servidor estático
+```
 
-### Front-End
+O frontend é HTML + módulos ES nativos (sem bundler). Os arquivos `src/*.ts` compilam para `js/*.js`
+com `npm run build` (o `.js` gerado também fica no repositório).
 
-- **Estrutura:** Arquitetura modular construída em JavaScript, HTML5 e CSS, com infraestrutura já preparada para uma futura migração para TypeScript.
-- **Performance:** Interface leve, rápida e responsiva. Atualmente centralizada em um único índice (Single Page), mas arquitetada para escalar facilmente para múltiplos módulos.
+## Testes
 
-### Back-End (BaaS)
+| Comando | O que testa |
+|---|---|
+| `npm run tipos` | Checagem do TypeScript |
+| `npm run lint` | ESLint |
+| `npm run test:unit` | Regras puras (datas, prazos, metas, paginação, fotos, permissões) |
+| `npm run test:e2e` | Navegador (Playwright) com um Supabase **falso** — nada toca o banco real. Primeira vez: `npx playwright install chromium` |
+| `npm run test:sql` | Migrações + RLS + triggers num Postgres local que imita o Supabase (variáveis `PG*`) |
+| `npm test` | Tipos, lint, unidade e navegador |
 
-- **Banco de Dados:** Supabase. Solução escolhida para otimizar recursos operacionais, dispensando o uso de Máquinas Virtuais ou Servidores Dedicados.
+O GitHub Actions (`.github/workflows/ci.yml`) roda tudo isso a cada push e pull request.
+Para impedir deploy com erro, ative na branch `main` a proteção que exige o CI verde.
 
-## Segurança e Auditoria de Dados
+## Banco de dados (Supabase)
 
-- **Proteção de Acesso:** Implementação rigorosa de **RLS (Row Level Security)** e *Policies* do Supabase. Apenas usuários autenticados via OAuth (e validados com e-mail Ternium) conseguem acessar as tabelas.
-- **Controle de Edição:** A alteração de registros é bloqueada por padrão. Apenas usuários autenticados com o status `isAdmin = true` no banco de dados têm permissão de escrita.
-- **Rastreabilidade:** Todas as edições e atualizações geram um log de histórico, registrando qual usuário realizou a alteração.
+- Mudanças de esquema ficam em `supabase/migrations/`, em ordem de data. Todas podem ser rodadas
+  de novo sem efeito colateral. Aplique pelo SQL Editor (ou `supabase db push`), **na ordem**.
+- `supabase/consultas/` tem consultas de apoio (fotos órfãs, diagnóstico do relatório, metas excluídas).
+- O esquema original (anterior a out/2026) ainda não está versionado: gere com
+  `supabase db dump --schema public > supabase/migrations/00000000_esquema_base.sql`.
+
+## Publicação
+
+A Vercel publica a branch `main`. No build, `scripts/gerar-config.js` cria o `supabase-config.js`
+a partir das variáveis `SUPABASE_URL` e `SUPABASE_KEY` (a chave publishable não é secreta; a
+proteção é o RLS).

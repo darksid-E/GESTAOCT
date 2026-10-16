@@ -3,9 +3,10 @@
 // =========================================================
 import { state, isAdminAtual, nomeExibicaoAtual, salvarCacheLocalMaquinas } from './state.js';
 import { criarMaquinaSupabase, atualizarMaquinaSupabase, excluirMaquinaSupabase } from './supabase-api.js';
-import { formatarDataBR, debounce } from './utils.js';
+import { formatarDataBR, debounce, esc } from './utils.js';
 
 import { mostrarToast } from './toast.js';
+import { confirmar } from './dialogo.js';
 // Os 8 pontos de medição da bandeja, na ordem em que aparecem no
 // modal — usados tanto pra montar/ler o formulário quanto pra tirar a
 // média em cada célula do diagrama.
@@ -207,7 +208,7 @@ window.editarRegistroMaquina = function (id) {
 
 window.deletarRegistroMaquina = async function (id) {
     if (!isAdminAtual()) { mostrarToast('Apenas usuários administradores podem excluir registros de máquina.', 'info', 6000); return; }
-    if (!confirm('Deseja excluir este registro?')) return;
+    if (!(await confirmar('Deseja excluir este registro?', { titulo: 'Excluir registro', textoConfirmar: 'Excluir' }))) return;
 
     try {
         if (state.supabaseAtivo) await excluirMaquinaSupabase(id);
@@ -333,26 +334,26 @@ export function renderizarTabelaMaquinas() {
         const tr = document.createElement('tr');
         tr.innerHTML = `
             <td><strong>${formatarDataBR(reg.data)}</strong></td>
-            <td>${reg.bateria}</td>
-            <td>${reg.bloco}</td>
+            <td>${esc(reg.bateria)}</td>
+            <td>${esc(reg.bloco)}</td>
             <td>${String(reg.forno).padStart(2, '0')}</td>
-            <td>${reg.maquina}</td>
-            <td>${reg.altura_programada ?? '-'}</td>
-            <td>${reg.perfil_carga || '-'}</td>
-            <td>${reg.altura_media ?? '-'}</td>
-            <td>${reg.desvio ?? '-'}</td>
-            <td><span class="badge_prazo ${reg.gatilho === 'DESVIO' ? 'prazo_atrasado' : 'prazo_ok'}">${reg.gatilho || '-'}</span></td>
-            <td>${reg.tempo_ciclo_min ?? '-'}</td>
-            <td>${reg.tempo_compactacao_min ?? '-'}</td>
-            <td>${reg.pressao_compactacao_bar ?? '-'}</td>
-            <td>${reg.nivel_oleo_pct ?? '-'}</td>
-            <td>${reg.registrado_por || '-'}</td>
-            <td>${reg.observacao || '-'}</td>
-            <td>${reg.justificativa || '-'}</td>
+            <td>${esc(reg.maquina)}</td>
+            <td>${esc(reg.altura_programada ?? '-')}</td>
+            <td>${esc(reg.perfil_carga || '-')}</td>
+            <td>${esc(reg.altura_media ?? '-')}</td>
+            <td>${esc(reg.desvio ?? '-')}</td>
+            <td><span class="badge_prazo ${reg.gatilho === 'DESVIO' ? 'prazo_atrasado' : 'prazo_ok'}">${esc(reg.gatilho || '-')}</span></td>
+            <td>${esc(reg.tempo_ciclo_min ?? '-')}</td>
+            <td>${esc(reg.tempo_compactacao_min ?? '-')}</td>
+            <td>${esc(reg.pressao_compactacao_bar ?? '-')}</td>
+            <td>${esc(reg.nivel_oleo_pct ?? '-')}</td>
+            <td>${esc(reg.registrado_por || '-')}</td>
+            <td>${esc(reg.observacao || '-')}</td>
+            <td>${esc(reg.justificativa || '-')}</td>
             <td>
                 ${isAdminAtual() ? `<div class="acoes_linha">
-                    <button class="btn_icone icone_editar" onclick="editarRegistroMaquina('${reg.id}')" aria-label="Editar"><svg class="icone" aria-hidden="true"><use href="#i-pencil"></use></svg></button>
-                    <button class="btn_icone icone_excluir" onclick="deletarRegistroMaquina('${reg.id}')" aria-label="Excluir"><svg class="icone" aria-hidden="true"><use href="#i-trash"></use></svg></button>
+                    <button class="btn_icone icone_editar" onclick="editarRegistroMaquina('${esc(reg.id)}')" aria-label="Editar"><svg class="icone" aria-hidden="true"><use href="#i-pencil"></use></svg></button>
+                    <button class="btn_icone icone_excluir" onclick="deletarRegistroMaquina('${esc(reg.id)}')" aria-label="Excluir"><svg class="icone" aria-hidden="true"><use href="#i-trash"></use></svg></button>
                 </div>` : ''}
             </td>
         `;

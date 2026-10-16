@@ -6,6 +6,7 @@ import { importarReparosSupabase } from './supabase-api.js';
 import { processarDadosGlobais } from './mapa2d.js';
 import { renderizarTabela } from './tabela.js';
 import { formatarStatus, formatarDataBR, calcularSituacaoPrazo } from './utils.js';
+import { urlsAssinadas } from './fotos.js';
 
 import { mostrarToast } from './toast.js';
 export function renderizarDashboard() {
@@ -54,7 +55,7 @@ export function renderizarDashboard() {
 // Exporta TODOS os reparos para Excel, com cabeçalhos e dados em MAIÚSCULO.
 // Links das fotos não são convertidos (maiúsculas quebrariam a URL): saem
 // como células "VER FOTO" com hiperlink para o endereço original.
-function exportarExcelReparos() {
+async function exportarExcelReparos() {
     if (typeof XLSX === 'undefined') {
         mostrarToast('A biblioteca de exportação (SheetJS) não carregou. Verifique sua conexão e tente de novo.', 'erro', 8000);
         return;
@@ -82,7 +83,10 @@ function exportarExcelReparos() {
 
     const planilha = XLSX.utils.aoa_to_sheet([colunas, ...linhas]);
 
-    // Hiperlinks das fotos (colunas T e U) apontando para a URL original
+    // Links das fotos: válidos por 7 dias (o bucket pode ser privado; com bucket
+    // público a assinatura falha e fica a URL original, que não expira)
+    const links = await urlsAssinadas(state.dbReparos.flatMap(r => [r.foto_antes, r.foto_depois]), 7 * 24 * 3600);
+    // Hiperlinks das fotos (colunas T e U)
     const colAntes = colunas.indexOf('FOTO ANTES');
     const colDepois = colunas.indexOf('FOTO DEPOIS');
     state.dbReparos.forEach((r, i) => {
@@ -90,7 +94,7 @@ function exportarExcelReparos() {
         [[colAntes, r.foto_antes], [colDepois, r.foto_depois]].forEach(([col, url]) => {
             if (!url) return;
             const celula = planilha[XLSX.utils.encode_cell({ r: linha, c: col })];
-            if (celula) celula.l = { Target: url };
+            if (celula) celula.l = { Target: links.get(url) || url };
         });
     });
 

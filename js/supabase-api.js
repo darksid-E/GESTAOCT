@@ -3,6 +3,7 @@
 // =========================================================
 import { state, config } from './state.js';
 import { fetchAutenticado } from './sessao.js';
+import { comprimirImagem } from './fotos.js';
 
 // Toda requisição passa por fetchAutenticado: o token é renovado antes de
 // vencer e, se o servidor responder 401 (JWT expired), renova e repete.
@@ -20,8 +21,25 @@ async function requisicaoSupabase(tabela, caminho, options = {}) {
     return resposta.json();
 }
 
+// O PostgREST do Supabase devolve no máximo 1000 linhas por resposta (max-rows).
+// Sem paginar, tabelas maiores que isso eram cortadas em silêncio. Busca em
+// páginas até a última vir incompleta. `consulta` já traz select/order/filtros;
+// a ordenação precisa ser estável (terminar em uma coluna única, como id).
+export const TAMANHO_PAGINA = 1000;
+const LIMITE_PAGINAS = 500;   // trava de segurança: 500 mil linhas
+
+export async function listarTodos(tabela, consulta) {
+    let todos = [];
+    for (let pagina = 0; pagina < LIMITE_PAGINAS; pagina++) {
+        const lote = await requisicaoSupabase(tabela, `?${consulta}&limit=${TAMANHO_PAGINA}&offset=${pagina * TAMANHO_PAGINA}`) || [];
+        todos = todos.concat(lote);
+        if (lote.length < TAMANHO_PAGINA) break;
+    }
+    return todos;
+}
+
 export async function listarReparosSupabase() {
-    return requisicaoSupabase(config.SUPABASE_TABLE, '?select=*&order=id_reparo.asc');
+    return listarTodos(config.SUPABASE_TABLE, 'select=*&order=id_reparo.asc');
 }
 
 export async function criarReparoSupabase(dados) {
@@ -52,7 +70,7 @@ export async function excluirReparoSupabase(idReparo) {
 // --- "maquinas" (lançamentos de altura/perfil de carga) ---
 
 export async function listarMaquinasSupabase() {
-    return requisicaoSupabase(config.SUPABASE_TABLE_MAQUINAS, '?select=*&order=id.desc');
+    return listarTodos(config.SUPABASE_TABLE_MAQUINAS, 'select=*&order=id.desc');
 }
 
 export async function criarMaquinaSupabase(dados) {
@@ -83,7 +101,7 @@ export async function excluirMaquinaSupabase(id) {
 // --- "relatorio_turno" (Relatório de passagem de turno) ---
 
 export async function listarRelatorioItensSupabase() {
-    return requisicaoSupabase(config.SUPABASE_TABLE_RELATORIO_ITENS, '?select=*&order=ordem.asc,id.asc&limit=1000');
+    return listarTodos(config.SUPABASE_TABLE_RELATORIO_ITENS, 'select=*&order=ordem.asc,id.asc');
 }
 
 // O PostgREST devolve no máximo 1000 linhas por resposta, então busca em
@@ -93,15 +111,7 @@ export async function listarRelatorioTurnoSupabase({ inicio, fim } = {}) {
     const filtros = [];
     if (inicio) filtros.push(`data=gte.${encodeURIComponent(inicio)}`);
     if (fim) filtros.push(`data=lte.${encodeURIComponent(fim)}`);
-    const TAMANHO_PAGINA = 1000;
-    let todos = [];
-    for (let pagina = 0; pagina < 100; pagina++) {
-        const consulta = ['select=*', ...filtros, 'order=data.desc,id.desc', `limit=${TAMANHO_PAGINA}`, `offset=${pagina * TAMANHO_PAGINA}`].join('&');
-        const lote = await requisicaoSupabase(config.SUPABASE_TABLE_RELATORIO_TURNO, `?${consulta}`);
-        todos = todos.concat(lote);
-        if (lote.length < TAMANHO_PAGINA) break;
-    }
-    return todos;
+    return listarTodos(config.SUPABASE_TABLE_RELATORIO_TURNO, ['select=*', ...filtros, 'order=data.desc,id.desc'].join('&'));
 }
 
 // Último registro de cada item (por bateria e tipo) até a data informada — função
@@ -161,10 +171,13 @@ export async function excluirRelatorioTurnoSupabase(id) {
     });
 }
 
-// NOVO: Função de Upload para o Supabase
+// Upload de foto do reparo (comprimida antes). Devolve a URL a guardar no
+// registro; para exibir, use urlAssinada() de fotos.js.
 export async function uploadFotoSupabase(file, tipoDaFoto) {
     if (!state.supabaseAtivo) return null;
-    const path = `reparos/${Date.now()}_${tipoDaFoto}_${file.name.replace(/\s+/g, '_')}`;
+    file = await comprimirImagem(file);
+    const nomeSeguro = file.name.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^\w.-]+/g, '_');
+    const path = `reparos/${Date.now()}_${tipoDaFoto}_${nomeSeguro}`;
 
     const resposta = await fetchAutenticado(`${config.SUPABASE_STORAGE_BASE}/storage/v1/object/fotos_reparos/${path}`, {
         method: 'POST',
@@ -195,7 +208,7 @@ export async function importarReparosSupabase(registros) {
 // --- "perfis" (usado pela página Permissões; só admins enxergam todos) ---
 
 export async function listarPerfisSupabase() {
-    return requisicaoSupabase(config.SUPABASE_TABLE_PERFIS, '?select=*&order=nome.asc');
+    return listarTodos(config.SUPABASE_TABLE_PERFIS, 'select=*&order=nome.asc,id.asc');
 }
 
 export async function atualizarPerfilSupabase(id, dados) {
@@ -212,7 +225,7 @@ export async function atualizarPerfilSupabase(id, dados) {
 // --- Itens de Controle (Comporta, Sapata, Truck, Queda de Material) ---
 
 export async function listarControleSupabase(tabela) {
-    return requisicaoSupabase(tabela, '?select=*&order=data.desc,id.desc');
+    return listarTodos(tabela, 'select=*&order=data.desc,id.desc');
 }
 
 export async function criarControleSupabase(tabela, dados) {
