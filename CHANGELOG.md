@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-10-17
+- Itens de Controle: campo **Turno** (Turno 1 / Turno 2) nos quatro controles — formulário (obrigatório), tabela da página, banco (com filtro) e Excel. Migração `20261017_itens_controle_turno.sql`.
+- Removidos de vez `temperaturas.js`, `pi-api.js` e `pi-config.js` (o `pi-config.js` deixava o lint do CI vermelho).
+
 ## 2026-10-16 — Auditoria: segurança, dados e base de testes
 ### Segurança
 - Domínio @ternium e email confirmado exigidos no banco (trigger + `usuario_valido()`).

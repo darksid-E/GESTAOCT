@@ -20,6 +20,8 @@ const OKNOK = ['OK', 'NOK'];
 
 // --- Campos reutilizados ---
 const C_DATA = { id: 'data', rotulo: 'Data', tipo: 'data' };
+const TURNOS = ['Turno 1', 'Turno 2'];
+const C_TURNO = { id: 'turno', rotulo: 'Turno', tipo: 'select', opcoes: TURNOS };
 const C_BATERIA = { id: 'bateria', rotulo: 'Bateria', tipo: 'bateria' };
 const C_MAQUINA = { id: 'maquina', rotulo: 'Máquina', tipo: 'maquina' };
 const C_OBS = { id: 'observacao', rotulo: 'Observação', tipo: 'texto', opcional: true, largo: true };
@@ -83,38 +85,38 @@ const COLS_AUDITORIA = [
 export const CONTROLES = {
     comporta: {
         titulo: 'Comporta', tituloModal: 'Medição de Comporta', tabela: 'controle_comporta', icone: 'i-porta',
-        campos: [C_DATA, C_BATERIA, C_MAQUINA,
+        campos: [C_DATA, C_TURNO, C_BATERIA, C_MAQUINA,
             { id: 'linha', rotulo: 'Linha', tipo: 'select', opcoes: ['L1', 'L2'] },
             ...MEDIDAS_COMPORTA, C_OBS],
         status: statusPorFaixa(MEDIDAS_COMPORTA),
-        colunas: [col('data', 'Data', 'data'), col('maquina', 'Máquina'), col('linha', 'Linha'),
+        colunas: [col('data', 'Data', 'data'), col('turno', 'Turno', 'texto', { opcoes: TURNOS }), col('maquina', 'Máquina'), col('linha', 'Linha'),
             ...MEDIDAS_COMPORTA.map(colMedida), col('status', 'Status', 'status'), col('observacao', 'Observação')],
         colunasBanco: [col('bateria', 'Bateria')],
     },
     sapata: {
         titulo: 'Sapata', tituloModal: 'Sapata', tabela: 'controle_sapata', icone: 'i-regua',
-        campos: [C_DATA, C_BATERIA, C_MAQUINA, ...MEDIDAS_SAPATA, C_OBS],
+        campos: [C_DATA, C_TURNO, C_BATERIA, C_MAQUINA, ...MEDIDAS_SAPATA, C_OBS],
         status: statusPorFaixa(MEDIDAS_SAPATA),
-        colunas: [col('data', 'Data', 'data'), col('maquina', 'Máquina'),
+        colunas: [col('data', 'Data', 'data'), col('turno', 'Turno', 'texto', { opcoes: TURNOS }), col('maquina', 'Máquina'),
             ...MEDIDAS_SAPATA.map(colMedida), col('status', 'Status', 'status'), col('observacao', 'Observação')],
         colunasBanco: [col('bateria', 'Bateria')],
     },
     truck: {
         titulo: 'Truck', tituloModal: 'Relatório dos Trucks', tabela: 'controle_truck', icone: 'i-truck',
-        campos: [C_DATA, C_BATERIA, C_MAQUINA, ...CAMPOS_TRUCK, C_OBS],
-        colunas: [col('data', 'Data', 'data'), col('bateria', 'Bateria'), col('maquina', 'Máquina'),
+        campos: [C_DATA, C_TURNO, C_BATERIA, C_MAQUINA, ...CAMPOS_TRUCK, C_OBS],
+        colunas: [col('data', 'Data', 'data'), col('turno', 'Turno', 'texto', { opcoes: TURNOS }), col('bateria', 'Bateria'), col('maquina', 'Máquina'),
             ...CAMPOS_TRUCK.map(c => col(c.id, c.rotulo, 'oknok')), col('observacao', 'Observação')],
         colunasBanco: [],
     },
     queda: {
         titulo: 'Queda de Material', tituloModal: 'Relatório de Queda de Material', tabela: 'controle_queda_material', icone: 'i-queda',
-        campos: [C_DATA, C_BATERIA, { id: 'linha', rotulo: 'Linha', tipo: 'maquina' },
+        campos: [C_DATA, C_TURNO, C_BATERIA, { id: 'linha', rotulo: 'Linha', tipo: 'maquina' },
             { id: 'numero_viagem', rotulo: 'Nº viagem', tipo: 'inteiro' },
             { id: 'peso_t', rotulo: 'Peso', tipo: 'numero', unidade: 't' },
             { id: 'material', rotulo: 'Material', tipo: 'derivado', calcular: (d) => materialDaLinha(d.linha) },
             C_OBS],
         derivados: { material: (r) => r.material || materialDaLinha(r.linha) },
-        colunas: [col('data', 'Data', 'data'), col('bateria', 'Bateria'), col('linha', 'Linha'),
+        colunas: [col('data', 'Data', 'data'), col('turno', 'Turno', 'texto', { opcoes: TURNOS }), col('bateria', 'Bateria'), col('linha', 'Linha'),
             col('numero_viagem', 'Nº viagem', 'numero'), col('peso_t', 'Peso (t)', 'numero'), col('material', 'Material'), col('observacao', 'Observação')],
         colunasBanco: [],
     },
@@ -270,6 +272,7 @@ const colunasDoBanco = (cfg) => {
 function htmlFiltro(c) {
     if (c.tipo === 'oknok') return `<select class="input_filtro_col" data-filtro="${c.campo}"><option value="">Todos</option><option>OK</option><option>NOK</option><option value="-">Vazio</option></select>`;
     if (c.tipo === 'status') return `<select class="input_filtro_col" data-filtro="${c.campo}"><option value="">Todos</option><option>OK</option><option>DESVIO</option></select>`;
+    if (c.opcoes) return `<select class="input_filtro_col" data-filtro="${c.campo}"><option value="">Todos</option>${c.opcoes.map(o => `<option>${esc(o)}</option>`).join('')}<option value="-">Vazio</option></select>`;
     if (c.campo === 'bateria') return `<select class="input_filtro_col" data-filtro="${c.campo}"><option value="">Todas</option>${BATERIAS.map(b => `<option>${b}</option>`).join('')}</select>`;
     return `<input type="text" class="input_filtro_col" data-filtro="${c.campo}">`;
 }

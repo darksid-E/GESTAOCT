@@ -61,6 +61,8 @@ caso "comporta: 419 = DESVIO" "$(como authenticated $ADM "insert into public.con
 caso "sapata: 30 e 45 = OK" "$(como authenticated $ADM "insert into public.controle_sapata (data, bateria, maquina, altura_t_mm, altura_m_mm, altura_f_mm) values (current_date, 'A', '33A', 30, 45, 40) returning status;")" "^OK"
 caso "queda: linha 33 = Moinha" "$(como authenticated $ADM "insert into public.controle_queda_material (data, bateria, linha, numero_viagem, peso_t) values (current_date, 'B', '33B', 1, 2.5) returning material;")" "^Moinha"
 caso "máquina de outra bateria recusada" "$(como authenticated $ADM "insert into public.controle_sapata (data, bateria, maquina, altura_t_mm, altura_m_mm, altura_f_mm) values (current_date, 'A', '31B', 40, 40, 40);")" "check constraint"
+caso "turno válido aceito" "$(como authenticated $ADM "insert into public.controle_truck (data, bateria, maquina, turno, freio_01) values (current_date, 'A', '31A', 'Turno 2', 'OK') returning turno;")" "^Turno 2"
+caso "turno inválido recusado" "$(como authenticated $ADM "insert into public.controle_truck (data, bateria, maquina, turno) values (current_date, 'A', '31A', 'Turno 3');")" "turno_check"
 caso "leitor não lança" "$(como authenticated $LEI "insert into public.controle_truck (data, bateria, maquina, freio_01) values (current_date, 'A', '31A', 'OK');")" "row-level security"
 
 echo; echo "$((total - falhas))/$total casos ok"
